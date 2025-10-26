@@ -1,0 +1,23 @@
+{
+	"files.associations": {
+		"*.h": "c",
+		"*.c": "c",
+		"libft.h": "c",
+		"unistd.h": "c"
+	},
+	"editor.insertSpaces": false,
+	"editor.tabSize": 4,
+	"editor.detectIndentation": false,
+	"editor.renderWhitespace": "boundary",
+	"editor.autoIndent": "advanced",
+
+	"[c]": {
+		"editor.insertSpaces": false,
+		"editor.tabSize": 4,
+		"editor.detectIndentation": false
+	},
+
+	"files.trimTrailingWhitespace": true,
+	"files.insertFinalNewline": true,
+	"files.trimFinalNewlines": true
+}
