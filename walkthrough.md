@@ -72,24 +72,24 @@ minishell/
   } t_token;
   ```
  -->
-### 5. Parser recursivo (`parser/parser.c`)
+<!-- ### 5. Parser recursivo (`parser/parser.c`)
 
 * Converter lista de tokens em árvore binária:
 
-  ```c
   typedef struct s_node {
       t_toktype type;
       char **argv;
       struct s_node *left;
       struct s_node *right;
   } t_node;
-  ```
 * Regras:
 
   * `PIPE` → esquerda e direita
   * `AND` / `OR` → esquerda e direita
   * Parênteses → subárvore
-  * `WORD` → comando
+  * `WORD` → comando -->
+
+<!-- acima feito... -->
 
 ### 6. Implementar funções auxiliares
 
@@ -104,9 +104,7 @@ minishell/
 
 Função principal:
 
-```c
 int exec_tree(t_node *node, t_shell *sh);
-```
 
 Casos:
 

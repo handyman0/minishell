@@ -1,24 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minishell.c                                        :+:      :+:    :+:   */
+/*   builtins.h                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/26 19:24:51 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:34:07 by lmelo-do         ###   ########.fr       */
+/*   Created: 2025/10/31 16:30:09 by lmelo-do          #+#    #+#             */
+/*   Updated: 2025/10/31 16:31:31 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/minishell.h"
+#ifndef BUILTINS_H
+#define BUILTINS_H
 
-int	main(void)
-{
-	// char	*test_input = "ls -la | grep test && echo done";
+/* echo, cd, export ... */
 
-	printf("Testando tokenizer ... \n");
-	// t_token *tokens = tokenize_line(test_input);
-
-	// só imprimir o debug, mas ja ve se compila.
-	return (0);
-}
+#endif

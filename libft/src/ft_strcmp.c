@@ -1,24 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minishell.c                                        :+:      :+:    :+:   */
+/*   ft_strcmp.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/26 19:24:51 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:34:07 by lmelo-do         ###   ########.fr       */
+/*   Created: 2025/10/31 16:03:45 by lmelo-do          #+#    #+#             */
+/*   Updated: 2025/10/31 16:07:56 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/minishell.h"
+#include "../include/libft.h"
 
-int	main(void)
+int	ft_strcmp(char *s1, char *s2)
 {
-	// char	*test_input = "ls -la | grep test && echo done";
+	int	i;
 
-	printf("Testando tokenizer ... \n");
-	// t_token *tokens = tokenize_line(test_input);
-
-	// só imprimir o debug, mas ja ve se compila.
-	return (0);
+	i = 0;
+	while ((s1[i] || s2[i]) && s1[i] == s2[i])
+		i++;
+	return (s1[i] - s2[i]);
 }

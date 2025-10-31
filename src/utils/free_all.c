@@ -1,24 +1,29 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minishell.c                                        :+:      :+:    :+:   */
+/*   free_all.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/26 19:24:51 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:34:07 by lmelo-do         ###   ########.fr       */
+/*   Created: 2025/10/31 19:39:14 by lmelo-do          #+#    #+#             */
+/*   Updated: 2025/10/31 19:39:24 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "../includes/minishell.h"
+#include "../../includes/utils.h"
 
-int	main(void)
+void    free_str_array(char **arr)
 {
-	// char	*test_input = "ls -la | grep test && echo done";
+	int i;
 
-	printf("Testando tokenizer ... \n");
-	// t_token *tokens = tokenize_line(test_input);
+	if (!arr)
+		return;
 
-	// só imprimir o debug, mas ja ve se compila.
-	return (0);
+	i = 0;
+	while (arr[i])
+	{
+		free(arr[i]);
+		i++;
+	}
+	free(arr);
 }
