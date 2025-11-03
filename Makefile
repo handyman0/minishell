@@ -44,7 +44,7 @@ INCLUDES = -I$(INC_DIR) -I$(LIBFT_DIR)/include
 all: libft $(NAME)
 
 $(NAME): $(OBJS) $(LIBFT)
-	@$(CC) $(CFLAGS) $(OBJS) -L$(LIBFT_DIR) -lft -o $(NAME)
+	@$(CC) $(CFLAGS) $(OBJS) -L$(LIBFT_DIR) -lft -lreadline -o $(NAME)
 	@echo "$(GREEN)✅ $(NAME) compilado com sucesso!$(RESET)"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
@@ -76,4 +76,14 @@ valgrind: re
 	@echo "$(YELLOW)🧠 Compilado para análise Valgrind$(RESET)"
 	@echo "$(BLUE)👉 Exemplo: valgrind --leak-check=full --track-origins=yes ./$(NAME)$(RESET)"
 
-.PHONY: all clean fclean re libft debug valgrind
+TEST_PARSER_OBJS = $(filter-out $(OBJ_DIR)/minishell.o, $(OBJS))
+
+test_parser: $(TEST_PARSER_OBJS) $(LIBFT)
+	@$(CC) $(CFLAGS) test_parser.c $(TEST_PARSER_OBJS) -L$(LIBFT_DIR) -lft -lreadline -o test_parser
+	@echo "$(GREEN)✅ test_parser compilado!$(RESET)"
+	@./test_parser
+
+test: test_parser
+	@echo "$(BLUE)🧪 Todos os testes executados!$(RESET)"
+
+.PHONY: all clean fclean re libft debug valgrind test test_parser

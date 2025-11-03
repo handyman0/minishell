@@ -6,33 +6,23 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:35:05 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:30:30 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/03 15:05:39 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/parser.h"
 #include "../includes/utils.h"
 
-static t_token	*create_token(t_toktype type, char *value)
-{
-	t_token *token;
-
-	token = malloc(sizeof(t_token));
-	if (!token)
-		return (NULL);
-	token->type = type;
-	token->value = value;
-	token->next = NULL;
-	return (token);
-}
-
 static void	add_token(t_token **head, t_token **current, t_toktype type, char *value)
 {
 	t_token	*new_token;
 
-	new_token = create_token(type, value);
+	new_token = malloc(sizeof(t_token));
 	if (!new_token)
 		return ;
+	new_token->type = type;
+	new_token->value = value;
+	new_token->next = NULL;
 
 	if (*head == NULL)
 		*head = new_token;
@@ -95,11 +85,31 @@ static char	*extract_word(char *line, int *i)
 {
 	int		len;
 	char	*word;
+	char	quote;
 
 	len = 0;
 	while (line[*i + len] && !ft_isspace(line[*i + len]) &&
 			!handle_operator(line, *i + len, NULL, NULL))
-		len++;
+	{
+		if (line[*i + len] == '\'' || line[*i + len] == '\"')
+		{
+			quote = line[*i + len];
+			len++;
+
+			while (line[*i + len] && line[*i + len] != quote)
+				len++;
+			if (line[*i + len] == quote)
+				len++;
+			else
+			{
+				break ;
+			}
+		}
+		else
+		{
+			len++;
+		}
+	}
 	if (len == 0)
 		return (NULL);
 	word = malloc(len + 1);

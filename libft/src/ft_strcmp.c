@@ -6,13 +6,13 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 16:03:45 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 16:07:56 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/03 13:21:09 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../include/libft.h"
 
-int	ft_strcmp(char *s1, char *s2)
+int	ft_strcmp(const char *s1, const char *s2)
 {
 	int	i;
 

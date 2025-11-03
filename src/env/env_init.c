@@ -5,12 +5,28 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/31 15:24:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 15:36:13 by lmelo-do         ###   ########.fr       */
+/*   Created: 2025/10/31 19:43:49 by lmelo-do          #+#    #+#             */
+/*   Updated: 2025/10/31 19:43:56 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/env.h"
+#include "../../includes/utils.h"
+
+static void	free_split(char **split)
+{
+	int	i;
+
+	if (!split)
+		return;
+	i = 0;
+	while (split[i])
+	{
+		free(split[i]);
+		i++;
+	}
+	free(split);
+}
 
 t_env	*env_new(char *key, char *value)
 {
@@ -20,7 +36,10 @@ t_env	*env_new(char *key, char *value)
 	if (!node)
 		return (NULL);
 	node->key = ft_strdup(key);
-	node->value = ft_strdup(value);
+	if (value)
+		node->value = ft_strdup(value);
+	else
+		node->value = ft_strdup("");
 	node->next = NULL;
 	return (node);
 }
@@ -29,10 +48,12 @@ void	env_add_back(t_env **env, t_env *new)
 {
 	t_env	*tmp;
 
+	if (!new)
+		return;
 	if (!*env)
 	{
 		*env = new;
-		return ;
+		return;
 	}
 	tmp = *env;
 	while (tmp->next)
@@ -52,9 +73,16 @@ t_env	*env_init(char **envp)
 	while (envp && envp[i])
 	{
 		split = ft_split(envp[i], '=');
-		node = env_new(split[0], split[1] ? split[1] : "");
-		env_add_back(&env, node);
-		free_str_array(split);
+		if (split && split[0])
+		{
+			node = env_new(split[0], split[1]);
+			if (node)
+				env_add_back(&env, node);
+			else
+				free_split(split);
+		}
+		if (split)
+			free_split(split);
 		i++;
 	}
 	return (env);

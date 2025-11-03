@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 15:43:24 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 15:55:00 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/03 13:07:55 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,11 +14,14 @@
 
 char	*env_get(t_env *env, const char *key)
 {
+	t_env	*tmp;
+
+	tmp = env;
 	while (env)
 	{
 		if (ft_strcmp(env->key, key) == 0)
-			return (0);
-		env = env->next;
+			return (tmp->value);
+		tmp = tmp->next;
 	}
 	return (NULL);
 }
@@ -26,6 +29,7 @@ char	*env_get(t_env *env, const char *key)
 void	env_set(t_env **env, const char *key, const char *value)
 {
 	t_env	*tmp;
+	t_env	*new_node;
 
 	tmp = *env;
 	while (tmp)
@@ -38,7 +42,9 @@ void	env_set(t_env **env, const char *key, const char *value)
 		}
 		tmp = tmp->next;
 	}
-	env_add_back(env, env_new((char *)key, (char *)value));
+	new_node = env_new((char *)key, (char *)value);
+	if (new_node)
+		env_add_back(env, new_node);
 }
 
 void	env_unset(t_env **env, const char *key)
@@ -46,6 +52,8 @@ void	env_unset(t_env **env, const char *key)
 	t_env	*tmp;
 	t_env	*prev;
 
+	if (!env || !*env)
+		return ;
 	tmp = *env;
 	prev = NULL;
 	while (tmp)

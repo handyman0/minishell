@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:01:35 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:40:31 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/03 13:09:57 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,8 +38,8 @@ void	env_free(t_env *env);
 /* =================== */
 
 char	*env_get(t_env *env, const char *key);
-char	*env_set(t_env **env, const char *key, const char *value);
-char	*env_unset(t_env *env, const char *key);
+void	env_set(t_env **env, const char *key, const char *value);
+void	env_unset(t_env **env, const char *key);
 
 /* =================== */
 /* Utilitarios e debug */
@@ -48,5 +48,12 @@ char	*env_unset(t_env *env, const char *key);
 void	env_print(t_env *env);
 int		env_size(t_env *env);
 char	**env_to_array(t_env *env);
+
+/* ================== */
+/* Funções auxiliares */
+/* ================== */
+
+t_env	*env_new(char *key, char *value);
+void	env_add_back(t_env **env, t_env *new);
 
 #endif
