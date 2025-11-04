@@ -6,13 +6,14 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/04 17:11:05 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/04 18:32:45 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/executor.h"
 #include "../../includes/minishell.h"
 #include "../../includes/utils.h"
+#include "../../includes/builtins.h"
 
 static int	execute_builtin(t_node *node, t_shell *shell)
 {
@@ -38,29 +39,26 @@ static int	execute_command(t_node *node, t_shell *shell)
 	char	*path;
 	char	**env_array;
 	int		status;
+	int		builtin_status;
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
-
-	// Verifica se é builtin
-	// TODO: Implementar builtins
-
-	// Busca o caminho do comando
+	builtin_status = execute_builtin(node, shell);
+	if (builtin_status != -1)
+		return (builtin_status);
 	path = find_path(node->data.cmd.argv[0], shell);
 	if (!path)
 	{
 		printf("minishell: %s: command not found\n", node->data.cmd.argv[0]);
 		return (127);
 	}
-
 	env_array = env_to_array(shell->env);
 	if (fork() == 0)
 	{
-		execve(path, node->data.cmd.argv, env_array);  // ← CORRIGIDO: execve
+		execve(path, node->data.cmd.argv, env_array);
 		perror("minishell");
 		exit(126);
 	}
-
 	free(path);
 	free_str_array(env_array);
 	wait(&status);

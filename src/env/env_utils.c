@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 15:55:16 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/04 17:01:32 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/04 18:15:37 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,31 +43,18 @@ char	**env_to_array(t_env *env)
 
 	size = env_size(env);
 	array = malloc(sizeof(char *) * (size + 1));
-	if (!array)  // ← CORRIGIDO: !array em vez de array
+	if (!array)
 		return (NULL);
-
 	i = 0;
-	while (env)
+	while (env && i < size)
 	{
 		tmp = ft_strjoin(env->key, "=");
 		if (!tmp)
-		{
-			// Libera o que já foi alocado
-			while (i > 0)
-				free(array[--i]);
-			free(array);
-			return (NULL);
-		}
+			break ;
 		array[i] = ft_strjoin(tmp, env->value);
 		free(tmp);
 		if (!array[i])
-		{
-			// Libera o que já foi alocado
-			while (i > 0)
-				free(array[--i]);
-			free(array);
-			return (NULL);
-		}
+			break ;
 		env = env->next;
 		i++;
 	}
