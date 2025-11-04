@@ -1,7 +1,3 @@
-# **************************************************************************** #
-#                                   CONFIG                                     #
-# **************************************************************************** #
-
 NAME        = minishell
 
 CC          = cc
@@ -15,19 +11,11 @@ LIBFT_DIR   = libft
 
 LIBFT       = $(LIBFT_DIR)/libft.a
 
-# **************************************************************************** #
-#                                 CORES & MSGS                                 #
-# **************************************************************************** #
-
 RED     = \033[1;31m
 GREEN   = \033[1;32m
 BLUE    = \033[1;34m
 YELLOW  = \033[1;33m
 RESET   = \033[0m
-
-# **************************************************************************** #
-#                                DETECÇÃO DE ARQS                              #
-# **************************************************************************** #
 
 # Busca todos os .c de src/ e subpastas
 SRCS    = $(shell find $(SRC_DIR) -type f -name "*.c")
@@ -36,10 +24,6 @@ SRCS    = $(shell find $(SRC_DIR) -type f -name "*.c")
 OBJS    = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 INCLUDES = -I$(INC_DIR) -I$(LIBFT_DIR)/include
-
-# **************************************************************************** #
-#                                    RULES                                     #
-# **************************************************************************** #
 
 all: libft $(NAME)
 
@@ -78,7 +62,7 @@ valgrind: re
 
 TEST_PARSER_OBJS = $(filter-out $(OBJ_DIR)/minishell.o, $(OBJS))
 
-test_parser: $(TEST_PARSER_OBJS) $(LIBFT)
+test_parser: libft $(TEST_PARSER_OBJS)
 	@$(CC) $(CFLAGS) test_parser.c $(TEST_PARSER_OBJS) -L$(LIBFT_DIR) -lft -lreadline -o test_parser
 	@echo "$(GREEN)✅ test_parser compilado!$(RESET)"
 	@./test_parser

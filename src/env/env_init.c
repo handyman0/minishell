@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 19:43:49 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:43:56 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/04 16:52:33 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,22 +69,35 @@ t_env	*env_init(char **envp)
 	int		i;
 
 	env = NULL;
+
+	if (!envp)
+	{
+		printf("⚠️  envp é NULL - criando ambiente mínimo\n");
+		return (env_init_minimal());
+	}
+
 	i = 0;
-	while (envp && envp[i])
+	while (envp[i])
 	{
 		split = ft_split(envp[i], '=');
 		if (split && split[0])
 		{
-			node = env_new(split[0], split[1]);
+			node = env_new(split[0], split[1] ? split[1] : "");
 			if (node)
 				env_add_back(&env, node);
-			else
-				free_split(split);
 		}
 		if (split)
 			free_split(split);
 		i++;
 	}
+
+	// Se ainda estiver vazio, cria mínimo
+	if (!env)
+	{
+		printf("⚠️  Ambiente vazio - criando mínimo\n");
+		return (env_init_minimal());
+	}
+
 	return (env);
 }
 

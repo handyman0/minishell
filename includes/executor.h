@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:02:41 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/26 20:34:04 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/03 16:24:22 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,18 +22,20 @@
 # include "utils.h"
 # include "parser.h"
 
+typedef struct s_env t_env;
+typedef struct s_shell t_shell;
+
 void	error_exit(const char *msg);
 void	free_str_array(char **arr);
 
-char	*find_path(const char *cmd, char **envp);
-void	exec_command(char *cmd, char **envp);
-
-void	exec_pipe(char **cmds, char **envp);
 void	exec_heredoc(const char *limiter);
 
 int		open_file(char *path, int mode);
 void	handle_redirection_in(const char *file);
 void	handle_redirection_out(const char *file, int append);
 
-#endif
+char	*find_path(char *cmd, t_shell *shell);
+char	**env_to_array(t_env *env);
+int		execute_tree(t_node *node, t_shell *shell);
 
+#endif

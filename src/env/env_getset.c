@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 15:43:24 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/03 13:07:55 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/04 16:53:12 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,22 @@ char	*env_get(t_env *env, const char *key)
 {
 	t_env	*tmp;
 
-	tmp = env;
-	while (env)
+	if (!env || !key)
 	{
-		if (ft_strcmp(env->key, key) == 0)
+		printf("❌ env_get: env=%p, key=%p\n", env, key);
+		return (NULL);
+	}
+
+	tmp = env;
+	while (tmp)
+	{
+		if (!tmp->key)
+		{
+			printf("❌ env_get: tmp->key é NULL\n");
+			tmp = tmp->next;
+			continue;
+		}
+		if (ft_strcmp(tmp->key, key) == 0)
 			return (tmp->value);
 		tmp = tmp->next;
 	}
