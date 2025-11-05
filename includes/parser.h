@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:30:10 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:31:03 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/05 15:59:36 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,10 +94,17 @@ typedef struct s_node
 // tokenizer.c
 t_token	*tokenize_line(char *line);
 void	free_tokens(t_token *tokens);
+void	token_add_back(t_token **head, t_token **current, t_toktype type, char *value);
 
 // parser.c
 t_node	*parse_tokens(t_token **tokens);
 void	free_ast(t_node *node);
+t_node	*parse_expression(t_token **tokens);
+t_node	*parse_and_or(t_token **tokens);
+t_node	*parse_pipeline(t_token **tokens);
+
+// expand_wildcars.c
+void	expand_wildcards(t_token **tokens);
 
 // syntax_check.c
 int		check_syntax(t_token *tokens);
@@ -107,6 +114,5 @@ void	expand_tokens(t_token *tokens);
 
 // debug_print.c (sera movido para utils depois)
 void	print_tokens(t_token *tokens);
-/* void	print_ast(t_node *node, int); */
 
 #endif

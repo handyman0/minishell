@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/04 18:32:45 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/05 15:00:43 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,26 @@
 #include "../../includes/minishell.h"
 #include "../../includes/utils.h"
 #include "../../includes/builtins.h"
+
+static int	execute_and(t_node *node, t_shell *shell)
+{
+	int	left_status;
+
+	left_status = execute_tree(node->data.op.left, shell);
+	if (left_status == 0)
+		return (execute_tree(node->data.op.right, shell));
+	return (left_status);
+}
+
+static int	execute_or(t_node *node, t_shell *shell)
+{
+	int	left_status;
+
+	left_status = execute_tree(node->data.op.left, shell);
+	if (left_status != 0)
+		return (execute_tree(node->data.op.right, shell));
+	return (left_status);
+}
 
 static int	execute_builtin(t_node *node, t_shell *shell)
 {
@@ -111,6 +131,10 @@ int	execute_tree(t_node *node, t_shell *shell)
 			return (execute_command(node, shell));
 		case NODE_PIPE:
 			return (execute_pipe(node, shell));
+		case NODE_AND:
+			return (execute_and(node, shell));
+		case NODE_OR:
+			return (execute_or(node, shell));
 		default:
 			printf("minishell: unknown node type\n");
 			return (1);

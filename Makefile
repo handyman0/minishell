@@ -58,7 +58,7 @@ debug: re
 valgrind: CFLAGS += -g3
 valgrind: re
 	@echo "$(YELLOW)🧠 Compilado para análise Valgrind$(RESET)"
-	@echo "$(BLUE)👉 Exemplo: valgrind --leak-check=full --track-origins=yes ./$(NAME)$(RESET)"
+	@echo "$(BLUE)👉 Exemplo: valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(NAME)$(RESET)"
 
 TEST_PARSER_OBJS = $(filter-out $(OBJ_DIR)/minishell.o, $(OBJS))
 

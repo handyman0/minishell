@@ -6,14 +6,65 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 14:00:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/03 14:56:54 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/05 17:20:32 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/parser.h"
 #include "../../includes/utils.h"
 
-static void	free_args_list(t_list *args)
+t_node	*parse_expression(t_token **tokens)
+{
+	t_node	*node;
+
+	if (!tokens || !*tokens)
+		return (NULL);
+	if ((*tokens)->type == TOKEN_LPAREN)
+	{
+		*tokens = (*tokens)->next;
+		node = parse_and_or(tokens);
+		if (*tokens && (*tokens)->type == TOKEN_RPAREN)
+			*tokens = (*tokens)->next;
+		return (node);
+	}
+	return (parse_and_or(tokens));
+}
+
+t_node	*parse_and_or(t_token **tokens)
+{
+	t_node		*left;
+	t_node		*node;
+	t_toktype	op_type;
+
+	left = parse_pipeline(tokens);
+	if (!left)
+		return (NULL);
+	while (*tokens && ((*tokens)->type == TOKEN_AND || (*tokens)->type == TOKEN_OR))
+	{
+		op_type = (*tokens)->type;
+		*tokens = (*tokens)->next;
+
+		node = malloc(sizeof(t_node));
+		if (!node)
+		{
+			free_ast(left);
+			return (NULL);
+		}
+		node->type = (op_type == TOKEN_AND) ? NODE_AND : NODE_OR;
+		node->data.op.left = left;
+		node->data.op.right = parse_pipeline(tokens);
+		if (!node->data.op.right)
+		{
+			free(node);
+			free_ast(left);
+			return (NULL);
+		}
+		left = node;
+	}
+	return (left);
+}
+
+void	free_args_list(t_list *args)
 {
 	t_list	*tmp;
 
@@ -27,7 +78,7 @@ static void	free_args_list(t_list *args)
 	}
 }
 
-static t_node	*parse_command(t_token **tokens)
+t_node	*parse_command(t_token **tokens)
 {
 	t_node	*node;
 	t_list	*args;
@@ -93,7 +144,7 @@ static t_node	*parse_command(t_token **tokens)
 	return (node);
 }
 
-static t_node	*parse_pipeline(t_token **tokens)
+t_node	*parse_pipeline(t_token **tokens)
 {
 	t_node	*left;
 	t_node	*node;
@@ -101,11 +152,9 @@ static t_node	*parse_pipeline(t_token **tokens)
 	left = parse_command(tokens);
 	if (!left)
 		return (NULL);
-
 	while (*tokens && (*tokens)->type == TOKEN_PIPE)
 	{
 		*tokens = (*tokens)->next;
-
 		node = malloc(sizeof(t_node));
 		if (!node)
 		{
@@ -115,7 +164,6 @@ static t_node	*parse_pipeline(t_token **tokens)
 		node->type = NODE_PIPE;
 		node->data.op.left = left;
 		node->data.op.right = parse_command(tokens);
-
 		if (!node->data.op.right)
 		{
 			free(node);
@@ -131,7 +179,7 @@ t_node	*parse_tokens(t_token **tokens)
 {
 	if (!tokens || !*tokens)
 		return (NULL);
-	return (parse_pipeline(tokens));
+	return (parse_expression(tokens));
 }
 
 void	free_ast(t_node *node)

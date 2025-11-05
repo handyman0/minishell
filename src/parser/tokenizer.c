@@ -6,14 +6,14 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:35:05 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/03 15:05:39 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/05 17:43:49 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/parser.h"
 #include "../includes/utils.h"
 
-static void	add_token(t_token **head, t_token **current, t_toktype type, char *value)
+void	token_add_back(t_token **head, t_token **current, t_toktype type, char *value)
 {
 	t_token	*new_token;
 
@@ -35,47 +35,47 @@ static int	handle_operator(char *line, int i, t_token **head, t_token **current)
 {
 	if (line[i] == '|' && line[i + 1] == '|')
 	{
-		add_token(head, current, TOKEN_OR, NULL);
+		token_add_back(head, current, TOKEN_OR, NULL);
 		return (2);
 	}
 	else if (line[i] == '|')
 	{
-		add_token(head, current, TOKEN_PIPE, NULL);
+		token_add_back(head, current, TOKEN_PIPE, NULL);
 		return (1);
 	}
 	else if (line[i] == '&' && line[i + 1] == '&')
 	{
-		add_token(head, current, TOKEN_AND, NULL);
+		token_add_back(head, current, TOKEN_AND, NULL);
 		return (2);
 	}
 	else if (line[i] == '<' && line[i + 1] == '<')
 	{
-		add_token(head, current, TOKEN_HEREDOC, NULL);
+		token_add_back(head, current, TOKEN_HEREDOC, NULL);
 		return (2);
 	}
 	else if (line[i] == '<')
 	{
-		add_token(head, current, TOKEN_REDIR_IN, NULL);
+		token_add_back(head, current, TOKEN_REDIR_IN, NULL);
 		return (1);
 	}
 	else if (line[i] == '>' && line[i + 1] == '>')
 	{
-		add_token(head, current, TOKEN_REDIR_APPEND, NULL);
+		token_add_back(head, current, TOKEN_REDIR_APPEND, NULL);
 		return (2);
 	}
 	else if (line[i] == '>')
 	{
-		add_token(head, current, TOKEN_REDIR_OUT, NULL);
+		token_add_back(head, current, TOKEN_REDIR_OUT, NULL);
 		return (1);
 	}
 	else if (line[i] == '(')
 	{
-		add_token(head, current, TOKEN_LPAREN, NULL);
+		token_add_back(head, current, TOKEN_LPAREN, NULL);
 		return (1);
 	}
 	else if (line[i] == ')')
 	{
-		add_token(head, current, TOKEN_RPAREN, NULL);
+		token_add_back(head, current, TOKEN_RPAREN, NULL);
 		return (1);
 	}
 	return (0);
@@ -148,7 +148,7 @@ t_token	*tokenize_line(char *line)
 		}
 		word = extract_word(line, &i);
 		if (word)
-			add_token(&head, &current, TOKEN_WORD, word);
+			token_add_back(&head, &current, TOKEN_WORD, word);
 	}
 	return (head);
 }
@@ -161,7 +161,10 @@ void	free_tokens(t_token *tokens)
 	{
 		tmp = tokens->next;
 		if (tokens->value)
+		{
 			free(tokens->value);
+			tokens->value = NULL;
+		}
 		free(tokens);
 		tokens = tmp;
 	}
