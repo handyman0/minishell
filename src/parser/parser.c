@@ -6,12 +6,13 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 14:00:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/05 17:20:32 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 20:17:58 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/parser.h"
 #include "../../includes/utils.h"
+#include "../../includes/minishell.h"
 
 t_node	*parse_expression(t_token **tokens)
 {
@@ -173,6 +174,28 @@ t_node	*parse_pipeline(t_token **tokens)
 		left = node;
 	}
 	return (left);
+}
+
+void	process_tokens_before_parsing(t_token **tokens, t_shell *shell)
+{
+	if (!tokens || !*tokens || !shell)
+		return ;
+	t_token *current = *tokens;
+	while (current)
+	{
+		if (current->type == TOKEN_WORD && current->value)
+		{
+			char *expanded = expand_variables(current->value, shell);
+			if (expanded)
+			{
+				char	*clean = remove_quotes(expanded);
+				free(expanded);
+				free(current->value);
+				current->value = clean;
+			}
+		}
+		current = current->next;
+	}
 }
 
 t_node	*parse_tokens(t_token **tokens)
