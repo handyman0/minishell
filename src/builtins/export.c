@@ -6,17 +6,61 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 18:36:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/04 18:36:58 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 18:56:48 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/builtins.h"
 #include "../includes/minishell.h"
 
+static int	is_valid_identifier(char *str)
+{
+	int i = 0;
+
+	if (!str || !*str || ft_isdigit(str[0]))
+		return (0);
+	while (str[i] && str[i] != '=')
+	{
+		if (!ft_isalnum(str[i]) && str[i] != '_')
+			return (0);
+		i++;
+	}
+	return (1);
+}
+
 int	builtin_export(char **argv, t_shell *shell)
 {
-	(void)argv;
-	(void)shell;
-	printf("minishell: export: ainda não implementado");
-	return (1);
+	int i = 1;
+	int status = 0;
+	char *equal_sign;
+
+	if (!argv[1])
+	{
+		env_print(shell->env);
+		return (0);
+	}
+	while (argv[i])
+	{
+		if (!is_valid_identifier(argv[i]))
+		{
+			ft_putstr_fd("minishell: export: '", STDERR_FILENO);
+			ft_putstr_fd(argv[i], STDERR_FILENO);
+			ft_putstr_fd("': not valid identifier\n", STDERR_FILENO);
+			status = 1;
+		}
+		else
+		{
+			equal_sign = ft_strchr(argv[i], '=');
+			if (equal_sign)
+			{
+				*equal_sign = '\0';
+				env_set(&shell->env, argv[i], equal_sign + 1);
+				*equal_sign = '=';
+			}
+			else
+				env_set(&shell->env, argv[i], "");
+		}
+		i++;
+	}
+	return (status);
 }
