@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:03:08 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:37:51 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 20:12:18 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 # define UTILS_H
 
 # include "../libft/include/libft.h"
-# include "parser.h"
+# include "minishell.h"
 
 int		ft_isspace(char c);
 void	print_tokens(t_token *tokens); // Para debug

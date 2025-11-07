@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:02:41 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/03 16:24:22 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 20:13:31 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,11 +19,7 @@
 # include <sys/wait.h>
 # include <stdio.h>
 # include "../libft/include/libft.h"
-# include "utils.h"
-# include "parser.h"
-
-typedef struct s_env t_env;
-typedef struct s_shell t_shell;
+# include "minishell.h"
 
 void	error_exit(const char *msg);
 void	free_str_array(char **arr);

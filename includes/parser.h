@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:30:10 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/05 15:59:36 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 20:19:31 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 # include <stdlib.h>
 # include <stdio.h>
+# include "minishell.h"
 
 /* ==================================== */
 /* TOKEN TYPES - Para o lexer/tokenizer */
@@ -103,14 +104,16 @@ t_node	*parse_expression(t_token **tokens);
 t_node	*parse_and_or(t_token **tokens);
 t_node	*parse_pipeline(t_token **tokens);
 
+// expand.c
+char	*expand_variables(char *token, t_shell *shell);
+char	*remove_quotes(char *token);
+void	process_tokens(t_token *tokens, t_shell *shell);
+
 // expand_wildcars.c
 void	expand_wildcards(t_token **tokens);
 
 // syntax_check.c
 int		check_syntax(t_token *tokens);
-
-// expand.c
-void	expand_tokens(t_token *tokens);
 
 // debug_print.c (sera movido para utils depois)
 void	print_tokens(t_token *tokens);
