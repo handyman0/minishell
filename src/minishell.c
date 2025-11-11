@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:24:51 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 20:20:55 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 21:46:39 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,10 +16,17 @@
 
 static void	init_shell(t_shell *shell, char **envp)
 {
+	char	cwd[1024];
+
 	shell->env = env_init(envp);
 	shell->exit_status = 0;
 	shell->running = 1;
-	// configurar sinais
+
+	// garante que PWD está definido e correto
+	if (getcwd(cwd, sizeof(cwd)) != NULL)
+		env_set(&shell->env, "PWD", cwd);
+	else
+		perror("minishell: getcwd");
 	setup_signals();
 }
 

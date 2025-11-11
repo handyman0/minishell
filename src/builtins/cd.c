@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 18:34:24 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 18:40:16 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 21:57:09 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,11 +18,17 @@ int	builtin_cd(char **argv, t_shell *shell)
 {
 	char	*path;
 	char	*oldpwd;
-	char	*pwd;
+	char	cwd[1024];
 
 	if (argv[1] && argv[2])
 	{
 		ft_putstr_fd("minishell: cd: too many arguments\n", STDERR_FILENO);
+		return (1);
+	}
+	oldpwd = getcwd(NULL, 0);
+	if (!oldpwd)
+	{
+		perror("minishell: cd");
 		return (1);
 	}
 	if (!argv[1] || ft_strcmp(argv[1], "~") == 0)
@@ -31,6 +37,7 @@ int	builtin_cd(char **argv, t_shell *shell)
 		if (!path)
 		{
 			ft_putstr_fd("minishell: cd: HOME not set\n", STDERR_FILENO);
+			free(oldpwd);
 			return (1);
 		}
 	}
@@ -40,6 +47,7 @@ int	builtin_cd(char **argv, t_shell *shell)
 		if (!path)
 		{
 			ft_putstr_fd("minishell: cd: OLDPWD not set\n", STDERR_FILENO);
+			free(oldpwd);
 			return (1);
 		}
 		ft_putstr_fd(path, STDOUT_FILENO);
@@ -47,12 +55,6 @@ int	builtin_cd(char **argv, t_shell *shell)
 	}
 	else
 		path = argv[1];
-	oldpwd = getcwd(NULL, 0);
-	if (!oldpwd)
-	{
-		perror("minishell: cd");
-		return (1);
-	}
 	if (chdir(path) != 0)
 	{
 		ft_putstr_fd("minishell: cd: ", STDERR_FILENO);
@@ -62,13 +64,17 @@ int	builtin_cd(char **argv, t_shell *shell)
 		free(oldpwd);
 		return (1);
 	}
+	// Atualiza OLDPWD com o diretorio anterior
 	env_set(&shell->env, "OLDPWD", oldpwd);
 	free(oldpwd);
-	pwd = getcwd(NULL, 0);
-	if (pwd)
+
+	// Atualizar PWD com o novo diretorio atual
+	if (getcwd(cwd, sizeof(cwd)) != NULL)
+		env_set(&shell->env, "PWD", cwd);
+	else
 	{
-		env_set(&shell->env, "PWD", pwd);
-		free(pwd);
+		perror("minishell: cd");
+		return (1);
 	}
 	return (0);
 }

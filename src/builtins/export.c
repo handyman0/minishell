@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 18:36:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 18:56:48 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 21:31:37 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,13 @@ static int	is_valid_identifier(char *str)
 {
 	int i = 0;
 
-	if (!str || !*str || ft_isdigit(str[0]))
+	// Caso especial: string vazia ou começando com '='
+	if (!str || !*str || str[0] == '=')
 		return (0);
+	// Verifica se é um digito no inicio
+	if (ft_isdigit(str[0]))
+		return (0);
+	// Verifica cada caractere até o '=' ou fim da string
 	while (str[i] && str[i] != '=')
 	{
 		if (!ft_isalnum(str[i]) && str[i] != '_')
@@ -43,7 +48,7 @@ int	builtin_export(char **argv, t_shell *shell)
 	{
 		if (!is_valid_identifier(argv[i]))
 		{
-			ft_putstr_fd("minishell: export: '", STDERR_FILENO);
+			ft_putstr_fd("minishell: export: `", STDERR_FILENO);
 			ft_putstr_fd(argv[i], STDERR_FILENO);
 			ft_putstr_fd("': not valid identifier\n", STDERR_FILENO);
 			status = 1;

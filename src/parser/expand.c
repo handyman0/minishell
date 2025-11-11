@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 19:02:25 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 20:33:14 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/07 21:26:38 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,155 +51,93 @@ static char	*get_var_value(char *var_name, t_shell *shell)
 	return (value ? value : ft_strdup(""));
 }
 
-// Função para calcular o tamanho necessário após expansão
-static size_t	calculate_required_size(char *token, t_shell *shell)
-{
-	size_t	size;
-	int		i;
-	char	*var_value;
-	int		var_len;
-
-	size = 0;
-	i = 0;
-	while (token[i])
-	{
-		if (token[i] == '$' && (ft_isalnum(token[i+1]) || token[i+1] == '?' || token[i+1] == '_'))
-		{
-			var_value = get_var_value(&token[i+1], shell);
-			if (var_value)
-			{
-				size += ft_strlen(var_value);
-				free(var_value);
-			}
-			var_len = var_name_length(&token[i+1]);
-			i += var_len + 1;
-		}
-		else
-		{
-			size++;
-			i++;
-		}
-	}
-	return (size + 1); // +1 para o null terminator
-}
-
-// Função para expandir as variaveis de ambiente
-char	*expand_variables(char *token, t_shell *shell)
+static char *process_token_with_quotes(char *token, t_shell *shell)
 {
 	char	*result;
-	size_t	size;
 	int		i;
 	int		j;
+	int		in_squote;
+	int		in_dquote;
 	char	*var_value;
 
 	if (!token)
 		return (NULL);
-
-	size = calculate_required_size(token, shell);
-	result = malloc(size);
+	result = malloc(ft_strlen(token) * 2 + 1);
 	if (!result)
 		return (NULL);
-
 	i = 0;
 	j = 0;
-	while (token[i])
+	in_squote = 0;
+	in_dquote = 0;
+	while (token[i] && j < (int)(ft_strlen(token) * 2))
 	{
-		if (token[i] == '$' && (ft_isalnum(token[i+1]) || token[i+1] == '?' || token[i+1] == '_'))
+		// Entrando ou saindo de aspas simples
+		if (token[i] == '\'' && !in_dquote)
+		{
+			in_squote = !in_squote;
+			i++;
+		}
+		// Entrando ou saindo de aspas duplas
+		else if (token[i] == '"' && !in_squote)
+		{
+			in_dquote = !in_dquote;
+			i++;
+		}
+		// Entrando de variaveis (não ocorre dentro de aspas simples)
+		else if (token[i] == '$' && !in_squote && (ft_isalnum(token[i+1]) || token[i+1] == '?' || token[i+1] == '_'))
 		{
 			var_value = get_var_value(&token[i+1], shell);
 			if (var_value)
 			{
-				// Copiar caractere por caractere para evitar overflow
 				int k = 0;
-				while (var_value[k] && j < (int)size - 1)
+				while (var_value[k] && j < (int)(ft_strlen(token) * 2) - 1)
 					result[j++] = var_value[k++];
 				free(var_value);
 				i += var_name_length(&token[i+1]) + 1;
 			}
 			else
-			{
 				i += var_name_length(&token[i+1]) + 1;
-			}
 		}
+		// Caracteres normais
 		else
 		{
-			if (j < (int)size - 1)
+			if (j < (int)(ft_strlen(token) * 2) - 1)
 				result[j++] = token[i++];
 			else
-				break;
+				break ;
 		}
 	}
 	result[j] = '\0';
 	return (result);
+}
+
+// Função para expandir as variaveis de ambiente
+char	*expand_variables(char *token, t_shell *shell)
+{
+	return (process_token_with_quotes(token, shell));
 }
 
 // Função para remover aspas
 char	*remove_quotes(char *token)
 {
-	char	*result;
-	int		i;
-	int		j;
-	int		in_dquote;
-	int		in_squote;
-
-	if (!token)
-		return (NULL);
-
-	i = 0;
-	j = 0;
-	in_dquote = 0;
-	in_squote = 0;
-	result = malloc(ft_strlen(token) + 1);
-	if (!result)
-		return (NULL);
-
-	while (token[i])
-	{
-		if (token[i] == '"' && !in_squote)
-		{
-			in_dquote = !in_dquote;
-			i++;
-		}
-		else if (token[i] == '\'' && !in_dquote)
-		{
-			in_squote = !in_squote;
-			i++;
-		}
-		else
-		{
-			result[j++] = token[i++];
-		}
-	}
-	result[j] = '\0';
-
-	// Otimização: se não houve remoção, retorna o original
-	if (j == (int)ft_strlen(token))
-	{
-		free(result);
-		return (ft_strdup(token));
-	}
-
-	return (result);
+	return (ft_strdup(token));
 }
 
 void	process_tokens(t_token *tokens, t_shell *shell)
 {
 	t_token	*current;
-	char	*expanded;
-	char	*clean;
+	char	*processed;
 
 	current = tokens;
 	while (current)
 	{
 		if (current->type == TOKEN_WORD && current->value)
 		{
-			expanded = expand_variables(current->value, shell);
-			if (expanded)
+			processed = process_token_with_quotes(current->value, shell);
+			if (processed)
 			{
-				clean = remove_quotes(expanded);
-				free(expanded);
 				free(current->value);
-				current->value = clean;
+				current->value = processed;
 			}
 		}
 		current = current->next;
