@@ -1,22 +1,3 @@
-
-## 🔹 Etapa 4 — Sinais, Histórico e Controle
-
-### 10. Sinais (`signals/signals.c`)
-
-* Desativar `readline` signals: `rl_catch_signals = 0`
-* `SIGINT` → nova linha + prompt
-* `SIGQUIT` → ignorar
-* `SIGTERM` → sair gracioso
-* `signal(SIGINT, sigint_handler);`
-* `signal(SIGQUIT, SIG_IGN);`
-
-### 11. Histórico (`signals/history.c`)
-
-* Ativar `add_history(line)` se a linha não estiver vazia
-* Manter histórico persistente opcional (salvar em `.minishell_history`)
-
----
-
 ## 🔹 Etapa 5 — Expansões e Polimento
 
 ### 12. Expansão de variáveis (`parser/expand.c`)
