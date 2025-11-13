@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 18:36:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 21:31:37 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:44:20 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,7 +50,7 @@ int	builtin_export(char **argv, t_shell *shell)
 		{
 			ft_putstr_fd("minishell: export: `", STDERR_FILENO);
 			ft_putstr_fd(argv[i], STDERR_FILENO);
-			ft_putstr_fd("': not valid identifier\n", STDERR_FILENO);
+			ft_putstr_fd("': não é um identificador válido\n", STDERR_FILENO);
 			status = 1;
 		}
 		else

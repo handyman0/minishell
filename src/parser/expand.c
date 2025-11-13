@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/05 19:02:25 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 21:26:38 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:34:56 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,9 +51,40 @@ static char	*get_var_value(char *var_name, t_shell *shell)
 	return (value ? value : ft_strdup(""));
 }
 
-static char *process_token_with_quotes(char *token, t_shell *shell)
+// Função para calcular o tamanho necessario após expansão
+static size_t	calculate_expanded_size(char *token, t_shell *shell)
+{
+	size_t	size;
+	int		i;
+	char	*var_value;
+
+	size = 0;
+	i = 0;
+	while (token[i])
+	{
+		if (token[i] == '$' && (ft_isalnum(token[i+1]) || token[i+1] == '?' || token[i+1] == '_'))
+		{
+			var_value = get_var_value(&token[i+1], shell);
+			if (var_value)
+			{
+				size += ft_strlen(var_value);
+				free(var_value);
+			}
+			i += var_name_length(&token[i+1]) + 1;
+		}
+		else
+		{
+			size++;
+			i++;
+		}
+	}
+	return (size + 1);
+}
+
+static char	*process_token_with_quotes(char *token, t_shell *shell)
 {
 	char	*result;
+	size_t	size;
 	int		i;
 	int		j;
 	int		in_squote;
@@ -62,14 +93,15 @@ static char *process_token_with_quotes(char *token, t_shell *shell)
 
 	if (!token)
 		return (NULL);
-	result = malloc(ft_strlen(token) * 2 + 1);
+	size = calculate_expanded_size(token, shell);
+	result = malloc(size);
 	if (!result)
 		return (NULL);
 	i = 0;
 	j = 0;
 	in_squote = 0;
 	in_dquote = 0;
-	while (token[i] && j < (int)(ft_strlen(token) * 2))
+	while (token[i] && j < (int)size - 1)
 	{
 		// Entrando ou saindo de aspas simples
 		if (token[i] == '\'' && !in_dquote)
@@ -90,7 +122,7 @@ static char *process_token_with_quotes(char *token, t_shell *shell)
 			if (var_value)
 			{
 				int k = 0;
-				while (var_value[k] && j < (int)(ft_strlen(token) * 2) - 1)
+				while (var_value[k] && j < (int)size - 1)
 					result[j++] = var_value[k++];
 				free(var_value);
 				i += var_name_length(&token[i+1]) + 1;
@@ -100,12 +132,7 @@ static char *process_token_with_quotes(char *token, t_shell *shell)
 		}
 		// Caracteres normais
 		else
-		{
-			if (j < (int)(ft_strlen(token) * 2) - 1)
-				result[j++] = token[i++];
-			else
-				break ;
-		}
+			result[j++] = token[i++];
 	}
 	result[j] = '\0';
 	return (result);

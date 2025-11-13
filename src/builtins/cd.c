@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 18:34:24 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 21:57:09 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:48:25 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,7 +22,7 @@ int	builtin_cd(char **argv, t_shell *shell)
 
 	if (argv[1] && argv[2])
 	{
-		ft_putstr_fd("minishell: cd: too many arguments\n", STDERR_FILENO);
+		ft_putstr_fd("minishell: cd: número excessivo de argumentos\n", STDERR_FILENO);
 		return (1);
 	}
 	oldpwd = getcwd(NULL, 0);

@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/04 18:38:40 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 18:04:03 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:50:11 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,12 +42,12 @@ int	builtin_exit(char **argv, t_shell *shell)
 		{
 			ft_putstr_fd("minishell: exit: ", STDERR_FILENO);
 			ft_putstr_fd(argv[1], STDERR_FILENO);
-			ft_putstr_fd(": numeric argument required\n", STDERR_FILENO);
+			ft_putstr_fd(": requer argumento numérico\n", STDERR_FILENO);
 			exit_code = 2;
 		}
 		else if (argv[2])
 		{
-			ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
+			ft_putstr_fd("minishell: exit: número excessivo de argumentos\n", STDERR_FILENO);
 			return (1);
 		}
 		else
