@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/05 15:00:43 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 14:55:54 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,7 +108,7 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	if (pid_right == 0)
 	{
 		close(pipefd[1]);
-		dup2(pipefd[0], STDIN_FILENO);  // ← CORRIGIDO: STDIN_FILENO
+		dup2(pipefd[0], STDIN_FILENO);
 		close(pipefd[0]);
 		exit(execute_tree(node->data.op.right, shell));
 	}

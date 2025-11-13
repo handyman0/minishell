@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 15:55:16 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/04 18:15:37 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 15:38:34 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,11 +50,17 @@ char	**env_to_array(t_env *env)
 	{
 		tmp = ft_strjoin(env->key, "=");
 		if (!tmp)
-			break ;
+		{
+			free_str_array(array);
+			return (NULL);
+		}
 		array[i] = ft_strjoin(tmp, env->value);
 		free(tmp);
 		if (!array[i])
-			break ;
+		{
+			free_str_array(array);
+			return (NULL);
+		}
 		env = env->next;
 		i++;
 	}
