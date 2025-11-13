@@ -6,13 +6,76 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 14:00:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 20:17:58 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 17:04:43 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/parser.h"
 #include "../../includes/utils.h"
 #include "../../includes/minishell.h"
+
+int	is_redirection_token(t_token *token)
+{
+	if (!token)
+		return (0);
+	return (token->type == TOKEN_REDIR_APPEND || token->type == TOKEN_REDIR_OUT || token->type == TOKEN_REDIR_APPEND || token->type == TOKEN_HEREDOC);
+}
+
+int	handle_redirection(t_token **tokens, t_redir **redirs)
+{
+	t_redir	*new_redir;
+	t_token	*current;
+
+	if (!tokens || !*tokens)
+		return (0);
+	current = *tokens;
+	new_redir = malloc(sizeof(t_redir));
+	if (!new_redir)
+		return (0);
+	new_redir->type = (t_redir_type)current->type;
+	new_redir->file = NULL;
+	new_redir->next = NULL;
+
+	// Avançar para o token do arquivo
+	current = current->next;
+	if (!current || current->type != TOKEN_WORD)
+	{
+		free(new_redir);
+		return (0);
+	}
+	new_redir->file = ft_strdup(current->value);
+	if (!new_redir->file)
+	{
+		free(new_redir);
+		return (0);
+	}
+
+	// Adicionar à lista de redirecionamentos
+	if (*redirs == NULL)
+		*redirs = new_redir;
+	else
+	{
+		t_redir *last = *redirs;
+		while (last->next)
+			last = last->next;
+		last->next = new_redir;
+	}
+	// Avança tokens
+	*tokens = current->next;
+	return (1);
+}
+
+void	free_redirs(t_redir *redirs)
+{
+	t_redir *tmp;
+	while (redirs)
+	{
+		tmp = redirs->next;
+		free(redirs->file);
+		free(redirs);
+		redirs = tmp;
+	}
+}
 
 t_node	*parse_expression(t_token **tokens)
 {
@@ -98,47 +161,65 @@ t_node	*parse_command(t_token **tokens)
 
 	args = NULL;
 	count = 0;
-	while (*tokens && (*tokens)->type == TOKEN_WORD)
+	while (*tokens)
 	{
-		new_node = ft_lstnew(ft_strdup((*tokens)->value));
-		if (!new_node)
+		// handle redirections
+		if (is_redirection_token(*tokens))
 		{
-			free_args_list(args);
-			free(node);
-			return (NULL);
+			if (!handle_redirection(tokens, &node->data.cmd.redirs))
+			{
+				free_args_list(args);
+				free_redirs(node->data.cmd.redirs);
+				free(node);
+				return (NULL);
+			}
+			continue;
 		}
-		ft_lstadd_back(&args, new_node);
-		count++;
-		*tokens = (*tokens)->next;
-	}
-
-	if (count > 0)
-	{
-		node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
-		if (!node->data.cmd.argv)
+		if ((*tokens)->type == TOKEN_WORD)
 		{
-			free_args_list(args);
-			free(node);
-			return (NULL);
+			new_node = ft_lstnew(ft_strdup((*tokens)->value));
+			if (!new_node)
+			{
+				free_args_list(args);
+				free_redirs(node->data.cmd.redirs);
+				free(node);
+				return (NULL);
+			}
+			ft_lstadd_back(&args, new_node);
+			count++;
+			*tokens = (*tokens)->next;
 		}
+		else
+			break;
 
-		t_list *current = args;
-		int i = 0;
-		while (current && i < count)
+		if (count > 0)
 		{
-			node->data.cmd.argv[i] = current->content;
-			current = current->next;
-			i++;
-		}
-		node->data.cmd.argv[count] = NULL;
+			node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
+			if (!node->data.cmd.argv)
+			{
+				free_args_list(args);
+				free(node);
+				return (NULL);
+			}
 
-		// Libera apenas os nós da lista, não o conteúdo (já no array)
-		t_list *tmp;
-		while (args)
-		{
-			tmp = args->next;
-			free(args);
-			args = tmp;
+			t_list *current = args;
+			int i = 0;
+			while (current && i < count)
+			{
+				node->data.cmd.argv[i] = current->content;
+				current = current->next;
+				i++;
+			}
+			node->data.cmd.argv[count] = NULL;
+
+			// Libera apenas os nós da lista, não o conteúdo (já no array)
+			t_list *tmp;
+			while (args)
+			{
+				tmp = args->next;
+				free(args);
+				args = tmp;
+			}
 		}
 	}
 
@@ -224,7 +305,7 @@ void	free_ast(t_node *node)
 			}
 			free(node->data.cmd.argv);
 		}
-		// TODO: free redirections
+		free_redirs(node->data.cmd.redirs);
 	}
 	else
 	{
