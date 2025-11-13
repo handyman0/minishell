@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:35:05 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/05 19:03:34 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 16:36:39 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ void	token_add_back(t_token **head, t_token **current, t_toktype type, char *val
 
 	if (*head == NULL)
 		*head = new_token;
-	else
+	else if (*current)
 		(*current)->next = new_token;
 	*current = new_token;
 }
