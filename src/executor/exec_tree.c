@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 17:52:10 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 18:00:17 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,9 +108,11 @@ static int	execute_command(t_node *node, t_shell *shell)
 	int		status;
 	int		builtin_status;
 	int		stdin_backup, stdout_backup;
+	pid_t	pid;
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
+
 	stdin_backup = dup(STDIN_FILENO);
 	stdout_backup = dup(STDOUT_FILENO);
 
@@ -141,15 +143,10 @@ static int	execute_command(t_node *node, t_shell *shell)
 		close(stdout_backup);
 		return (127);
 	}
-	env_array = env_to_array(shell->env);
-	if (fork() == 0)
-	{
-		execve(path, node->data.cmd.argv, env_array);
-		perror("minishell");
-		exit(126);
-	}
 
-	pid_t	pid = fork();
+	env_array = env_to_array(shell->env);
+
+	pid = fork();
 	if (pid == -1)
 	{
 		perror("minishell: fork");
@@ -161,16 +158,18 @@ static int	execute_command(t_node *node, t_shell *shell)
 		free_str_array(env_array);
 		return (1);
 	}
+
 	if (pid == 0)
 	{
 		execve(path, node->data.cmd.argv, env_array);
 		perror("minishell");
+		free(path);
+		free_str_array(env_array);
 		exit(126);
 	}
 	free(path);
 	free_str_array(env_array);
 	wait(&status);
-
 	dup2(stdin_backup, STDIN_FILENO);
 	dup2(stdout_backup, STDOUT_FILENO);
 	close(stdin_backup);
