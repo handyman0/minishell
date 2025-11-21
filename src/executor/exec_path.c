@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:24:56 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 17:45:05 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:06:42 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,8 @@ static char	*search_in_path(char *cmd, char **paths)
 		temp = ft_strjoin(paths[i], "/");
 		full_path = ft_strjoin(temp, cmd);
 		free(temp);
-		if (access(full_path, X_OK) == 0)
+		/* if the file exists in this path, return it (execve will handle permission errors) */
+		if (access(full_path, F_OK) == 0)
 			return (full_path);
 		free(full_path);
 		i++;
@@ -57,8 +58,8 @@ char	*find_path(char *cmd, t_shell *shell)
 
 	if (!path_env)
 	{
-		printf("find_path: PATH não encontrado\n");
-		return (NULL);
+		/* no PATH: fall back to default search locations or handle absolute/relative paths */
+		path_env = NULL;
 	}
 	paths = ft_split(path_env, ':');
 	if (!paths)
@@ -66,5 +67,11 @@ char	*find_path(char *cmd, t_shell *shell)
 
 	full_path = search_in_path(cmd, paths);
 	free_str_array(paths);
+	/* if cmd contains a slash, try it directly (relative or absolute path) */
+	if (!full_path && ft_strchr(cmd, '/'))
+	{
+		if (access(cmd, F_OK) == 0)
+			full_path = ft_strdup(cmd);
+	}
 	return (full_path);
 }

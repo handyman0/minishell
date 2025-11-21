@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:02:41 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 20:13:31 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 18:45:53 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,9 +26,9 @@ void	free_str_array(char **arr);
 
 void	exec_heredoc(const char *limiter);
 
-int		open_file(char *path, int mode);
-void	handle_redirection_in(const char *file);
-void	handle_redirection_out(const char *file, int append);
+int	open_file(char *path, int mode);
+int	handle_redirection_in(const char *file);
+int	handle_redirection_out(const char *file, int append);
 
 char	*find_path(char *cmd, t_shell *shell);
 char	**env_to_array(t_env *env);

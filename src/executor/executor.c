@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:30:07 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/26 20:37:04 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 18:45:56 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,22 +21,28 @@ int	open_file(char *path, int mode)
 	else if (mode == 1) // truncate
 		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	else // read
-		fd = open(path, O_RDONLY, 0644);
+		fd = open(path, O_RDONLY);
 	if (fd == -1)
-		error_exit("open");
+		return (-1);
 	return (fd);
 }
 
-void	handle_redirection_in(const char *file)
+int	handle_redirection_in(const char *file)
 {
 	int	fd;
 
 	fd = open_file((char *)file, 2);
+	if (fd == -1)
+	{
+		perror("minishell");
+		return (0);
+	}
 	dup2(fd, STDIN_FILENO);
 	close(fd);
+	return (1);
 }
 
-void	handle_redirection_out(const char *file, int append)
+int	handle_redirection_out(const char *file, int append)
 {
 	int	fd;
 
@@ -44,6 +50,12 @@ void	handle_redirection_out(const char *file, int append)
 		fd = open_file((char *)file, 0);
 	else
 		fd = open_file((char *)file, 1);
+	if (fd == -1)
+	{
+		perror("minishell");
+		return (0);
+	}
 	dup2(fd, STDOUT_FILENO);
 	close(fd);
+	return (1);
 }

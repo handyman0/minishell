@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 18:00:17 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:06:37 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 #include "../../includes/minishell.h"
 #include "../../includes/utils.h"
 #include "../../includes/builtins.h"
+#include <errno.h>
+#include <string.h>
 
 static int	execute_and(t_node *node, t_shell *shell)
 {
@@ -54,7 +56,7 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 	return (-1);
 }
 
-static int	apply_redirections(t_redir *redirs)
+static int	apply_redirections(t_redir *redirs, char *cmd_name)
 {
 	t_redir	*current;
 	int		fd;
@@ -62,12 +64,22 @@ static int	apply_redirections(t_redir *redirs)
 	current = redirs;
 	while (current)
 	{
+		if (current->type == REDIR_HEREDOC)
+		{
+			/* heredoc: prepare stdin from limiter content */
+			exec_heredoc(current->file);
+			current = current->next;
+			continue ;
+		}
 		if (current->type == REDIR_IN)
 		{
 			fd = open(current->file, O_RDONLY);
 			if (fd == -1)
 			{
-				perror("minishell");
+				if (cmd_name)
+					fprintf(stderr, "%s: %s: %s\n", cmd_name, current->file, strerror(errno));
+				else
+					perror(current->file);
 				return (0);
 			}
 			dup2(fd, STDIN_FILENO);
@@ -78,7 +90,10 @@ static int	apply_redirections(t_redir *redirs)
 			fd = open(current->file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 			if (fd == -1)
 			{
-				perror("minishell");
+				if (cmd_name)
+					fprintf(stderr, "%s: %s: %s\n", cmd_name, current->file, strerror(errno));
+				else
+					perror(current->file);
 				return (0);
 			}
 			dup2(fd, STDOUT_FILENO);
@@ -89,13 +104,15 @@ static int	apply_redirections(t_redir *redirs)
 			fd = open(current->file, O_WRONLY | O_CREAT | O_APPEND, 0644);
 			if (fd == -1)
 			{
-				perror("minishell");
+				if (cmd_name)
+					fprintf(stderr, "%s: %s: %s\n", cmd_name, current->file, strerror(errno));
+				else
+					perror(current->file);
 				return (0);
 			}
 			dup2(fd, STDOUT_FILENO);
 			close(fd);
 		}
-		// HEREDOC será implementado depois
 		current = current->next;
 	}
 	return (1);
@@ -116,16 +133,33 @@ static int	execute_command(t_node *node, t_shell *shell)
 	stdin_backup = dup(STDIN_FILENO);
 	stdout_backup = dup(STDOUT_FILENO);
 
-	if (!apply_redirections(node->data.cmd.redirs))
+	/* detect builtin without applying redirections so we can decide where to apply them */
+	int	is_builtin = 0;
+	if (node->data.cmd.argv && node->data.cmd.argv[0])
 	{
-		close(stdin_backup);
-		close(stdout_backup);
-		return (1);
+		if (ft_strcmp(node->data.cmd.argv[0], "echo") == 0
+			|| ft_strcmp(node->data.cmd.argv[0], "cd") == 0
+			|| ft_strcmp(node->data.cmd.argv[0], "pwd") == 0
+			|| ft_strcmp(node->data.cmd.argv[0], "export") == 0
+			|| ft_strcmp(node->data.cmd.argv[0], "unset") == 0
+			|| ft_strcmp(node->data.cmd.argv[0], "env") == 0
+			|| ft_strcmp(node->data.cmd.argv[0], "exit") == 0)
+			is_builtin = 1;
 	}
 
-	builtin_status = execute_builtin(node, shell);
-	if (builtin_status != -1)
+	/* If it's a builtin, apply redirections in current process and run it */
+	if (is_builtin)
 	{
+		if (!apply_redirections(node->data.cmd.redirs,
+				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
+		{
+			dup2(stdin_backup, STDIN_FILENO);
+			dup2(stdout_backup, STDOUT_FILENO);
+			close(stdin_backup);
+			close(stdout_backup);
+			return (1);
+		}
+		builtin_status = execute_builtin(node, shell);
 		dup2(stdin_backup, STDIN_FILENO);
 		dup2(stdout_backup, STDOUT_FILENO);
 		close(stdin_backup);
@@ -161,15 +195,25 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (pid == 0)
 	{
+		/* child: apply redirections then exec */
+		if (!apply_redirections(node->data.cmd.redirs,
+				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
+		{
+			free(path);
+			free_str_array(env_array);
+			exit(1);
+		}
 		execve(path, node->data.cmd.argv, env_array);
 		perror("minishell");
 		free(path);
 		free_str_array(env_array);
 		exit(126);
 	}
+
 	free(path);
 	free_str_array(env_array);
 	wait(&status);
+
 	dup2(stdin_backup, STDIN_FILENO);
 	dup2(stdout_backup, STDOUT_FILENO);
 	close(stdin_backup);

@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 14:00:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 17:55:52 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 18:38:03 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,24 +30,39 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 	if (!tokens || !*tokens)
 		return (0);
 	current = *tokens;
+
 	new_redir = malloc(sizeof(t_redir));
 	if (!new_redir)
 		return (0);
-	new_redir->type = (t_redir_type)current->type;
+
+	switch (current->type)
+	{
+		case TOKEN_REDIR_IN: new_redir->type = REDIR_IN; break;
+		case TOKEN_REDIR_OUT: new_redir->type = REDIR_OUT; break;
+		case TOKEN_REDIR_APPEND: new_redir->type = REDIR_APPEND; break;
+		case TOKEN_HEREDOC: new_redir->type = REDIR_HEREDOC; break;
+		default:
+			free(new_redir);
+			return (0);
+	}
+
 	new_redir->file = NULL;
 	new_redir->next = NULL;
+
 	current = current->next;
 	if (!current || current->type != TOKEN_WORD)
 	{
 		free(new_redir);
 		return (0);
 	}
+
 	new_redir->file = ft_strdup(current->value);
 	if (!new_redir->file)
 	{
 		free(new_redir);
 		return (0);
 	}
+
 	if (*redirs == NULL)
 		*redirs = new_redir;
 	else
@@ -57,6 +72,7 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 			last = last->next;
 		last->next = new_redir;
 	}
+
 	*tokens = current->next;
 	return (1);
 }
@@ -169,6 +185,7 @@ t_node	*parse_command(t_token **tokens)
 			}
 			continue;
 		}
+
 		if ((*tokens)->type == TOKEN_WORD)
 		{
 			new_node = ft_lstnew(ft_strdup((*tokens)->value));
@@ -186,6 +203,8 @@ t_node	*parse_command(t_token **tokens)
 		else
 			break;
 	}
+
+	// BLOCO MOVIDO PARA FORA DO LOOP - CORREÇÃO CRÍTICA
 	if (count > 0)
 	{
 		node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
@@ -206,6 +225,7 @@ t_node	*parse_command(t_token **tokens)
 			i++;
 		}
 		node->data.cmd.argv[count] = NULL;
+
 		t_list *tmp;
 		while (args)
 		{

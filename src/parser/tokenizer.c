@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:35:05 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/13 16:36:39 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:06:39 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,47 +35,56 @@ static int	handle_operator(char *line, int i, t_token **head, t_token **current)
 {
 	if (line[i] == '|' && line[i + 1] == '|')
 	{
-		token_add_back(head, current, TOKEN_OR, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_OR, NULL);
 		return (2);
 	}
 	else if (line[i] == '|')
 	{
-		token_add_back(head, current, TOKEN_PIPE, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_PIPE, NULL);
 		return (1);
 	}
 	else if (line[i] == '&' && line[i + 1] == '&')
 	{
-		token_add_back(head, current, TOKEN_AND, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_AND, NULL);
 		return (2);
 	}
 	else if (line[i] == '<' && line[i + 1] == '<')
 	{
-		token_add_back(head, current, TOKEN_HEREDOC, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_HEREDOC, NULL);
 		return (2);
 	}
 	else if (line[i] == '<')
 	{
-		token_add_back(head, current, TOKEN_REDIR_IN, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_REDIR_IN, NULL);
 		return (1);
 	}
 	else if (line[i] == '>' && line[i + 1] == '>')
 	{
-		token_add_back(head, current, TOKEN_REDIR_APPEND, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_REDIR_APPEND, NULL);
 		return (2);
 	}
 	else if (line[i] == '>')
 	{
-		token_add_back(head, current, TOKEN_REDIR_OUT, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_REDIR_OUT, NULL);
 		return (1);
 	}
 	else if (line[i] == '(')
 	{
-		token_add_back(head, current, TOKEN_LPAREN, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_LPAREN, NULL);
 		return (1);
 	}
 	else if (line[i] == ')')
 	{
-		token_add_back(head, current, TOKEN_RPAREN, NULL);
+		if (head && current)
+			token_add_back(head, current, TOKEN_RPAREN, NULL);
 		return (1);
 	}
 	return (0);
