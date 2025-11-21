@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/13 14:55:54 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 17:28:33 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,27 +54,101 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 	return (-1);
 }
 
+static int	apply_redirections(t_redir *redirs)
+{
+	t_redir	*current;
+	int		fd;
+
+	current = redirs;
+	while (current)
+	{
+		if (current->type == REDIR_IN)
+		{
+			fd = open(current->file, O_RDONLY);
+			if (fd == -1)
+			{
+				perror("minishell");
+				return (0);
+			}
+			dup2(fd, STDIN_FILENO);
+			close(fd);
+		}
+		else if (current->type == REDIR_OUT)
+		{
+			fd = open(current->file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+			if (fd == -1)
+			{
+				perror("minishell");
+				return (0);
+			}
+			dup2(fd, STDOUT_FILENO);
+			close(fd);
+		}
+		else if (current->type == REDIR_APPEND)
+		{
+			fd = open(current->file, O_WRONLY | O_CREAT | O_APPEND, 0644);
+			if (fd == -1)
+			{
+				perror("minishell");
+				return (0);
+			}
+			dup2(fd, STDOUT_FILENO);
+			close(fd);
+		}
+		// HEREDOC será implementado depois
+		current = current->next;
+	}
+	return (1);
+}
+
 static int	execute_command(t_node *node, t_shell *shell)
 {
 	char	*path;
 	char	**env_array;
 	int		status;
 	int		builtin_status;
+	int		stdin_backup, stdout_backup;
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
+
+	// Aplicar redirecionamentos
+	stdin_backup = dup(STDIN_FILENO);
+	stdout_backup = dup(STDOUT_FILENO);
+
+	if (!apply_redirections(node->data.cmd.redirs))
+	{
+		close(stdin_backup);
+		close(stdout_backup);
+		return (1);
+	}
+
 	builtin_status = execute_builtin(node, shell);
 	if (builtin_status != -1)
+	{
+		// Restaurar STDIN/STDOUT para builtins
+		dup2(stdin_backup, STDIN_FILENO);
+		dup2(stdout_backup, STDOUT_FILENO);
+		close(stdin_backup);
+		close(stdout_backup);
 		return (builtin_status);
+	}
+
 	path = find_path(node->data.cmd.argv[0], shell);
 	if (!path)
 	{
 		printf("minishell: %s: command not found\n", node->data.cmd.argv[0]);
+		// Restaurar antes de retornar
+		dup2(stdin_backup, STDIN_FILENO);
+		dup2(stdout_backup, STDOUT_FILENO);
+		close(stdin_backup);
+		close(stdout_backup);
 		return (127);
 	}
 	env_array = env_to_array(shell->env);
 	if (fork() == 0)
 	{
+		// No processo filho, os redirecionamentos já estão aplicados
 		execve(path, node->data.cmd.argv, env_array);
 		perror("minishell");
 		exit(126);
@@ -82,6 +156,12 @@ static int	execute_command(t_node *node, t_shell *shell)
 	free(path);
 	free_str_array(env_array);
 	wait(&status);
+
+	dup2(stdin_backup, STDIN_FILENO);
+	dup2(stdout_backup, STDOUT_FILENO);
+	close(stdin_backup);
+	close(stdout_backup);
+
 	return (WEXITSTATUS(status));
 }
 

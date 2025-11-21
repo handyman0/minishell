@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:30:10 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 20:19:31 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/13 17:36:41 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -113,9 +113,14 @@ void	process_tokens(t_token *tokens, t_shell *shell);
 void	expand_wildcards(t_token **tokens);
 
 // syntax_check.c
-int		check_syntax(t_token *tokens);
+int		check_syntax(t_token *tokens); //TODO
 
 // debug_print.c (sera movido para utils depois)
 void	print_tokens(t_token *tokens);
+
+// prototipos temporarios
+int		is_redirection_token(t_token *token);
+int		handle_redirection(t_token **tokens, t_redir **redirs);
+void	free_redirs(t_redir *redirs);
 
 #endif

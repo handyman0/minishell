@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 14:00:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/13 17:04:43 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 17:39:16 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,8 @@ int	is_redirection_token(t_token *token)
 {
 	if (!token)
 		return (0);
-	return (token->type == TOKEN_REDIR_APPEND || token->type == TOKEN_REDIR_OUT || token->type == TOKEN_REDIR_APPEND || token->type == TOKEN_HEREDOC);
+	return (token->type == TOKEN_REDIR_IN || token->type == TOKEN_REDIR_OUT ||
+			token->type == TOKEN_REDIR_APPEND || token->type == TOKEN_HEREDOC);
 }
 
 int	handle_redirection(t_token **tokens, t_redir **redirs)
@@ -163,7 +164,6 @@ t_node	*parse_command(t_token **tokens)
 	count = 0;
 	while (*tokens)
 	{
-		// handle redirections
 		if (is_redirection_token(*tokens))
 		{
 			if (!handle_redirection(tokens, &node->data.cmd.redirs))
@@ -191,35 +191,33 @@ t_node	*parse_command(t_token **tokens)
 		}
 		else
 			break;
-
-		if (count > 0)
+	}
+	if (count > 0)
+	{
+		node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
+		if (!node->data.cmd.argv)
 		{
-			node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
-			if (!node->data.cmd.argv)
-			{
-				free_args_list(args);
-				free(node);
-				return (NULL);
-			}
+			free_args_list(args);
+			free_redirs(node->data.cmd.redirs);
+			free(node);
+			return (NULL);
+		}
 
-			t_list *current = args;
-			int i = 0;
-			while (current && i < count)
-			{
-				node->data.cmd.argv[i] = current->content;
-				current = current->next;
-				i++;
-			}
-			node->data.cmd.argv[count] = NULL;
-
-			// Libera apenas os nós da lista, não o conteúdo (já no array)
-			t_list *tmp;
-			while (args)
-			{
-				tmp = args->next;
-				free(args);
-				args = tmp;
-			}
+		t_list *current = args;
+		int i = 0;
+		while (current && i < count)
+		{
+			node->data.cmd.argv[i] = current->content;
+			current = current->next;
+			i++;
+		}
+		node->data.cmd.argv[count] = NULL;
+		t_list *tmp;
+		while (args)
+		{
+			tmp = args->next;
+			free(args);
+			args = tmp;
 		}
 	}
 
