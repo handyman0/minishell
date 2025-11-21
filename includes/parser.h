@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:30:10 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/13 17:36:41 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:41:29 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,6 +108,7 @@ t_node	*parse_pipeline(t_token **tokens);
 char	*expand_variables(char *token, t_shell *shell);
 char	*remove_quotes(char *token);
 void	process_tokens(t_token *tokens, t_shell *shell);
+void	process_tokens_before_parsing(t_token **tokens, t_shell *shell);
 
 // expand_wildcars.c
 void	expand_wildcards(t_token **tokens);

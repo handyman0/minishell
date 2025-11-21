@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:24:56 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 19:06:42 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:41:39 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,8 @@
 
 static char	*search_in_path(char *cmd, char **paths)
 {
+	if (!cmd || cmd[0] == '\0')
+		return (NULL);
 	char	*full_path;
 	char	*temp;
 	int		i;

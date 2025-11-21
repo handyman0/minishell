@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:24:51 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 21:46:39 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:41:34 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,12 +45,11 @@ static void	shell_loop(t_shell *shell)
 		if (*line)
 			add_history(line);
 		tokens = tokenize_line(line);
-		tokens_start = tokens;
 		if (tokens)
 		{
 			expand_wildcards(&tokens);
+			process_tokens_before_parsing(&tokens, shell);
 			tokens_start = tokens;
-			process_tokens(tokens, shell);
 			ast = parse_tokens(&tokens);
 			if (ast)
 			{

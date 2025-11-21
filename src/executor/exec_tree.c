@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 19:06:37 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:41:41 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include "../../includes/builtins.h"
 #include <errno.h>
 #include <string.h>
+#include <signal.h>
 
 static int	execute_and(t_node *node, t_shell *shell)
 {
@@ -130,6 +131,10 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
 
+	/* if the command string is empty (result of empty expansion), treat as no-op */
+	if (node->data.cmd.argv[0] && node->data.cmd.argv[0][0] == '\0')
+		return (0);
+
 	stdin_backup = dup(STDIN_FILENO);
 	stdout_backup = dup(STDOUT_FILENO);
 
@@ -170,7 +175,11 @@ static int	execute_command(t_node *node, t_shell *shell)
 	path = find_path(node->data.cmd.argv[0], shell);
 	if (!path)
 	{
-		printf("minishell: %s: command not found\n", node->data.cmd.argv[0]);
+		/* if the command contains a slash, report a file-not-found style error */
+		if (ft_strchr(node->data.cmd.argv[0], '/'))
+			fprintf(stderr, "%s: %s\n", node->data.cmd.argv[0], strerror(ENOENT));
+		else
+			fprintf(stderr, "minishell: %s: command not found\n", node->data.cmd.argv[0]);
 		dup2(stdin_backup, STDIN_FILENO);
 		dup2(stdout_backup, STDOUT_FILENO);
 		close(stdin_backup);
@@ -195,6 +204,9 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (pid == 0)
 	{
+		/* restore default signal handlers in child so it behaves like a normal program */
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
 		/* child: apply redirections then exec */
 		if (!apply_redirections(node->data.cmd.redirs,
 				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
@@ -235,6 +247,9 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	pid_left = fork();
 	if (pid_left == 0)
 	{
+		/* restore default signals in pipeline children */
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
@@ -244,6 +259,9 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	pid_right = fork();
 	if (pid_right == 0)
 	{
+		/* restore default signals in pipeline children */
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
 		close(pipefd[1]);
 		dup2(pipefd[0], STDIN_FILENO);
 		close(pipefd[0]);

@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 14:00:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 18:38:03 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 19:41:59 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -273,7 +273,8 @@ void	process_tokens_before_parsing(t_token **tokens, t_shell *shell)
 {
 	if (!tokens || !*tokens || !shell)
 		return ;
-	t_token *current = *tokens;
+	 t_token *current = *tokens;
+	 t_token *prev = NULL;
 	while (current)
 	{
 		if (current->type == TOKEN_WORD && current->value)
@@ -281,13 +282,30 @@ void	process_tokens_before_parsing(t_token **tokens, t_shell *shell)
 			char *expanded = expand_variables(current->value, shell);
 			if (expanded)
 			{
-				char	*clean = remove_quotes(expanded);
+				char *clean = remove_quotes(expanded);
 				free(expanded);
+				/* if expansion produced an empty word, remove this token from the list */
+				if (clean[0] == '\0')
+				{
+					free(current->value);
+					free(clean);
+					/* remove node */
+					if (prev)
+						prev->next = current->next;
+					else
+						*tokens = current->next;
+					t_token *to_free = current;
+					current = current->next;
+					free(to_free);
+					continue ;
+				}
 				free(current->value);
 				current->value = clean;
 			}
 		}
-		current = current->next;
+		prev = current;
+		if (current)
+			current = current->next;
 	}
 }
 
