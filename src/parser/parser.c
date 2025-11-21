@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 14:00:06 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 17:39:16 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 17:55:52 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,8 +36,6 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 	new_redir->type = (t_redir_type)current->type;
 	new_redir->file = NULL;
 	new_redir->next = NULL;
-
-	// Avançar para o token do arquivo
 	current = current->next;
 	if (!current || current->type != TOKEN_WORD)
 	{
@@ -50,8 +48,6 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 		free(new_redir);
 		return (0);
 	}
-
-	// Adicionar à lista de redirecionamentos
 	if (*redirs == NULL)
 		*redirs = new_redir;
 	else
@@ -61,7 +57,6 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 			last = last->next;
 		last->next = new_redir;
 	}
-	// Avança tokens
 	*tokens = current->next;
 	return (1);
 }
@@ -72,7 +67,8 @@ void	free_redirs(t_redir *redirs)
 	while (redirs)
 	{
 		tmp = redirs->next;
-		free(redirs->file);
+		if (redirs->file)
+			free(redirs->file);
 		free(redirs);
 		redirs = tmp;
 	}
@@ -136,8 +132,6 @@ void	free_args_list(t_list *args)
 	while (args)
 	{
 		tmp = args->next;
-		if (args->content)
-			free(args->content);
 		free(args);
 		args = tmp;
 	}

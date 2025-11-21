@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/13 17:28:33 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 17:52:10 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -111,8 +111,6 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
-
-	// Aplicar redirecionamentos
 	stdin_backup = dup(STDIN_FILENO);
 	stdout_backup = dup(STDOUT_FILENO);
 
@@ -126,7 +124,6 @@ static int	execute_command(t_node *node, t_shell *shell)
 	builtin_status = execute_builtin(node, shell);
 	if (builtin_status != -1)
 	{
-		// Restaurar STDIN/STDOUT para builtins
 		dup2(stdin_backup, STDIN_FILENO);
 		dup2(stdout_backup, STDOUT_FILENO);
 		close(stdin_backup);
@@ -138,7 +135,6 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!path)
 	{
 		printf("minishell: %s: command not found\n", node->data.cmd.argv[0]);
-		// Restaurar antes de retornar
 		dup2(stdin_backup, STDIN_FILENO);
 		dup2(stdout_backup, STDOUT_FILENO);
 		close(stdin_backup);
@@ -148,7 +144,25 @@ static int	execute_command(t_node *node, t_shell *shell)
 	env_array = env_to_array(shell->env);
 	if (fork() == 0)
 	{
-		// No processo filho, os redirecionamentos já estão aplicados
+		execve(path, node->data.cmd.argv, env_array);
+		perror("minishell");
+		exit(126);
+	}
+
+	pid_t	pid = fork();
+	if (pid == -1)
+	{
+		perror("minishell: fork");
+		dup2(stdin_backup, STDIN_FILENO);
+		dup2(stdout_backup, STDOUT_FILENO);
+		close(stdin_backup);
+		close(stdout_backup);
+		free(path);
+		free_str_array(env_array);
+		return (1);
+	}
+	if (pid == 0)
+	{
 		execve(path, node->data.cmd.argv, env_array);
 		perror("minishell");
 		exit(126);

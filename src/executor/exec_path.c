@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:24:56 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/04 16:54:30 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 17:45:05 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,15 +40,14 @@ char	*find_path(char *cmd, t_shell *shell)
 	char	**paths;
 	char	*full_path;
 
-	// Verificações extremas
 	if (!shell)
 	{
-		printf("❌ find_path: shell é NULL\n");
+		printf("find_path: shell é NULL\n");
 		return (NULL);
 	}
 	if (!shell->env)
 	{
-		printf("❌ find_path: shell->env é NULL, criando PATH mínimo\n");
+		printf("find_path: shell->env é NULL, criando PATH mínimo\n");
 		path_env = "/bin:/usr/bin:/usr/local/bin";
 	}
 	else
@@ -58,11 +57,9 @@ char	*find_path(char *cmd, t_shell *shell)
 
 	if (!path_env)
 	{
-		printf("❌ find_path: PATH não encontrado\n");
+		printf("find_path: PATH não encontrado\n");
 		return (NULL);
 	}
-
-	// Resto do código normal...
 	paths = ft_split(path_env, ':');
 	if (!paths)
 		return (NULL);

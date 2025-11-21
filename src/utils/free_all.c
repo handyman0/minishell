@@ -6,13 +6,13 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 19:39:14 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/10/31 19:39:24 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 17:52:50 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/utils.h"
 
-void    free_str_array(char **arr)
+void	free_str_array(char **arr)
 {
 	int i;
 
