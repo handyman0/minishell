@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/03 15:06:39 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 19:41:41 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2025/11/21 20:11:37 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -224,13 +224,20 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	free(path);
 	free_str_array(env_array);
-	wait(&status);
+	waitpid(pid, &status, 0);
+	if (WIFSIGNALED(status))
+	{
+		/* print a message similar to bash when child dies from a signal (eg. SIGPIPE) */
+		perror("minishell");
+	}
 
 	dup2(stdin_backup, STDIN_FILENO);
 	dup2(stdout_backup, STDOUT_FILENO);
 	close(stdin_backup);
 	close(stdout_backup);
 
+	if (WIFSIGNALED(status))
+		return (128 + WTERMSIG(status));
 	return (WEXITSTATUS(status));
 }
 
@@ -272,6 +279,12 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	close(pipefd[1]);
 	waitpid(pid_left, &status_left, 0);
 	waitpid(pid_right, &status_right, 0);
+	if (WIFSIGNALED(status_right))
+	{
+		/* report signal-caused termination (e.g. Broken pipe) to stderr */
+		perror("minishell");
+		return (128 + WTERMSIG(status_right));
+	}
 	return (WEXITSTATUS(status_right));
 }
 
