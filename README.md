@@ -595,7 +595,7 @@ Para documentação técnica detalhada, consulte:
 Este projeto segue as regras e licenças da **École 42**.
 
 ```
-Copyright © 2025 École 42
+Copyright © 2026 École 42
 Made during 42 Cursus
 ```
 
@@ -603,7 +603,7 @@ Made during 42 Cursus
 
 ## 👤 Autor
 
-**lmelo-do** (Luis Melo)
+**lmelo-do** (Luiz Melo)
 - Escola: 42 São Paulo
 - Projeto: minishell (4º Círculo)
 - Status: ✅ Completo
