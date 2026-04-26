@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 19:12:21 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/07 20:09:25 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2026/04/25 21:08:41 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,13 @@ typedef struct s_shell t_shell;
 # include "signals.h"
 # include "utils.h"
 
+/**
+ * @struct s_shell
+ * @brief Estado global da minishell.
+ *
+ * A estrutura mantém o ambiente, o status de saída do último comando
+ * e se o loop principal da shell deve continuar executando.
+ */
 struct s_shell
 {
 	t_env		*env;

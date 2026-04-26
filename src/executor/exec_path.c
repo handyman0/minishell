@@ -6,7 +6,7 @@
 /*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/26 20:24:56 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/21 19:41:39 by lmelo-do         ###   ########.fr       */
+/*   Updated: 2026/04/25 21:29:06 by lmelo-do         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,27 +42,18 @@ char	*find_path(char *cmd, t_shell *shell)
 	char	*path_env;
 	char	**paths;
 	char	*full_path;
+	const char *default_path = "/bin:/usr/bin:/usr/local/bin";
 
-	if (!shell)
-	{
-		printf("find_path: shell é NULL\n");
+	if (!cmd || !*cmd || !shell)
 		return (NULL);
-	}
-	if (!shell->env)
-	{
-		printf("find_path: shell->env é NULL, criando PATH mínimo\n");
-		path_env = "/bin:/usr/bin:/usr/local/bin";
-	}
-	else
-	{
-		path_env = env_get(shell->env, "PATH");
-	}
 
-	if (!path_env)
-	{
-		/* no PATH: fall back to default search locations or handle absolute/relative paths */
-		path_env = NULL;
-	}
+	path_env = NULL;
+	if (shell->env)
+		path_env = env_get(shell->env, "PATH");
+
+	if (!path_env || *path_env == '\0')
+		path_env = (char *)default_path;
+
 	paths = ft_split(path_env, ':');
 	if (!paths)
 		return (NULL);
