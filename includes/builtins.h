@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   builtins.h                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
+/*   By: lmelo-do <lmelo-do@42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/10/31 16:30:09 by lmelo-do          #+#    #+#             */
 /*   Updated: 2026/04/25 21:08:41 by lmelo-do         ###   ########.fr       */
@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #ifndef BUILTINS_H
-#define BUILTINS_H
+# define BUILTINS_H
 
 # include "../libft/include/libft.h"
 # include "minishell.h"
@@ -20,7 +20,7 @@
  * @brief Executa o builtin pwd imprimindo o diretório atual.
  * @return 0 em sucesso ou 1 em erro.
  */
-int builtin_pwd(void);
+int	builtin_pwd(void);
 
 /**
  * @brief Executa o builtin echo.

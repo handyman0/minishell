@@ -19,7 +19,8 @@ int	is_redirection_token(t_token *token)
 	if (!token)
 		return (0);
 	return (token->type == TOKEN_REDIR_IN || token->type == TOKEN_REDIR_OUT ||
-			token->type == TOKEN_REDIR_APPEND || token->type == TOKEN_HEREDOC);
+			token->type == TOKEN_REDIR_APPEND ||
+					token->type == TOKEN_HEREDOC);
 }
 
 int	handle_redirection(t_token **tokens, t_redir **redirs)
@@ -203,8 +204,7 @@ t_node	*parse_command(t_token **tokens)
 		else
 			break;
 	}
-
-	// BLOCO MOVIDO PARA FORA DO LOOP - CORREÇÃO CRÍTICA
+	
 	if (count > 0)
 	{
 		node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
@@ -225,8 +225,7 @@ t_node	*parse_command(t_token **tokens)
 			i++;
 		}
 		node->data.cmd.argv[count] = NULL;
-
-		t_list *tmp;
+		t_list	*tmp;
 		while (args)
 		{
 			tmp = args->next;
@@ -234,7 +233,6 @@ t_node	*parse_command(t_token **tokens)
 			args = tmp;
 		}
 	}
-
 	return (node);
 }
 
@@ -271,30 +269,34 @@ t_node	*parse_pipeline(t_token **tokens)
 
 void	process_tokens_before_parsing(t_token **tokens, t_shell *shell)
 {
+	t_token	*to_free;
+	char	*clean;
+	char	*expanded;
+	t_token	*prev;
+	t_token	*current;
+
 	if (!tokens || !*tokens || !shell)
 		return ;
-	 t_token *current = *tokens;
-	 t_token *prev = NULL;
+	current = *tokens;
+	prev = NULL;
 	while (current)
 	{
 		if (current->type == TOKEN_WORD && current->value)
 		{
-			char *expanded = expand_variables(current->value, shell);
+			expanded = expand_variables(current->value, shell);
 			if (expanded)
 			{
-				char *clean = remove_quotes(expanded);
+				clean = remove_quotes(expanded);
 				free(expanded);
-				/* if expansion produced an empty word, remove this token from the list */
 				if (clean[0] == '\0')
 				{
 					free(current->value);
 					free(clean);
-					/* remove node */
 					if (prev)
 						prev->next = current->next;
 					else
 						*tokens = current->next;
-					t_token *to_free = current;
+					to_free = current;
 					current = current->next;
 					free(to_free);
 					continue ;
@@ -321,8 +323,7 @@ void	free_ast(t_node *node)
 	int	i;
 
 	if (!node)
-		return;
-
+		return ;
 	if (node->type == NODE_CMD)
 	{
 		if (node->data.cmd.argv)

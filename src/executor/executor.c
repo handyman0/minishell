@@ -16,11 +16,11 @@ int	open_file(char *path, int mode)
 {
 	int	fd;
 
-	if (mode == 0) // append
+	if (mode == 0)
 		fd = open(path, O_WRONLY | O_CREAT | O_APPEND, 0644);
-	else if (mode == 1) // truncate
+	else if (mode == 1)
 		fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-	else // read
+	else
 		fd = open(path, O_RDONLY);
 	if (fd == -1)
 		return (-1);

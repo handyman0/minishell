@@ -15,7 +15,6 @@
 
 void	setup_signals(void)
 {
-	// Configuração basica de sinais
-	signal(SIGINT, SIG_IGN); // Ignora o Ctrl+c por enquanto
-	signal(SIGQUIT, SIG_IGN); // Ignora o Ctrl+\ por enquanto
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
 }

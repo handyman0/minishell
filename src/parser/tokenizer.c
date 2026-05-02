@@ -13,7 +13,8 @@
 #include "../includes/parser.h"
 #include "../includes/utils.h"
 
-void	token_add_back(t_token **head, t_token **current, t_toktype type, char *value)
+void	token_add_back(t_token **head, t_token **current,
+					t_toktype type, char *value)
 {
 	t_token	*new_token;
 
@@ -23,7 +24,6 @@ void	token_add_back(t_token **head, t_token **current, t_toktype type, char *val
 	new_token->type = type;
 	new_token->value = value;
 	new_token->next = NULL;
-
 	if (*head == NULL)
 		*head = new_token;
 	else if (*current)
@@ -31,7 +31,8 @@ void	token_add_back(t_token **head, t_token **current, t_toktype type, char *val
 	*current = new_token;
 }
 
-static int	handle_operator(char *line, int i, t_token **head, t_token **current)
+static int	handle_operator(char *line, int i,
+					t_token **head, t_token **current)
 {
 	if (line[i] == '|' && line[i + 1] == '|')
 	{
@@ -90,34 +91,27 @@ static int	handle_operator(char *line, int i, t_token **head, t_token **current)
 	return (0);
 }
 
-static char	*extract_word(char *line, int *i)
+static char	*extract_word(char *line, int *i, int len)
 {
-	int		len;
 	char	*word;
 	char	quote;
 
-	len = 0;
-	while (line[*i + len] && !ft_isspace(line[*i + len]) &&
-			!handle_operator(line, *i + len, NULL, NULL))
+	while (line[*i + len] && !ft_isspace(line[*i + len])
+		&& !handle_operator(line, *i + len, NULL, NULL))
 	{
 		if (line[*i + len] == '\'' || line[*i + len] == '\"')
 		{
 			quote = line[*i + len];
 			len++;
-
 			while (line[*i + len] && line[*i + len] != quote)
 				len++;
 			if (line[*i + len] == quote)
 				len++;
 			else
-			{
 				break ;
-			}
 		}
 		else
-		{
 			len++;
-		}
 	}
 	if (len == 0)
 		return (NULL);
@@ -131,8 +125,8 @@ static char	*extract_word(char *line, int *i)
 
 t_token	*tokenize_line(char *line)
 {
-	t_token *head;
-	t_token *current;
+	t_token	*head;
+	t_token	*current;
 	int		i;
 	char	*word;
 	int		op_len;
@@ -155,7 +149,7 @@ t_token	*tokenize_line(char *line)
 			i += op_len;
 			continue ;
 		}
-		word = extract_word(line, &i);
+		word = extract_word(line, &i, 0);
 		if (word)
 			token_add_back(&head, &current, TOKEN_WORD, word);
 	}

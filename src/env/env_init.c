@@ -1,13 +1,13 @@
 /* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   env_init.c                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/10/31 19:43:49 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/13 15:59:45 by lmelo-do         ###   ########.fr       */
-/*                                                                            */
+/*																			  */
+/*														  :::	   ::::::::	  */
+/*	 env_init.c											:+:		 :+:	:+:	  */
+/*													  +:+ +:+		  +:+	  */
+/*	 By: lmelo-do <lmelo-do@student.42.fr>			+#+	 +:+	   +#+		  */
+/*												  +#+#+#+#+#+	+#+			  */
+/*	 Created: 2025/10/31 19:43:49 by lmelo-do		   #+#	  #+#			  */
+/*	 Updated: 2025/11/13 15:59:45 by lmelo-do		  ###	########.fr		  */
+/*																			  */
 /* ************************************************************************** */
 
 #include "../../includes/env.h"
@@ -53,6 +53,7 @@ t_env	*env_init(char **envp)
 	char	*equal_sign;
 	int		i;
 	char	cwd[1024];
+	char	*existing_pwd;
 
 	env = NULL;
 
@@ -72,22 +73,19 @@ t_env	*env_init(char **envp)
 			}
 			i++;
 		}
-	}
-
-	if (getcwd(cwd, sizeof(cwd)) != NULL)
-	{
-		// Se PWD já existe, atualizar; senão, criar
-		char	*existing_pwd = env_get(env, "PWD");
-		if (existing_pwd)
-			env_set(&env, "PWD", cwd);
-		else
+		if (getcwd(cwd, sizeof(cwd)) != NULL)
 		{
-			node = env_new("PWD", cwd);
-			if (node)
-				env_add_back(&env, node);
+			existing_pwd = env_get(env, "PWD");
+			if (existing_pwd)
+				env_set(&env, "PWD", cwd);
+			else
+			{
+				node = env_new("PWD", cwd);
+				if (node)
+					env_add_back(&env, node);
+			}
 		}
 	}
-	// Se não há ambiente, criar mínimo
 	if (!envp)
 		return (env_init_minimal());
 	return (env);
