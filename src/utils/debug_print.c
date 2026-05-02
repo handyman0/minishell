@@ -18,8 +18,8 @@ static const char	*token_type_str(t_toktype type)
 	static const char	*names[] = {
 		"WORD", "PIPE", "REDIR_IN", "REDIR_OUT", "REDIR_APPEND",
 		"HEREDOC", "AND", "OR", "LPAREN", "RPAREN"
-	}
-		return (names[type]);
+	};
+	return (names[type]);
 }
 
 void	print_tokens(t_token *tokens)
