@@ -28,7 +28,6 @@ static char	*search_in_path(char *cmd, char **paths)
 		temp = ft_strjoin(paths[i], "/");
 		full_path = ft_strjoin(temp, cmd);
 		free(temp);
-		/* if the file exists in this path, return it (execve will handle permission errors) */
 		if (access(full_path, F_OK) == 0)
 			return (full_path);
 		free(full_path);
@@ -60,7 +59,6 @@ char	*find_path(char *cmd, t_shell *shell)
 
 	full_path = search_in_path(cmd, paths);
 	free_str_array(paths);
-	/* if cmd contains a slash, try it directly (relative or absolute path) */
 	if (!full_path && ft_strchr(cmd, '/'))
 	{
 		if (access(cmd, F_OK) == 0)

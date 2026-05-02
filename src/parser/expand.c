@@ -14,7 +14,6 @@
 #include "../../includes/minishell.h"
 #include "../../includes/env.h"
 
-// Função auxiliar para obter o comprimento do nome da variavel
 static int	var_name_length(char *str)
 {
 	int	i = 0;
@@ -26,7 +25,6 @@ static int	var_name_length(char *str)
 	return (i);
 }
 
-// Função para obter o valor da variavel
 static char	*get_var_value(char *var_name, t_shell *shell)
 {
 	int		len;
@@ -51,7 +49,6 @@ static char	*get_var_value(char *var_name, t_shell *shell)
 	return (value ? value : ft_strdup(""));
 }
 
-// Função para calcular o tamanho necessario após expansão
 static size_t	calculate_expanded_size(char *token, t_shell *shell)
 {
 	size_t	size;
@@ -103,19 +100,16 @@ static char	*process_token_with_quotes(char *token, t_shell *shell)
 	in_dquote = 0;
 	while (token[i] && j < (int)size - 1)
 	{
-		// Entrando ou saindo de aspas simples
 		if (token[i] == '\'' && !in_dquote)
 		{
 			in_squote = !in_squote;
 			i++;
 		}
-		// Entrando ou saindo de aspas duplas
 		else if (token[i] == '"' && !in_squote)
 		{
 			in_dquote = !in_dquote;
 			i++;
 		}
-		// Entrando de variaveis (não ocorre dentro de aspas simples)
 		else if (token[i] == '$' && !in_squote && (ft_isalnum(token[i+1]) || token[i+1] == '?' || token[i+1] == '_'))
 		{
 			var_value = get_var_value(&token[i+1], shell);
@@ -130,7 +124,6 @@ static char	*process_token_with_quotes(char *token, t_shell *shell)
 			else
 				i += var_name_length(&token[i+1]) + 1;
 		}
-		// Caracteres normais
 		else
 			result[j++] = token[i++];
 	}
@@ -138,13 +131,11 @@ static char	*process_token_with_quotes(char *token, t_shell *shell)
 	return (result);
 }
 
-// Função para expandir as variaveis de ambiente
 char	*expand_variables(char *token, t_shell *shell)
 {
 	return (process_token_with_quotes(token, shell));
 }
 
-// Função para remover aspas
 char	*remove_quotes(char *token)
 {
 	return (ft_strdup(token));

@@ -67,7 +67,6 @@ static int	apply_redirections(t_redir *redirs, char *cmd_name)
 	{
 		if (current->type == REDIR_HEREDOC)
 		{
-			/* heredoc: prepare stdin from limiter content */
 			exec_heredoc(current->file);
 			current = current->next;
 			continue ;
@@ -130,15 +129,11 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
-
-	/* if the command string is empty (result of empty expansion), treat as no-op */
 	if (node->data.cmd.argv[0] && node->data.cmd.argv[0][0] == '\0')
 		return (0);
 
 	stdin_backup = dup(STDIN_FILENO);
 	stdout_backup = dup(STDOUT_FILENO);
-
-	/* detect builtin without applying redirections so we can decide where to apply them */
 	int	is_builtin = 0;
 	if (node->data.cmd.argv && node->data.cmd.argv[0])
 	{
@@ -151,8 +146,6 @@ static int	execute_command(t_node *node, t_shell *shell)
 			|| ft_strcmp(node->data.cmd.argv[0], "exit") == 0)
 			is_builtin = 1;
 	}
-
-	/* If it's a builtin, apply redirections in current process and run it */
 	if (is_builtin)
 	{
 		if (!apply_redirections(node->data.cmd.redirs,
@@ -175,7 +168,6 @@ static int	execute_command(t_node *node, t_shell *shell)
 	path = find_path(node->data.cmd.argv[0], shell);
 	if (!path)
 	{
-		/* if the command contains a slash, report a file-not-found style error */
 		if (ft_strchr(node->data.cmd.argv[0], '/'))
 			fprintf(stderr, "%s: %s\n", node->data.cmd.argv[0], strerror(ENOENT));
 		else
@@ -204,10 +196,8 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (pid == 0)
 	{
-		/* restore default signal handlers in child so it behaves like a normal program */
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
-		/* child: apply redirections then exec */
 		if (!apply_redirections(node->data.cmd.redirs,
 				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
 		{
@@ -226,11 +216,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	free_str_array(env_array);
 	waitpid(pid, &status, 0);
 	if (WIFSIGNALED(status))
-	{
-		/* print a message similar to bash when child dies from a signal (eg. SIGPIPE) */
 		perror("minishell");
-	}
-
 	dup2(stdin_backup, STDIN_FILENO);
 	dup2(stdout_backup, STDOUT_FILENO);
 	close(stdin_backup);
@@ -254,7 +240,6 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	pid_left = fork();
 	if (pid_left == 0)
 	{
-		/* restore default signals in pipeline children */
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
 		close(pipefd[0]);
@@ -266,7 +251,6 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	pid_right = fork();
 	if (pid_right == 0)
 	{
-		/* restore default signals in pipeline children */
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
 		close(pipefd[1]);
@@ -281,7 +265,6 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	waitpid(pid_right, &status_right, 0);
 	if (WIFSIGNALED(status_right))
 	{
-		/* report signal-caused termination (e.g. Broken pipe) to stderr */
 		perror("minishell");
 		return (128 + WTERMSIG(status_right));
 	}

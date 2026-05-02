@@ -22,7 +22,6 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->exit_status = 0;
 	shell->running = 1;
 
-	// garante que PWD está definido e correto
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else
