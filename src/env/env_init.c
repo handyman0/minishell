@@ -74,7 +74,6 @@ t_env	*env_init(char **envp)
 		}
 	}
 
-	// Garantir que PWD está definido e correto
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 	{
 		// Se PWD já existe, atualizar; senão, criar
