@@ -18,9 +18,9 @@ int	is_redirection_token(t_token *token)
 {
 	if (!token)
 		return (0);
-	return (token->type == TOKEN_REDIR_IN || token->type == TOKEN_REDIR_OUT ||
-			token->type == TOKEN_REDIR_APPEND ||
-					token->type == TOKEN_HEREDOC);
+	return (token->type == TOKEN_REDIR_IN || token->type == TOKEN_REDIR_OUT
+		|| token->type == TOKEN_REDIR_APPEND
+		|| token->type == TOKEN_HEREDOC);
 }
 
 int	handle_redirection(t_token **tokens, t_redir **redirs)
@@ -31,39 +31,33 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 	if (!tokens || !*tokens)
 		return (0);
 	current = *tokens;
-
 	new_redir = malloc(sizeof(t_redir));
 	if (!new_redir)
 		return (0);
-
 	switch (current->type)
 	{
-		case TOKEN_REDIR_IN: new_redir->type = REDIR_IN; break;
-		case TOKEN_REDIR_OUT: new_redir->type = REDIR_OUT; break;
-		case TOKEN_REDIR_APPEND: new_redir->type = REDIR_APPEND; break;
-		case TOKEN_HEREDOC: new_redir->type = REDIR_HEREDOC; break;
-		default:
+		case TOKEN_REDIR_IN: new_redir->type = REDIR_IN; break ;
+		case TOKEN_REDIR_OUT: new_redir->type = REDIR_OUT; break ;
+		case TOKEN_REDIR_APPEND: new_redir->type = REDIR_APPEND; break ;
+		case TOKEN_HEREDOC: new_redir->type = REDIR_HEREDOC; break ;
+		default :
 			free(new_redir);
 			return (0);
 	}
-
 	new_redir->file = NULL;
 	new_redir->next = NULL;
-
 	current = current->next;
 	if (!current || current->type != TOKEN_WORD)
 	{
 		free(new_redir);
 		return (0);
 	}
-
 	new_redir->file = ft_strdup(current->value);
 	if (!new_redir->file)
 	{
 		free(new_redir);
 		return (0);
 	}
-
 	if (*redirs == NULL)
 		*redirs = new_redir;
 	else
@@ -73,14 +67,14 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 			last = last->next;
 		last->next = new_redir;
 	}
-
 	*tokens = current->next;
 	return (1);
 }
 
 void	free_redirs(t_redir *redirs)
 {
-	t_redir *tmp;
+	t_redir	*tmp;
+
 	while (redirs)
 	{
 		tmp = redirs->next;
@@ -117,11 +111,11 @@ t_node	*parse_and_or(t_token **tokens)
 	left = parse_pipeline(tokens);
 	if (!left)
 		return (NULL);
-	while (*tokens && ((*tokens)->type == TOKEN_AND || (*tokens)->type == TOKEN_OR))
+	while (*tokens && ((*tokens)->type == TOKEN_AND
+		|| (*tokens)->type == TOKEN_OR))
 	{
 		op_type = (*tokens)->type;
 		*tokens = (*tokens)->next;
-
 		node = malloc(sizeof(t_node));
 		if (!node)
 		{
@@ -163,14 +157,12 @@ t_node	*parse_command(t_token **tokens)
 
 	if (!tokens || !*tokens)
 		return (NULL);
-
 	node = malloc(sizeof(t_node));
 	if (!node)
 		return (NULL);
 	node->type = NODE_CMD;
 	node->data.cmd.argv = NULL;
 	node->data.cmd.redirs = NULL;
-
 	args = NULL;
 	count = 0;
 	while (*tokens)
@@ -186,7 +178,6 @@ t_node	*parse_command(t_token **tokens)
 			}
 			continue;
 		}
-
 		if ((*tokens)->type == TOKEN_WORD)
 		{
 			new_node = ft_lstnew(ft_strdup((*tokens)->value));
@@ -204,7 +195,6 @@ t_node	*parse_command(t_token **tokens)
 		else
 			break;
 	}
-	
 	if (count > 0)
 	{
 		node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
@@ -215,7 +205,6 @@ t_node	*parse_command(t_token **tokens)
 			free(node);
 			return (NULL);
 		}
-
 		t_list *current = args;
 		int i = 0;
 		while (current && i < count)
