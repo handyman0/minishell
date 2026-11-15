@@ -92,22 +92,51 @@ int	check_syntax(t_token *tokens)
 	return (0);
 }
 
+static int	skip_open(const char *line, int i, char *unclosed)
+{
+	int	next;
+
+	if (line[i] == '`')
+	{
+		next = skip_backtick(line, i);
+		*unclosed = '`';
+	}
+	else if (line[i] == '$')
+	{
+		next = skip_dollar_paren(line, i);
+		*unclosed = ')';
+	}
+	else
+	{
+		next = skip_quote(line, i);
+		*unclosed = line[i];
+	}
+	return (next);
+}
+
 char	open_quote(const char *line)
 {
-	char	quote;
+	char	unclosed;
+	int		i;
+	int		next;
 
-	quote = 0;
-	while (*line)
+	i = 0;
+	while (line[i])
 	{
-		if (*line == '\\' && quote != '\'' && line[1])
-			line++;
-		else if (!quote && (*line == '\'' || *line == '"'))
-			quote = *line;
-		else if (quote && *line == quote)
-			quote = 0;
-		line++;
+		if (line[i] == '\\' && line[i + 1])
+			i += 2;
+		else if (line[i] == '\'' || line[i] == '"' || line[i] == '`'
+			|| (line[i] == '$' && line[i + 1] == '('))
+		{
+			next = skip_open(line, i, &unclosed);
+			if (next == -1)
+				return (unclosed);
+			i = next;
+		}
+		else
+			i++;
 	}
-	return (quote);
+	return (0);
 }
 
 int	check_quotes(char *line)

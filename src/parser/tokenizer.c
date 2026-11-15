@@ -103,42 +103,39 @@ static int	handle_operator(char *line, int i,
 	return (0);
 }
 
-static int	skip_quoted(char *line, int pos)
+static int	skip_construct(char *line, int pos)
 {
-	char	quote;
+	int	next;
 
-	quote = line[pos++];
-	while (line[pos] && line[pos] != quote)
-	{
-		if (quote == '"' && line[pos] == '\\' && line[pos + 1])
-			pos++;
-		pos++;
-	}
-	if (line[pos] == quote)
-		pos++;
-	return (pos);
+	if (line[pos] == '\'' || line[pos] == '"')
+		next = skip_quote(line, pos);
+	else if (line[pos] == '`')
+		next = skip_backtick(line, pos);
+	else
+		next = skip_dollar_paren(line, pos);
+	if (next == -1)
+		return ((int)ft_strlen(line));
+	return (next);
 }
 
 static char	*extract_word(char *line, int *i, int len)
 {
 	char	*word;
-	int		next;
+	int		p;
 
-	while (line[*i + len] && !ft_isspace(line[*i + len])
-		&& !handle_operator(line, *i + len, NULL, NULL))
+	p = *i + len;
+	while (line[p] && !ft_isspace(line[p]) && !handle_operator(line, p, NULL,
+			NULL))
 	{
-		if (line[*i + len] == '\\' && line[*i + len + 1])
-			len += 2;
-		else if (line[*i + len] == '\'' || line[*i + len] == '\"')
-		{
-			next = skip_quoted(line, *i + len);
-			if (line[next - 1] != line[*i + len] || next - *i - len < 2)
-				break ;
-			len = next - *i;
-		}
+		if (line[p] == '\\' && line[p + 1])
+			p += 2;
+		else if (line[p] == '\'' || line[p] == '"' || line[p] == '`'
+			|| (line[p] == '$' && line[p + 1] == '('))
+			p = skip_construct(line, p);
 		else
-			len++;
+			p++;
 	}
+	len = p - *i;
 	if (len == 0)
 		return (NULL);
 	word = malloc(len + 1);
