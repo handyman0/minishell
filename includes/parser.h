@@ -166,13 +166,6 @@ t_node	*parse_pipeline(t_token **tokens);
  */
 char	*expand_variables(char *token, t_shell *shell);
 
-/**
- * @brief Remove aspas simples e duplas de uma string.
- * @param token String de entrada.
- * @return Nova string sem aspas.
- */
-char	*remove_quotes(char *token);
-
 char	*expand_heredoc_line(char *line, t_shell *shell);
 void	expand_tokens(t_token **tokens, t_shell *shell);
 
@@ -189,6 +182,7 @@ void	expand_aliases(t_token **tokens, t_shell *shell);
  */
 int		check_syntax(t_token *tokens);
 int		check_quotes(char *line);
+char	open_quote(const char *line);
 
 
 // prototipos temporarios

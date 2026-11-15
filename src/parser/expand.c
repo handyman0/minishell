@@ -107,83 +107,6 @@ static size_t	calculate_expanded_size(char *token, t_shell *shell)
 	return (size + 1);
 }
 
-static char	*process_token_with_quotes(char *token, t_shell *shell)
-{
-	char	*result;
-	size_t	size;
-	int		i;
-	int		j;
-	int		in_squote;
-	int		in_dquote;
-	char	*var_value;
-
-	if (!token)
-		return (NULL);
-	size = calculate_expanded_size(token, shell);
-	result = malloc(size);
-	if (!result)
-		return (NULL);
-	i = 0;
-	j = 0;
-	in_squote = 0;
-	in_dquote = 0;
-	while (token[i] && j < (int)size - 1)
-	{
-		if (token[i] == '\'' && !in_dquote)
-		{
-			in_squote = !in_squote;
-			i++;
-		}
-		else if (token[i] == '"' && !in_squote)
-		{
-			in_dquote = !in_dquote;
-			i++;
-		}
-		else if (token[i] == '$' && !in_squote && is_ref(&token[i + 1]))
-		{
-			var_value = get_var_value(&token[i+1], shell);
-			if (var_value)
-			{
-				int k = 0;
-				while (var_value[k] && j < (int)size - 1)
-					result[j++] = var_value[k++];
-				free(var_value);
-				i += ref_length(&token[i + 1]) + 1;
-			}
-			else
-				i += ref_length(&token[i + 1]) + 1;
-		}
-		else
-			result[j++] = token[i++];
-	}
-	result[j] = '\0';
-	return (result);
-}
-
-char	*expand_variables(char *token, t_shell *shell)
-{
-	char	*result;
-	char	*home;
-	char	*joined;
-
-	result = process_token_with_quotes(token, shell);
-	if (!result || token[0] != '~' || (token[1] && token[1] != '/'))
-		return (result);
-	home = env_get(shell->env, "HOME");
-	if (!home)
-		return (result);
-	joined = ft_strjoin(home, result + 1);
-	if (!joined)
-		return (result);
-	free(result);
-	return (joined);
-}
-
-char	*remove_quotes(char *token)
-{
-	return (ft_strdup(token));
-}
-
 typedef struct s_buf
 {
 	char	*str;
@@ -214,12 +137,40 @@ static int	buf_put(t_buf *buf, const char *src, size_t n)
 	buf->str[buf->len] = '\0';
 	return (1);
 }
+static int	heredoc_escape(const char *s)
+{
+	return (s[0] == '\\' && s[1] && ft_strchr("$\\`", s[1]));
+}
+
+
+static int	heredoc_chunk(t_buf *buf, char *line, int *i, t_shell *shell)
+{
+	char	*value;
+	int		start;
+
+	start = *i;
+	while (line[*i] && !(line[*i] == '$' && is_ref(&line[*i + 1]))
+		&& !heredoc_escape(&line[*i]))
+		(*i)++;
+	if (*i > start && !buf_put(buf, line + start, *i - start))
+		return (0);
+	if (heredoc_escape(&line[*i]))
+	{
+		*i += 2;
+		return (buf_put(buf, line + *i - 1, 1));
+	}
+	if (!line[*i])
+		return (1);
+	value = get_var_value(&line[*i + 1], shell);
+	*i += ref_length(&line[*i + 1]) + 1;
+	if (!value || !buf_put(buf, value, ft_strlen(value)))
+		return (free(value), 0);
+	return (free(value), 1);
+}
 
 char	*expand_heredoc_line(char *line, t_shell *shell)
 {
 	t_buf	buf;
-	char	*value;
-	int		start;
 	int		i;
 
 	buf.str = NULL;
@@ -228,18 +179,8 @@ char	*expand_heredoc_line(char *line, t_shell *shell)
 	i = 0;
 	while (line[i])
 	{
-		start = i;
-		while (line[i] && !(line[i] == '$' && is_ref(&line[i + 1])))
-			i++;
-		if (i > start && !buf_put(&buf, line + start, i - start))
+		if (!heredoc_chunk(&buf, line, &i, shell))
 			return (free(buf.str), NULL);
-		if (!line[i])
-			break ;
-		value = get_var_value(&line[i + 1], shell);
-		i += ref_length(&line[i + 1]) + 1;
-		if (!value || !buf_put(&buf, value, ft_strlen(value)))
-			return (free(value), free(buf.str), NULL);
-		free(value);
 	}
 	if (!buf.str)
 		return (ft_strdup(""));
@@ -282,9 +223,22 @@ static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 	return (ref_length(raw + 1) + 1);
 }
 
+static int	put_escape(t_word *w, const char *raw, int quote)
+{
+	if (!raw[1])
+		return (0);
+	if (raw[1] == '\n')
+		return (2);
+	if (quote == '"' && !ft_strchr("$\"\\`", raw[1]))
+		return (0);
+	put_char(w, raw[1], QUOTED);
+	return (2);
+}
+
 static void	fill_word(t_word *w, char *raw, t_shell *shell)
 {
 	int		i;
+	int		n;
 	int		quote;
 	char	*home;
 
@@ -298,16 +252,16 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 	}
 	while (raw[i])
 	{
-		if ((raw[i] == '\'' || raw[i] == '"') && (!quote || quote == raw[i]))
-			quote = (quote == 0) * raw[i];
+		n = (raw[i] == '\\' && quote != '\'') ? put_escape(w, raw + i, quote) : 0;
+		if (n)
+			i += n;
+		else if ((raw[i] == '\'' || raw[i] == '"')
+			&& (!quote || quote == raw[i]))
+			quote = (quote == 0) * raw[i++];
 		else if (raw[i] == '$' && quote != '\'' && is_ref(&raw[i + 1]))
-		{
 			i += put_dollar(w, &raw[i], quote, shell);
-			continue ;
-		}
 		else
-			put_char(w, raw[i], quote ? QUOTED : 0);
-		i++;
+			put_char(w, raw[i++], quote ? QUOTED : 0);
 	}
 }
 
@@ -408,4 +362,27 @@ void	expand_tokens(t_token **tokens, t_shell *shell)
 		old = next;
 	}
 	*tokens = head;
+}
+
+char	*expand_variables(char *token, t_shell *shell)
+{
+	t_word	w;
+	char	*home;
+	char	*result;
+	size_t	cap;
+
+	home = env_get(shell->env, "HOME");
+	cap = calculate_expanded_size(token, shell) + (home ? ft_strlen(home) : 0);
+	w.len = 0;
+	w.str = ft_calloc(cap + 1, 1);
+	w.mask = ft_calloc(cap + 1, 1);
+	result = NULL;
+	if (w.str && w.mask)
+	{
+		fill_word(&w, token, shell);
+		result = ft_strdup(w.str);
+	}
+	free(w.str);
+	free(w.mask);
+	return (result);
 }
