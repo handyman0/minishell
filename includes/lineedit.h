@@ -31,6 +31,9 @@ typedef enum e_keytype
 	K_CLEAR,
 	K_INTERRUPT,
 	K_EOF,
+	K_SEARCH,
+	K_SEARCH_FWD,
+	K_CANCEL,
 	K_PASTE_START,
 	K_PASTE_END,
 	K_ERROR
@@ -92,6 +95,8 @@ const char	*history_suggestion(const char *buf, size_t len);
 
 void		sort_strings(char **items, int count);
 int			complete_tab(t_edit *e);
+void		le_set_buffer(t_edit *e, const char *text);
+int			search_history(t_edit *e);
 int			le_insert(t_edit *e, const char *src, size_t n);
 void		le_erase(t_edit *e, size_t from, size_t to);
 void		le_replace(t_edit *e, size_t from, size_t to, const char *text);

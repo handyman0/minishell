@@ -83,7 +83,7 @@ static size_t	word_right(t_edit *e)
 	return (p);
 }
 
-static void	set_buffer(t_edit *e, const char *text)
+void	le_set_buffer(t_edit *e, const char *text)
 {
 	e->len = 0;
 	e->pos = 0;
@@ -114,7 +114,7 @@ static void	history_move(t_edit *e, int dir)
 	if (i < 0 || (e->hist_idx == count && dir > 0))
 		return ;
 	e->hist_idx = i >= count ? count : i;
-	set_buffer(e, i >= count ? (e->saved ? e->saved : "")
+	le_set_buffer(e, i >= count ? (e->saved ? e->saved : "")
 		: le_history_get(i));
 }
 
@@ -202,6 +202,12 @@ static int	handle_key(t_edit *e, t_key *key, char **line)
 		return (*line = finish(e, 1), 1);
 	if (key->type == K_ERROR || (key->type == K_EOF && e->len == 0))
 		return (*line = NULL, 1);
+	if (key->type == K_SEARCH && e->fancy)
+	{
+		if (search_history(e) == 2)
+			return (*line = finish(e, 0), 1);
+		return (0);
+	}
 	if (key->type == K_PASTE_START || key->type == K_PASTE_END)
 		e->paste = (key->type == K_PASTE_START);
 	if (key->type == K_UP || key->type == K_DOWN)

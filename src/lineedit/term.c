@@ -117,7 +117,7 @@ static void	escape_key(t_key *key)
 	int	c;
 
 	c = read_byte(50);
-	key->type = K_NONE;
+	key->type = (c == -2) ? K_CANCEL : K_NONE;
 	if (c == '[')
 		return (csi_key(key));
 	if (c == 'O')
@@ -196,6 +196,12 @@ void	read_key(t_key *key)
 		key->type = K_KILL_BOL;
 	else if (c == 23)
 		key->type = K_KILL_WORD;
+	else if (c == 18)
+		key->type = K_SEARCH;
+	else if (c == 19)
+		key->type = K_SEARCH_FWD;
+	else if (c == 7)
+		key->type = K_CANCEL;
 	else if (c == 12)
 		key->type = K_CLEAR;
 	else if (c == 3)
