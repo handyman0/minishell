@@ -34,10 +34,11 @@ void	error_exit(const char *msg);
 void	free_str_array(char **arr);
 
 /**
- * @brief Executa um heredoc e redireciona stdin para o pipe interno.
- * @param limiter Texto que encerra o heredoc.
+ * @brief Le o corpo de um heredoc para um arquivo temporario anonimo.
+ * @param raw Limitador como digitado, com aspas se houver.
  */
-void	exec_heredoc(const char *raw, t_shell *shell);
+int	heredoc_read(const char *raw, t_shell *shell);
+int	prepare_heredocs(t_node *node, t_shell *shell);
 
 /**
  * @brief Abre um arquivo com modo de leitura ou escrita.

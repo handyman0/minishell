@@ -50,6 +50,7 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 		new_redir->fd = ft_atoi(current->value);
 	new_redir->file = NULL;
 	new_redir->next = NULL;
+	new_redir->hd_fd = -1;
 	current = current->next;
 	if (!current || current->type != TOKEN_WORD)
 	{
@@ -87,6 +88,8 @@ void	free_redirs(t_redir *redirs)
 		tmp = redirs->next;
 		if (redirs->file)
 			free(redirs->file);
+		if (redirs->hd_fd >= 0)
+			close(redirs->hd_fd);
 		free(redirs);
 		redirs = tmp;
 	}

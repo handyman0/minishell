@@ -12,6 +12,7 @@
 
 #include "../includes/minishell.h"
 #include "../includes/builtins.h"
+#include "../../includes/reader.h"
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -59,6 +60,12 @@ static void	run_tokens(t_token *tokens, t_shell *shell)
 	start = tokens;
 	shell->tokens = start;
 	ast = parse_tokens(&tokens);
+	if (ast && prepare_heredocs(ast, shell))
+	{
+		shell->exit_status = (g_signal == SIGINT) ? 130 : 1;
+		free_ast(ast);
+		ast = NULL;
+	}
 	if (ast)
 	{
 		shell->ast = ast;
@@ -126,21 +133,12 @@ static char	*read_input(t_shell *shell, int interactive)
 {
 	char	*line;
 	char	*prompt;
-	size_t	len;
 
-	if (interactive)
-	{
-		prompt = build_prompt(shell);
-		line = readline(prompt ? prompt : "minishell> ");
-		free(prompt);
-		return (line);
-	}
-	line = get_next_line(STDIN_FILENO);
-	if (!line)
-		return (NULL);
-	len = ft_strlen(line);
-	if (len > 0 && line[len - 1] == '\n')
-		line[len - 1] = '\0';
+	if (!interactive)
+		return (reader_line(stdin_reader()));
+	prompt = build_prompt(shell);
+	line = readline(prompt ? prompt : "minishell> ");
+	free(prompt);
 	return (line);
 }
 

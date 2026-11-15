@@ -1,30 +1,32 @@
 #include "../includes/builtins.h"
 #include "../includes/minishell.h"
+#include "../includes/reader.h"
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
 
 int	source_file(const char *path, t_shell *shell)
 {
-	char	*line;
-	size_t	len;
-	int		fd;
+	static t_reader	reader;
+	t_reader		saved;
+	char			*line;
+	int				fd;
 
 	fd = open(path, O_RDONLY);
 	if (fd == -1)
 		return (-1);
-	line = get_next_line(fd);
+	saved = reader;
+	reader_init(&reader, fd);
+	line = reader_line(&reader);
 	while (line && shell->running)
 	{
-		len = ft_strlen(line);
-		if (len > 0 && line[len - 1] == '\n')
-			line[len - 1] = '\0';
 		run_line(line, shell);
 		free(line);
-		line = get_next_line(fd);
+		line = reader_line(&reader);
 	}
 	free(line);
 	close(fd);
+	reader = saved;
 	return (shell->exit_status);
 }
 

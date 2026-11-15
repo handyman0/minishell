@@ -11,22 +11,17 @@
 /* ************************************************************************** */
 #include "../../includes/executor.h"
 #include "../../includes/parser.h"
+#include "../../includes/signals.h"
+#include "../../includes/reader.h"
 #include <readline/readline.h>
+#include <fcntl.h>
+#include <signal.h>
 
 static char	*read_heredoc_line(void)
 {
-	char	*line;
-	size_t	len;
-
 	if (isatty(STDIN_FILENO))
 		return (readline("heredoc> "));
-	line = get_next_line(STDIN_FILENO);
-	if (!line)
-		return (NULL);
-	len = ft_strlen(line);
-	if (len > 0 && line[len - 1] == '\n')
-		line[len - 1] = '\0';
-	return (line);
+	return (reader_line(stdin_reader()));
 }
 
 static char	*strip_quotes(const char *raw)
@@ -73,30 +68,96 @@ static void	write_line(int fd, char *line, int expand, t_shell *shell)
 	ft_putendl_fd(line, fd);
 }
 
-void	exec_heredoc(const char *raw, t_shell *shell)
+static int	heredoc_tmpfile(void)
 {
-	int		fd[2];
-	char	*line;
-	char	*limiter;
-	int		expand;
+	char	path[] = "/tmp/.minishell_hd_XXXXXX";
+	int		fd;
 
-	if (pipe(fd) == -1)
-		error_exit("pipe");
-	expand = !ft_strchr(raw, '\'') && !ft_strchr(raw, '"');
-	limiter = strip_quotes(raw);
-	while (limiter)
+	fd = mkstemp(path);
+	if (fd == -1)
+		return (-1);
+	unlink(path);
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	return (fd);
+}
+
+static int	heredoc_event(void)
+{
+	if (g_signal == SIGINT)
+		rl_done = 1;
+	return (0);
+}
+
+static void	heredoc_sigint(int sig)
+{
+	g_signal = sig;
+	write(STDOUT_FILENO, "\n", 1);
+}
+
+static int	heredoc_fill(int fd, char *limiter, int expand, t_shell *shell)
+{
+	char	*line;
+
+	while (1)
 	{
 		line = read_heredoc_line();
+		if (g_signal == SIGINT)
+			return (free(line), 0);
 		if (!line || ft_strcmp(line, limiter) == 0)
 		{
 			free(line);
-			break ;
+			return (1);
 		}
-		write_line(fd[1], line, expand, shell);
+		write_line(fd, line, expand, shell);
 		free(line);
 	}
+}
+
+int	heredoc_read(const char *raw, t_shell *shell)
+{
+	char	*limiter;
+	int		fd;
+	int		done;
+
+	fd = heredoc_tmpfile();
+	limiter = strip_quotes(raw);
+	if (fd == -1 || !limiter)
+		return (free(limiter), fd == -1 ? -1 : (close(fd), -1));
+	g_signal = 0;
+	rl_event_hook = heredoc_event;
+	if (shell->interactive)
+		signal(SIGINT, heredoc_sigint);
+	done = heredoc_fill(fd, limiter, !ft_strchr(raw, '\'')
+			&& !ft_strchr(raw, '"'), shell);
+	rl_event_hook = NULL;
+	if (shell->interactive)
+		setup_signals();
 	free(limiter);
-	close(fd[1]);
-	dup2(fd[0], STDIN_FILENO);
-	close(fd[0]);
+	if (!done)
+		return (close(fd), -1);
+	lseek(fd, 0, SEEK_SET);
+	return (fd);
+}
+
+int	prepare_heredocs(t_node *node, t_shell *shell)
+{
+	t_redir	*redir;
+
+	if (!node)
+		return (0);
+	if (node->type != NODE_CMD)
+		return (prepare_heredocs(node->data.op.left, shell)
+			|| prepare_heredocs(node->data.op.right, shell));
+	redir = node->data.cmd.redirs;
+	while (redir)
+	{
+		if (redir->type == REDIR_HEREDOC)
+		{
+			redir->hd_fd = heredoc_read(redir->file, shell);
+			if (redir->hd_fd == -1)
+				return (1);
+		}
+		redir = redir->next;
+	}
+	return (0);
 }
