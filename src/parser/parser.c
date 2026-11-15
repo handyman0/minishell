@@ -57,6 +57,9 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 		return (0);
 	}
 	new_redir->file = ft_strdup(current->value);
+	if (new_redir->file && new_redir->type == REDIR_OUT
+		&& new_redir->file[0] == '&' && ft_isdigit(new_redir->file[1]))
+		new_redir->type = REDIR_DUP;
 	if (!new_redir->file)
 	{
 		free(new_redir);

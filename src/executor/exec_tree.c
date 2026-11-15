@@ -71,6 +71,19 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 	return (-1);
 }
 
+static void	restore_fds(int backup[3])
+{
+	int	i;
+
+	i = 0;
+	while (i < 3)
+	{
+		dup2(backup[i], i);
+		close(backup[i]);
+		i++;
+	}
+}
+
 static int	open_redir(t_redir *redir)
 {
 	if (redir->type == REDIR_IN)
@@ -88,6 +101,8 @@ static int	apply_redirections(t_redir *redirs, char *cmd_name)
 	{
 		if (redirs->type == REDIR_HEREDOC)
 			exec_heredoc(redirs->file);
+		else if (redirs->type == REDIR_DUP)
+			dup2(ft_atoi(redirs->file + 1), redirs->fd);
 		else
 		{
 			fd = open_redir(redirs);
@@ -111,7 +126,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	char	**env_array;
 	int		status;
 	int		builtin_status;
-	int		stdin_backup, stdout_backup;
+	int		backup[3];
 	pid_t	pid;
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
@@ -121,8 +136,9 @@ static int	execute_command(t_node *node, t_shell *shell)
 		|| node->data.cmd.argv[0][0] == '\0')
 		return (0);
 
-	stdin_backup = dup(STDIN_FILENO);
-	stdout_backup = dup(STDOUT_FILENO);
+	backup[0] = dup(STDIN_FILENO);
+	backup[1] = dup(STDOUT_FILENO);
+	backup[2] = dup(STDERR_FILENO);
 	int	is_builtin = 0;
 	if (node->data.cmd.argv && node->data.cmd.argv[0])
 	{
@@ -140,17 +156,11 @@ static int	execute_command(t_node *node, t_shell *shell)
 		if (!apply_redirections(node->data.cmd.redirs,
 				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
 		{
-			dup2(stdin_backup, STDIN_FILENO);
-			dup2(stdout_backup, STDOUT_FILENO);
-			close(stdin_backup);
-			close(stdout_backup);
+			restore_fds(backup);
 			return (1);
 		}
 		builtin_status = execute_builtin(node, shell);
-		dup2(stdin_backup, STDIN_FILENO);
-		dup2(stdout_backup, STDOUT_FILENO);
-		close(stdin_backup);
-		close(stdout_backup);
+		restore_fds(backup);
 		return (builtin_status);
 	}
 
@@ -161,10 +171,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 			fprintf(stderr, "%s: %s\n", node->data.cmd.argv[0], strerror(ENOENT));
 		else
 			fprintf(stderr, "minishell: %s: command not found\n", node->data.cmd.argv[0]);
-		dup2(stdin_backup, STDIN_FILENO);
-		dup2(stdout_backup, STDOUT_FILENO);
-		close(stdin_backup);
-		close(stdout_backup);
+		restore_fds(backup);
 		return (127);
 	}
 
@@ -174,10 +181,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (pid == -1)
 	{
 		perror("minishell: fork");
-		dup2(stdin_backup, STDIN_FILENO);
-		dup2(stdout_backup, STDOUT_FILENO);
-		close(stdin_backup);
-		close(stdout_backup);
+		restore_fds(backup);
 		free(path);
 		free_str_array(env_array);
 		return (1);
@@ -209,10 +213,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 		setup_signals();
 	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
 		write(STDERR_FILENO, "\n", 1);
-	dup2(stdin_backup, STDIN_FILENO);
-	dup2(stdout_backup, STDOUT_FILENO);
-	close(stdin_backup);
-	close(stdout_backup);
+	restore_fds(backup);
 
 	if (WIFSIGNALED(status))
 		return (128 + WTERMSIG(status));

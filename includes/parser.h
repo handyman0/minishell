@@ -57,6 +57,7 @@ typedef enum e_redir_type
 	REDIR_OUT, // >
 	REDIR_APPEND, // >>
 	REDIR_HEREDOC, // <<
+	REDIR_DUP, // >&N
 } t_redir_type;
 
 typedef struct s_redir
