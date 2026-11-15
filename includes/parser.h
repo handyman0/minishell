@@ -195,6 +195,7 @@ void	expand_wildcards(t_token **tokens);
  * @return 0 se válido, outro valor em caso de erro.
  */
 int		check_syntax(t_token *tokens);
+int		check_quotes(char *line);
 
 // debug_print.c (sera movido para utils depois)
 /**
