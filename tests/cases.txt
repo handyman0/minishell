@@ -1,0 +1,127 @@
+echo oi
+echo -n oi
+echo -nn oi
+echo -n -n -n oi
+echo "a   b"   c
+echo 'a $HOME b'
+echo "a $HOME b"
+echo $HOME$USER
+echo $?
+echo $NAOEXISTE x
+echo "$NAOEXISTE"x
+echo $
+echo "$"
+echo $9
+echo ~
+echo ~/x
+echo "~"
+echo a'b'"c"d
+echo ""
+echo '' x
+echo a"" b
+false; echo $?
+true; echo $?
+false || echo $?
+true && echo ok
+false && echo no
+true || echo no
+true && false || echo x
+false || false || echo y
+echo a; echo b
+echo a;echo b
+echo a ; echo b ;
+echo "a;b"
+echo 'a;b'
+ls | wc -l
+echo a | cat | cat | cat
+echo abc | tr a-c A-C
+cat f | cat | wc -c
+false | true; echo $?
+true | false; echo $?
+(echo a)
+(echo a; echo b)
+(false) || echo x
+echo *.txt
+echo "*.txt"
+echo '*.txt'
+echo *.nada
+echo *
+echo a*
+echo *.log *.txt
+echo .*
+ls *.txt | wc -l
+cat < f
+cat < f | cat
+echo x > o1; cat o1
+echo x > o1; echo y >> o1; cat o1
+echo x > o1 > o2; cat o2
+< f cat
+cat < f > o3; cat o3
+echo hi > o4 && cat o4
+ls /nada 2> o5; cat o5
+ls /nada > o6 2>&1; cat o6
+echo err >&2 2> o7; cat o7
+cat < nada; echo $?
+cat nada; echo $?
+echo a > /nada/x; echo $?
+nocmd; echo $?
+/bin/echo ok
+/bin/nada; echo $?
+/tmp; echo $?
+./f; echo $?
+pwd
+cd /tmp; pwd
+cd /tmp && cd - 
+cd; pwd
+cd ~; pwd
+cd /nada; echo $?
+cd a b; echo $?
+cd /tmp; echo $PWD
+cd /tmp; cd ..; echo $PWD
+export A=1; echo $A
+export A=1 B=2; echo $A$B
+export A; echo $?
+export 1A=x; echo $?
+export A=x; unset A; echo $A
+unset NAOEXISTE; echo $?
+export A=a; export A=b; echo $A
+env | grep -c ^PATH=
+exit
+exit 5
+exit 300
+exit -1
+exit abc
+exit 1 2
+echo a; exit 3; echo b
+true && exit 7
+false || exit 8
+(exit 4); echo $?
+exit 3 | cat; echo $?
+echo $PATH | tr : '\n' | head -1
+unset PATH; ls; echo $?
+export X="a b"; echo "$X"
+export X=a; echo "$X$X"
+echo '$HOME' "$HOME" $HOME
+echo "'$HOME'"
+echo '"$HOME"'
+echo "a'b"
+echo 'a"b'
+echo a   |   cat
+ls|cat
+echo a&&echo b
+echo a||echo b
+echo a>o8;cat o8
+  echo   espacos  
+echo "unclosed
+echo 'unclosed
+echo a |
+| echo a
+echo a &&
+&& echo a
+echo a ; ; echo b
+> o9; ls o9
+echo > ; echo $?
+echo <; echo $?
+(; echo $?
+echo );  echo $?
+()
