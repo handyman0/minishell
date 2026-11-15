@@ -94,18 +94,8 @@ void	free_redirs(t_redir *redirs)
 
 t_node	*parse_expression(t_token **tokens)
 {
-	t_node	*node;
-
 	if (!tokens || !*tokens)
 		return (NULL);
-	if ((*tokens)->type == TOKEN_LPAREN)
-	{
-		*tokens = (*tokens)->next;
-		node = parse_and_or(tokens);
-		if (*tokens && (*tokens)->type == TOKEN_RPAREN)
-			*tokens = (*tokens)->next;
-		return (node);
-	}
 	return (parse_and_or(tokens));
 }
 
@@ -232,12 +222,34 @@ t_node	*parse_command(t_token **tokens)
 	return (node);
 }
 
+static t_node	*parse_primary(t_token **tokens)
+{
+	t_node	*node;
+	t_node	*inner;
+
+	if (!*tokens || (*tokens)->type != TOKEN_LPAREN)
+		return (parse_command(tokens));
+	*tokens = (*tokens)->next;
+	inner = parse_tokens(tokens);
+	if (!inner)
+		return (NULL);
+	if (*tokens && (*tokens)->type == TOKEN_RPAREN)
+		*tokens = (*tokens)->next;
+	node = malloc(sizeof(t_node));
+	if (!node)
+		return (free_ast(inner), NULL);
+	node->type = NODE_PAREN;
+	node->data.op.left = inner;
+	node->data.op.right = NULL;
+	return (node);
+}
+
 t_node	*parse_pipeline(t_token **tokens)
 {
 	t_node	*left;
 	t_node	*node;
 
-	left = parse_command(tokens);
+	left = parse_primary(tokens);
 	if (!left)
 		return (NULL);
 	while (*tokens && (*tokens)->type == TOKEN_PIPE)
@@ -251,7 +263,7 @@ t_node	*parse_pipeline(t_token **tokens)
 		}
 		node->type = NODE_PIPE;
 		node->data.op.left = left;
-		node->data.op.right = parse_command(tokens);
+		node->data.op.right = parse_primary(tokens);
 		if (!node->data.op.right)
 		{
 			free(node);
