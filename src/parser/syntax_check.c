@@ -92,19 +92,29 @@ int	check_syntax(t_token *tokens)
 	return (0);
 }
 
-int	check_quotes(char *line)
+char	open_quote(const char *line)
 {
 	char	quote;
 
 	quote = 0;
 	while (*line)
 	{
-		if (!quote && (*line == '\'' || *line == '"'))
+		if (*line == '\\' && quote != '\'' && line[1])
+			line++;
+		else if (!quote && (*line == '\'' || *line == '"'))
 			quote = *line;
 		else if (quote && *line == quote)
 			quote = 0;
 		line++;
 	}
+	return (quote);
+}
+
+int	check_quotes(char *line)
+{
+	char	quote;
+
+	quote = open_quote(line);
 	if (!quote)
 		return (0);
 	ft_putstr_fd("minishell: unexpected EOF while looking for matching `", 2);

@@ -103,24 +103,38 @@ static int	handle_operator(char *line, int i,
 	return (0);
 }
 
+static int	skip_quoted(char *line, int pos)
+{
+	char	quote;
+
+	quote = line[pos++];
+	while (line[pos] && line[pos] != quote)
+	{
+		if (quote == '"' && line[pos] == '\\' && line[pos + 1])
+			pos++;
+		pos++;
+	}
+	if (line[pos] == quote)
+		pos++;
+	return (pos);
+}
+
 static char	*extract_word(char *line, int *i, int len)
 {
 	char	*word;
-	char	quote;
+	int		next;
 
 	while (line[*i + len] && !ft_isspace(line[*i + len])
 		&& !handle_operator(line, *i + len, NULL, NULL))
 	{
-		if (line[*i + len] == '\'' || line[*i + len] == '\"')
+		if (line[*i + len] == '\\' && line[*i + len + 1])
+			len += 2;
+		else if (line[*i + len] == '\'' || line[*i + len] == '\"')
 		{
-			quote = line[*i + len];
-			len++;
-			while (line[*i + len] && line[*i + len] != quote)
-				len++;
-			if (line[*i + len] == quote)
-				len++;
-			else
+			next = skip_quoted(line, *i + len);
+			if (line[next - 1] != line[*i + len] || next - *i - len < 2)
 				break ;
+			len = next - *i;
 		}
 		else
 			len++;
@@ -199,6 +213,8 @@ t_token	*tokenize_line(char *line)
 		word = extract_word(line, &i, 0);
 		if (word)
 			token_add_back(&head, &current, TOKEN_WORD, word);
+		else
+			i++;
 	}
 	return (head);
 }
