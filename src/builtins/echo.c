@@ -12,6 +12,18 @@
 
 #include "../includes/builtins.h"
 
+static int	is_n_flag(char *arg)
+{
+	int	i;
+
+	if (!arg || arg[0] != '-' || arg[1] != 'n')
+		return (0);
+	i = 1;
+	while (arg[i] == 'n')
+		i++;
+	return (arg[i] == '\0');
+}
+
 int	builtin_echo(char **argv)
 {
 	int	i;
@@ -19,7 +31,7 @@ int	builtin_echo(char **argv)
 
 	i = 1;
 	newline = 1;
-	if (argv[1] && ft_strcmp(argv[1], "-n") == 0)
+	while (is_n_flag(argv[i]))
 	{
 		newline = 0;
 		i++;
