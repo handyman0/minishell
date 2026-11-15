@@ -140,8 +140,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
 	expand_command(node, shell);
-	if (!node->data.cmd.argv || !node->data.cmd.argv[0]
-		|| node->data.cmd.argv[0][0] == '\0')
+	if (!node->data.cmd.argv || !node->data.cmd.argv[0])
 		return (0);
 
 	backup[0] = dup(STDIN_FILENO);
