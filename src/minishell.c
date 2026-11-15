@@ -154,6 +154,8 @@ static void	shell_loop(t_shell *shell, int interactive)
 	while (shell->running)
 	{
 		g_signal = 0;
+		if (interactive)
+			jobs_notify(shell);
 		line = read_input(shell, interactive);
 		if (g_signal == SIGINT)
 			shell->exit_status = 130;
@@ -172,14 +174,16 @@ int	main(int argc, char **argv, char **envp)
 	int		interactive;
 
 	init_shell(&shell, envp);
+	jobs_init(&shell, !(argc >= 3 && ft_strcmp(argv[1], "-c") == 0));
 	if (argc >= 3 && ft_strcmp(argv[1], "-c") == 0)
 	{
 		setup_signals_noninteractive();
 		run_line(argv[2], &shell);
+		jobs_free(&shell, 0);
 		env_free(shell.env);
 		return (shell.exit_status);
 	}
-	interactive = isatty(STDIN_FILENO);
+	interactive = shell.interactive;
 	if (interactive)
 		setup_signals();
 	else
@@ -194,6 +198,7 @@ int	main(int argc, char **argv, char **envp)
 	shell_loop(&shell, interactive);
 	if (interactive)
 		history_save(&shell);
+	jobs_free(&shell, 1);
 	env_free(shell.env);
 	if (interactive)
 		printf("exit\n");
