@@ -179,6 +179,13 @@ static int	fd_redirection(char *line, int *i, t_token **head, t_token **cur)
 	return (op_len);
 }
 
+static int	continues_command(t_token *tok)
+{
+	return (tok->type == TOKEN_PIPE || tok->type == TOKEN_AND
+		|| tok->type == TOKEN_OR || tok->type == TOKEN_SEMI
+		|| tok->type == TOKEN_BG || tok->type == TOKEN_LPAREN);
+}
+
 t_token	*tokenize_line(char *line)
 {
 	t_token	*head;
@@ -194,13 +201,24 @@ t_token	*tokenize_line(char *line)
 	i = 0;
 	while (line[i])
 	{
+		if (line[i] == '\n')
+		{
+			if (current && !continues_command(current))
+				token_add_back(&head, &current, TOKEN_SEMI, NULL);
+			i++;
+			continue ;
+		}
 		if (ft_isspace(line[i]))
 		{
 			i++;
 			continue ;
 		}
 		if (line[i] == '#')
-			break ;
+		{
+			while (line[i] && line[i] != '\n')
+				i++;
+			continue ;
+		}
 		op_len = fd_redirection(line, &i, &head, &current);
 		if (op_len > 0)
 			continue ;
