@@ -13,14 +13,13 @@
 #include "../../includes/parser.h"
 #include "../../includes/signals.h"
 #include "../../includes/reader.h"
-#include <readline/readline.h>
 #include <fcntl.h>
 #include <signal.h>
 
 static char	*read_heredoc_line(void)
 {
 	if (isatty(STDIN_FILENO))
-		return (readline("heredoc> "));
+		return (le_readline("heredoc> ", NULL, LE_PLAIN));
 	return (reader_line(stdin_reader()));
 }
 
@@ -81,19 +80,6 @@ static int	heredoc_tmpfile(void)
 	return (fd);
 }
 
-static int	heredoc_event(void)
-{
-	if (g_signal == SIGINT)
-		rl_done = 1;
-	return (0);
-}
-
-static void	heredoc_sigint(int sig)
-{
-	g_signal = sig;
-	write(STDOUT_FILENO, "\n", 1);
-}
-
 static int	heredoc_fill(int fd, char *limiter, int expand, t_shell *shell)
 {
 	char	*line;
@@ -124,14 +110,8 @@ int	heredoc_read(const char *raw, t_shell *shell)
 	if (fd == -1 || !limiter)
 		return (free(limiter), fd == -1 ? -1 : (close(fd), -1));
 	g_signal = 0;
-	rl_event_hook = heredoc_event;
-	if (shell->interactive)
-		signal(SIGINT, heredoc_sigint);
 	done = heredoc_fill(fd, limiter, !ft_strchr(raw, '\'')
 			&& !ft_strchr(raw, '"'), shell);
-	rl_event_hook = NULL;
-	if (shell->interactive)
-		setup_signals();
 	free(limiter);
 	if (!done)
 		return (close(fd), -1);
@@ -139,15 +119,10 @@ int	heredoc_read(const char *raw, t_shell *shell)
 	return (fd);
 }
 
-int	prepare_heredocs(t_node *node, t_shell *shell)
+static int	command_heredocs(t_node *node, t_shell *shell)
 {
 	t_redir	*redir;
 
-	if (!node)
-		return (0);
-	if (node->type != NODE_CMD)
-		return (prepare_heredocs(node->data.op.left, shell)
-			|| prepare_heredocs(node->data.op.right, shell));
 	redir = node->data.cmd.redirs;
 	while (redir)
 	{
@@ -160,4 +135,32 @@ int	prepare_heredocs(t_node *node, t_shell *shell)
 		redir = redir->next;
 	}
 	return (0);
+}
+
+int	prepare_heredocs(t_node *root, t_shell *shell)
+{
+	t_node	**stack;
+	t_node	*cur;
+	int		depth;
+	int		bad;
+
+	depth = 0;
+	cur = root;
+	while (cur && cur->type != NODE_CMD && ++depth)
+		cur = cur->data.op.left;
+	stack = malloc(sizeof(t_node *) * (depth + 1));
+	if (!stack)
+		return (1);
+	cur = root;
+	depth = 0;
+	while (cur && cur->type != NODE_CMD)
+	{
+		stack[depth++] = cur;
+		cur = cur->data.op.left;
+	}
+	bad = cur && command_heredocs(cur, shell);
+	while (!bad && depth-- > 0)
+		bad = prepare_heredocs(stack[depth]->data.op.right, shell);
+	free(stack);
+	return (bad);
 }

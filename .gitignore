@@ -1,4 +1,9 @@
 *.o
 *.a
+*.d
 obj/
+obj_asan/
 minishell
+minishell_asan
+obj_dyn/
+minishell_dyn

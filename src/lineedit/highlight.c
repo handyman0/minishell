@@ -1,4 +1,4 @@
-#include "../../includes/completion.h"
+#include "../../includes/lineedit.h"
 #include "../../includes/builtins.h"
 #include "../../includes/executor.h"
 
@@ -9,16 +9,9 @@
 #define C_MAGENTA "\033[35m"
 #define C_RESET "\033[0m"
 
-typedef struct s_out
-{
-	char	*buf;
-	size_t	len;
-}	t_out;
-
 static void	put(t_out *out, const char *str, size_t n)
 {
-	ft_memcpy(out->buf + out->len, str, n);
-	out->len += n;
+	out_put(out, str, n);
 }
 
 static void	put_color(t_out *out, const char *color)
@@ -26,21 +19,61 @@ static void	put_color(t_out *out, const char *color)
 	put(out, color, ft_strlen(color));
 }
 
-static int	command_exists(const char *word, size_t len, t_shell *shell)
+#define CACHE_SLOTS 16
+#define CACHE_WORD 128
+
+typedef struct s_cache
 {
-	char	*name;
+	char	word[CACHE_SLOTS][CACHE_WORD];
+	char	ok[CACHE_SLOTS];
+	int		used;
+}	t_cache;
+
+static t_cache	g_cache;
+
+void	highlight_reset(void)
+{
+	g_cache.used = 0;
+}
+
+static int	lookup_command(const char *name, t_shell *shell)
+{
 	char	*path;
 	int		ok;
 
-	name = ft_substr(word, 0, len);
-	ok = is_builtin(name);
-	if (name && !ok)
+	ok = is_builtin(name) || env_get(shell->aliases, name) != NULL;
+	if (!ok)
 	{
 		path = find_executable(name, shell);
 		ok = path != NULL;
 		free(path);
 	}
-	free(name);
+	return (ok);
+}
+
+static int	command_exists(const char *word, size_t len, t_shell *shell)
+{
+	char	name[CACHE_WORD];
+	int		i;
+	int		ok;
+
+	if (len == 0 || len >= CACHE_WORD)
+		return (0);
+	ft_memcpy(name, word, len);
+	name[len] = '\0';
+	i = 0;
+	while (i < g_cache.used)
+	{
+		if (ft_strcmp(g_cache.word[i], name) == 0)
+			return (g_cache.ok[i]);
+		i++;
+	}
+	ok = lookup_command(name, shell);
+	if (g_cache.used < CACHE_SLOTS)
+	{
+		ft_strlcpy(g_cache.word[g_cache.used], name, CACHE_WORD);
+		g_cache.ok[g_cache.used++] = ok;
+	}
 	return (ok);
 }
 
@@ -121,12 +154,13 @@ char	*highlight_build(const char *line, size_t len, t_shell *shell)
 	int		cmd;
 	int		redir;
 
-	out.buf = malloc(len * 24 + 64);
+	out.s = NULL;
+	out.cap = 0;
 	out.len = 0;
 	cmd = 1;
 	redir = 0;
 	i = 0;
-	while (out.buf && i < len)
+	while (i < len)
 	{
 		n = operator_len(line + i);
 		if (ft_isspace(line[i]))
@@ -157,7 +191,6 @@ char	*highlight_build(const char *line, size_t len, t_shell *shell)
 			i += n;
 		}
 	}
-	if (out.buf)
-		out.buf[out.len] = '\0';
-	return (out.buf);
+	out_put(&out, "", 1);
+	return (out.s);
 }

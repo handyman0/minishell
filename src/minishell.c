@@ -14,8 +14,6 @@
 #include "../includes/builtins.h"
 #include "../includes/output.h"
 #include "../../includes/reader.h"
-#include <readline/readline.h>
-#include <readline/history.h>
 
 static void	init_env_defaults(t_shell *shell)
 {
@@ -138,7 +136,7 @@ static char	*read_input(t_shell *shell, int interactive)
 	if (!interactive)
 		return (reader_line(stdin_reader()));
 	prompt = build_prompt(shell);
-	line = readline(prompt ? prompt : "minishell> ");
+	line = le_readline(prompt ? prompt : "minishell> ", shell, LE_FANCY);
 	free(prompt);
 	return (line);
 }
@@ -176,7 +174,7 @@ static void	history_load(t_shell *shell)
 	path = history_path(shell);
 	if (!path)
 		return ;
-	read_history(path);
+	le_history_load(path);
 	free(path);
 }
 
@@ -187,8 +185,7 @@ static void	history_save(t_shell *shell)
 	path = history_path(shell);
 	if (!path)
 		return ;
-	stifle_history(1000);
-	write_history(path);
+	le_history_save(path);
 	free(path);
 }
 
@@ -207,7 +204,7 @@ static void	shell_loop(t_shell *shell, int interactive)
 		if (!line)
 			break ;
 		if (interactive && *line)
-			add_history(line);
+			le_history_add(line);
 		run_line(line, shell);
 		free(line);
 	}
@@ -238,11 +235,6 @@ int	main(int argc, char **argv, char **envp)
 		history_load(&shell);
 	if (interactive)
 		load_rc(&shell);
-	if (interactive)
-	{
-		setup_completion(&shell);
-		setup_suggestions(&shell);
-	}
 	shell_loop(&shell, interactive);
 	if (interactive)
 		history_save(&shell);

@@ -32,7 +32,7 @@ typedef struct s_job t_job;
 # include "executor.h"
 # include "signals.h"
 # include "utils.h"
-# include "completion.h"
+# include "lineedit.h"
 # include "jobs.h"
 
 /**

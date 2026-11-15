@@ -6,6 +6,7 @@ NAME        = minishell
 
 CC          = cc
 CFLAGS      = -Wall -Wextra -Werror -O2 -MMD -MP
+LDFLAGS     ?= -static
 RM          = rm -rf
 
 SRC_DIR     = src
@@ -40,7 +41,7 @@ OBJS        = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 all: $(NAME)
 
 $(NAME): $(LIBFT) $(OBJS)
-	@$(CC) $(CFLAGS) $(OBJS) -L$(LIBFT_DIR) -lft -lreadline -o $(NAME)
+	@$(CC) $(CFLAGS) $(OBJS) -L$(LIBFT_DIR) -lft $(LDFLAGS) -o $(NAME)
 	@echo "$(GREEN)[✔] $(NAME) compilado com sucesso!$(RESET)"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
@@ -64,10 +65,12 @@ re: fclean all
 	@echo "$(BLUE)🔁 Recompilação completa$(RESET)"
 
 debug: CFLAGS += -DDEBUG -g3 -fsanitize=address -O0
+debug: LDFLAGS =
 debug: re
 	@echo "$(YELLOW)🐛 Compilado em modo debug$(RESET)"
 
 valgrind: CFLAGS += -g3
+valgrind: LDFLAGS =
 valgrind: re
 	@echo "$(BLUE)🧠 Build pronto para Valgrind$(RESET)"
 	@echo "    👉 valgrind --leak-check=full ./$(NAME)"
@@ -81,3 +84,21 @@ install: all
 	@echo "$(GREEN)[✔] instalado em $(PREFIX)/bin/$(NAME)$(RESET)"
 
 .PHONY: all clean fclean re debug valgrind install
+
+ASAN_FLAGS  = -Wall -Wextra -Werror -g3 -O1 -fno-omit-frame-pointer \
+	-fsanitize=address,undefined -MMD -MP
+
+asan:
+	@$(MAKE) --no-print-directory NAME=minishell_asan OBJ_DIR=obj_asan \
+		CFLAGS="$(ASAN_FLAGS)" LDFLAGS=
+
+stress: asan
+	@bash tests/stress.sh ./minishell_asan
+
+dynamic:
+	@$(MAKE) --no-print-directory NAME=minishell_dyn OBJ_DIR=obj_dyn LDFLAGS=
+
+leaks: dynamic
+	@bash tests/leaks.sh ./minishell_dyn
+
+.PHONY: asan stress leaks dynamic
