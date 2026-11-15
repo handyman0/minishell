@@ -187,7 +187,10 @@ int	main(int argc, char **argv, char **envp)
 	if (interactive)
 		history_load(&shell);
 	if (interactive)
+	{
 		setup_completion(&shell);
+		setup_suggestions();
+	}
 	shell_loop(&shell, interactive);
 	if (interactive)
 		history_save(&shell);
