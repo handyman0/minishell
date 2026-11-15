@@ -302,9 +302,28 @@ void	process_tokens_before_parsing(t_token **tokens, t_shell *shell)
 
 t_node	*parse_tokens(t_token **tokens)
 {
+	t_node	*left;
+	t_node	*node;
+
 	if (!tokens || !*tokens)
 		return (NULL);
-	return (parse_expression(tokens));
+	left = parse_expression(tokens);
+	while (left && *tokens && (*tokens)->type == TOKEN_SEMI)
+	{
+		*tokens = (*tokens)->next;
+		if (!*tokens)
+			break ;
+		node = malloc(sizeof(t_node));
+		if (!node)
+			return (free_ast(left), NULL);
+		node->type = NODE_SEQ;
+		node->data.op.left = left;
+		node->data.op.right = parse_expression(tokens);
+		if (!node->data.op.right)
+			return (free(node), free_ast(left), NULL);
+		left = node;
+	}
+	return (left);
 }
 
 void	free_ast(t_node *node)

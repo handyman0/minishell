@@ -39,6 +39,17 @@ static int	execute_or(t_node *node, t_shell *shell)
 	return (left_status);
 }
 
+static int	execute_seq(t_node *node, t_shell *shell)
+{
+	int	status;
+
+	status = execute_tree(node->data.op.left, shell);
+	if (!shell->running)
+		return (status);
+	shell->exit_status = status;
+	return (execute_tree(node->data.op.right, shell));
+}
+
 static int	execute_builtin(t_node *node, t_shell *shell)
 {
 	if (ft_strcmp(node->data.cmd.argv[0], "echo") == 0)
@@ -294,6 +305,8 @@ int	execute_tree(t_node *node, t_shell *shell)
 			return (execute_and(node, shell));
 		case NODE_OR:
 			return (execute_or(node, shell));
+		case NODE_SEQ:
+			return (execute_seq(node, shell));
 		default:
 			printf("minishell: unknown node type\n");
 			return (1);
