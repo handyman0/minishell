@@ -14,11 +14,27 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+static void	init_env_defaults(t_shell *shell)
+{
+	char	*level;
+	char	*value;
+
+	if (!env_get(shell->env, "PATH"))
+		env_set(&shell->env, "PATH",
+			"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+	level = env_get(shell->env, "SHLVL");
+	value = ft_itoa(level ? ft_atoi(level) + 1 : 1);
+	if (value)
+		env_set(&shell->env, "SHLVL", value);
+	free(value);
+}
+
 static void	init_shell(t_shell *shell, char **envp)
 {
 	char	cwd[1024];
 
 	shell->env = env_init(envp);
+	init_env_defaults(shell);
 	shell->exit_status = 0;
 	shell->running = 1;
 	shell->ast = NULL;
