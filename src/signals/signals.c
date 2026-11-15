@@ -12,8 +12,33 @@
 
 #include "../../includes/signals.h"
 #include <signal.h>
+#include <unistd.h>
+#include <readline/readline.h>
+
+volatile sig_atomic_t	g_signal = 0;
+
+static void	sigint_handler(int sig)
+{
+	g_signal = sig;
+	write(STDOUT_FILENO, "\n", 1);
+	rl_on_new_line();
+	rl_replace_line("", 0);
+	rl_redisplay();
+}
 
 void	setup_signals(void)
+{
+	signal(SIGINT, sigint_handler);
+	signal(SIGQUIT, SIG_IGN);
+}
+
+void	setup_signals_noninteractive(void)
+{
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
+}
+
+void	signals_ignore(void)
 {
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);

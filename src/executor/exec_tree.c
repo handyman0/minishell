@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include "../../includes/signals.h"
 
 static int	execute_and(t_node *node, t_shell *shell)
 {
@@ -214,9 +215,12 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	free(path);
 	free_str_array(env_array);
+	signals_ignore();
 	waitpid(pid, &status, 0);
-	if (WIFSIGNALED(status))
-		perror("minishell");
+	if (isatty(STDIN_FILENO))
+		setup_signals();
+	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
+		write(STDERR_FILENO, "\n", 1);
 	dup2(stdin_backup, STDIN_FILENO);
 	dup2(stdout_backup, STDOUT_FILENO);
 	close(stdin_backup);
@@ -261,11 +265,15 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 
 	close(pipefd[0]);
 	close(pipefd[1]);
+	signals_ignore();
 	waitpid(pid_left, &status_left, 0);
 	waitpid(pid_right, &status_right, 0);
+	if (isatty(STDIN_FILENO))
+		setup_signals();
 	if (WIFSIGNALED(status_right))
 	{
-		perror("minishell");
+		if (WTERMSIG(status_right) == SIGINT)
+			write(STDERR_FILENO, "\n", 1);
 		return (128 + WTERMSIG(status_right));
 	}
 	return (WEXITSTATUS(status_right));
