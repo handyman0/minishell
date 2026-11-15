@@ -171,13 +171,18 @@ static int	execute_command(t_node *node, t_shell *shell)
 	int		status;
 	int		builtin_status;
 	int		backup[3];
+	t_saved	*saved;
+	int		nsaved;
 	pid_t	pid;
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
 	expand_command(node, shell);
 	if (!node->data.cmd.argv || !node->data.cmd.argv[0])
+	{
+		assign_shell(shell, node->data.cmd.assigns);
 		return (0);
+	}
 
 	backup[0] = dup(STDIN_FILENO);
 	backup[1] = dup(STDOUT_FILENO);
@@ -189,7 +194,11 @@ static int	execute_command(t_node *node, t_shell *shell)
 			restore_fds(backup);
 			return (1);
 		}
+		saved = node->data.cmd.assigns
+			? overlay_apply(shell, node->data.cmd.assigns, &nsaved) : NULL;
 		builtin_status = execute_builtin(node, shell);
+		if (saved)
+			overlay_restore(shell, saved, nsaved);
 		restore_fds(backup);
 		return (builtin_status);
 	}
@@ -207,7 +216,11 @@ static int	execute_command(t_node *node, t_shell *shell)
 		return (127);
 	}
 
+	saved = node->data.cmd.assigns
+		? overlay_apply(shell, node->data.cmd.assigns, &nsaved) : NULL;
 	env_array = env_to_array(shell->env);
+	if (saved)
+		overlay_restore(shell, saved, nsaved);
 
 	pid = fork();
 	if (pid == -1)
