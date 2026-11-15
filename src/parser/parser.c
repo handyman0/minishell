@@ -275,51 +275,6 @@ t_node	*parse_pipeline(t_token **tokens)
 	return (left);
 }
 
-void	process_tokens_before_parsing(t_token **tokens, t_shell *shell)
-{
-	t_token	*to_free;
-	char	*clean;
-	char	*expanded;
-	t_token	*prev;
-	t_token	*current;
-
-	if (!tokens || !*tokens || !shell)
-		return ;
-	current = *tokens;
-	prev = NULL;
-	while (current)
-	{
-		if (current->type == TOKEN_WORD && current->value)
-		{
-			expanded = expand_variables(current->value, shell);
-			if (expanded)
-			{
-				clean = remove_quotes(expanded);
-				free(expanded);
-				if (clean[0] == '\0' && !ft_strchr(current->value, '\'')
-					&& !ft_strchr(current->value, '"'))
-				{
-					free(current->value);
-					free(clean);
-					if (prev)
-						prev->next = current->next;
-					else
-						*tokens = current->next;
-					to_free = current;
-					current = current->next;
-					free(to_free);
-					continue ;
-				}
-				free(current->value);
-				current->value = clean;
-			}
-		}
-		prev = current;
-		if (current)
-			current = current->next;
-	}
-}
-
 t_node	*parse_tokens(t_token **tokens)
 {
 	t_node	*left;

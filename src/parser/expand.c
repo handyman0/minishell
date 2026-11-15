@@ -155,27 +155,6 @@ char	*remove_quotes(char *token)
 	return (ft_strdup(token));
 }
 
-void	process_tokens(t_token *tokens, t_shell *shell)
-{
-	t_token	*current;
-	char	*processed;
-
-	current = tokens;
-	while (current)
-	{
-		if (current->type == TOKEN_WORD && current->value)
-		{
-			processed = process_token_with_quotes(current->value, shell);
-			if (processed)
-			{
-				free(current->value);
-				current->value = processed;
-			}
-		}
-		current = current->next;
-	}
-}
-
 static char	*append_str(char *dst, char *src)
 {
 	char	*joined;

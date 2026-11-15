@@ -171,20 +171,6 @@ char	*expand_variables(char *token, t_shell *shell);
  */
 char	*remove_quotes(char *token);
 
-/**
- * @brief Processa todos os tokens, aplicando expansão de variáveis.
- * @param tokens Lista de tokens.
- * @param shell Estado global do shell.
- */
-void	process_tokens(t_token *tokens, t_shell *shell);
-
-/**
- * @brief Executa transformações antes do parser, removendo tokens vazios.
- * @param tokens Lista de tokens.
- * @param shell Estado global do shell.
- */
-void	process_tokens_before_parsing(t_token **tokens, t_shell *shell);
-
 char	*expand_heredoc_line(char *line, t_shell *shell);
 void	expand_tokens(t_token **tokens, t_shell *shell);
 
