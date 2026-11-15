@@ -7,3 +7,4 @@ minishell
 minishell_asan
 obj_dyn/
 minishell_dyn
+.vscode/
