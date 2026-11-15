@@ -72,4 +72,10 @@ valgrind: re
 	@echo "$(BLUE)🧠 Build pronto para Valgrind$(RESET)"
 	@echo "    👉 valgrind --leak-check=full ./$(NAME)"
 
-.PHONY: all clean fclean re debug valgrind
+PREFIX      ?= $(HOME)/.local
+
+install: all
+	@install -Dm755 $(NAME) $(PREFIX)/bin/$(NAME)
+	@echo "$(GREEN)[✔] instalado em $(PREFIX)/bin/$(NAME)$(RESET)"
+
+.PHONY: all clean fclean re debug valgrind install
