@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../includes/minishell.h"
+#include "../includes/builtins.h"
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -143,6 +144,22 @@ static char	*read_input(t_shell *shell, int interactive)
 	return (line);
 }
 
+static void	load_rc(t_shell *shell)
+{
+	char	*home;
+	char	*path;
+
+	home = env_get(shell->env, "HOME");
+	if (!home || !*home)
+		return ;
+	path = ft_strjoin(home, "/.minishellrc");
+	if (!path)
+		return ;
+	source_file(path, shell);
+	free(path);
+	shell->exit_status = 0;
+}
+
 static char	*history_path(t_shell *shell)
 {
 	char	*home;
@@ -220,6 +237,8 @@ int	main(int argc, char **argv, char **envp)
 		setup_signals_noninteractive();
 	if (interactive)
 		history_load(&shell);
+	if (interactive)
+		load_rc(&shell);
 	if (interactive)
 	{
 		setup_completion(&shell);
