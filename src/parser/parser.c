@@ -153,6 +153,7 @@ t_node	*parse_command(t_token **tokens)
 	t_node	*node;
 	t_list	*args;
 	t_list	*new_node;
+	t_list	*tail;
 	int		count;
 
 	if (!tokens || !*tokens)
@@ -164,6 +165,7 @@ t_node	*parse_command(t_token **tokens)
 	node->data.cmd.argv = NULL;
 	node->data.cmd.redirs = NULL;
 	args = NULL;
+	tail = NULL;
 	count = 0;
 	while (*tokens)
 	{
@@ -188,7 +190,11 @@ t_node	*parse_command(t_token **tokens)
 				free(node);
 				return (NULL);
 			}
-			ft_lstadd_back(&args, new_node);
+			if (args)
+				tail->next = new_node;
+			else
+				args = new_node;
+			tail = new_node;
 			count++;
 			*tokens = (*tokens)->next;
 		}
@@ -315,30 +321,35 @@ t_node	*parse_tokens(t_token **tokens)
 	return (left);
 }
 
-void	free_ast(t_node *node)
+static void	free_command(t_node *node)
 {
 	int	i;
 
-	if (!node)
-		return ;
-	if (node->type == NODE_CMD)
+	if (node->data.cmd.argv)
 	{
-		if (node->data.cmd.argv)
+		i = 0;
+		while (node->data.cmd.argv[i])
+			free(node->data.cmd.argv[i++]);
+		free(node->data.cmd.argv);
+	}
+	free_redirs(node->data.cmd.redirs);
+}
+
+void	free_ast(t_node *node)
+{
+	t_node	*next;
+
+	while (node)
+	{
+		next = NULL;
+		if (node->type == NODE_CMD)
+			free_command(node);
+		else
 		{
-			i = 0;
-			while (node->data.cmd.argv[i])
-			{
-				free(node->data.cmd.argv[i]);
-				i++;
-			}
-			free(node->data.cmd.argv);
+			free_ast(node->data.op.right);
+			next = node->data.op.left;
 		}
-		free_redirs(node->data.cmd.redirs);
+		free(node);
+		node = next;
 	}
-	else
-	{
-		free_ast(node->data.op.left);
-		free_ast(node->data.op.right);
-	}
-	free(node);
 }

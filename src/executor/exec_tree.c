@@ -22,37 +22,52 @@
 #include "../../includes/signals.h"
 #include "../../includes/jobs.h"
 
-static int	execute_and(t_node *node, t_shell *shell)
+static int	is_chain(t_node *node)
 {
-	int	left_status;
-
-	left_status = execute_tree(node->data.op.left, shell);
-	shell->exit_status = left_status;
-	if (left_status == 0)
-		return (execute_tree(node->data.op.right, shell));
-	return (left_status);
+	return (node->type == NODE_SEQ || node->type == NODE_AND
+		|| node->type == NODE_OR);
 }
 
-static int	execute_or(t_node *node, t_shell *shell)
+static int	chain_step(t_node *node, int status, t_shell *shell)
 {
-	int	left_status;
-
-	left_status = execute_tree(node->data.op.left, shell);
-	shell->exit_status = left_status;
-	if (left_status != 0)
-		return (execute_tree(node->data.op.right, shell));
-	return (left_status);
-}
-
-static int	execute_seq(t_node *node, t_shell *shell)
-{
-	int	status;
-
-	status = execute_tree(node->data.op.left, shell);
 	if (!shell->running)
 		return (status);
 	shell->exit_status = status;
-	return (execute_tree(node->data.op.right, shell));
+	if (node->type == NODE_SEQ
+		|| (node->type == NODE_AND) == (status == 0))
+		return (execute_tree(node->data.op.right, shell));
+	return (status);
+}
+
+static int	execute_chain(t_node *root, t_shell *shell)
+{
+	t_node	**stack;
+	t_node	*cur;
+	int		depth;
+	int		status;
+
+	depth = 0;
+	cur = root;
+	while (cur && is_chain(cur))
+	{
+		depth++;
+		cur = cur->data.op.left;
+	}
+	stack = malloc(sizeof(t_node *) * (depth + 1));
+	if (!stack)
+		return (1);
+	cur = root;
+	depth = 0;
+	while (cur && is_chain(cur))
+	{
+		stack[depth++] = cur;
+		cur = cur->data.op.left;
+	}
+	status = execute_tree(cur, shell);
+	while (depth-- > 0)
+		status = chain_step(stack[depth], status, shell);
+	free(stack);
+	return (status);
 }
 
 static int	execute_builtin(t_node *node, t_shell *shell)
@@ -337,15 +352,13 @@ int	execute_tree(t_node *node, t_shell *shell)
 		case NODE_PIPE:
 			return (execute_pipe(node, shell));
 		case NODE_AND:
-			return (execute_and(node, shell));
 		case NODE_OR:
-			return (execute_or(node, shell));
+		case NODE_SEQ:
+			return (execute_chain(node, shell));
 		case NODE_PAREN:
 			return (execute_subshell(node, shell));
 		case NODE_BG:
 			return (execute_background(node, shell));
-		case NODE_SEQ:
-			return (execute_seq(node, shell));
 		default:
 			put_all(STDERR_FILENO, "minishell: unknown node type\n", NULL);
 			return (1);
