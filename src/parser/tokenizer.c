@@ -129,6 +129,23 @@ static char	*extract_word(char *line, int *i, int len)
 	return (word);
 }
 
+static int	fd_redirection(char *line, int *i, t_token **head, t_token **cur)
+{
+	int	digits;
+	int	op_len;
+
+	digits = 0;
+	while (ft_isdigit(line[*i + digits]))
+		digits++;
+	if (digits == 0 || (line[*i + digits] != '>' && line[*i + digits] != '<'))
+		return (0);
+	op_len = handle_operator(line, *i + digits, head, cur);
+	if (op_len > 0 && *cur)
+		(*cur)->value = ft_substr(line, *i, digits);
+	*i += digits + op_len;
+	return (op_len);
+}
+
 t_token	*tokenize_line(char *line)
 {
 	t_token	*head;
@@ -149,6 +166,9 @@ t_token	*tokenize_line(char *line)
 			i++;
 			continue ;
 		}
+		op_len = fd_redirection(line, &i, &head, &current);
+		if (op_len > 0)
+			continue ;
 		op_len = handle_operator(line, i, &head, &current);
 		if (op_len > 0)
 		{

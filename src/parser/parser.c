@@ -44,6 +44,10 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 			free(new_redir);
 			return (0);
 	}
+	new_redir->fd = (current->type == TOKEN_REDIR_OUT
+			|| current->type == TOKEN_REDIR_APPEND);
+	if (current->value)
+		new_redir->fd = ft_atoi(current->value);
 	new_redir->file = NULL;
 	new_redir->next = NULL;
 	current = current->next;
