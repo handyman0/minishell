@@ -47,6 +47,12 @@ char	*find_path(char *cmd, t_shell *shell);
  */
 char	*find_executable(const char *name, t_shell *shell);
 
+typedef struct s_saved	t_saved;
+
+void	assign_shell(t_shell *shell, char **assigns);
+t_saved	*overlay_apply(t_shell *shell, char **assigns, int *count);
+void	overlay_restore(t_shell *shell, t_saved *saved, int count);
+
 /**
  * @brief Converte a lista de ambiente em array de strings para execve.
  * @param env Lista encadeada de variáveis de ambiente.
