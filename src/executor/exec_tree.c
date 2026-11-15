@@ -76,6 +76,12 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 		return (builtin_fg(node->data.cmd.argv, shell));
 	else if (ft_strcmp(node->data.cmd.argv[0], "bg") == 0)
 		return (builtin_bg(node->data.cmd.argv, shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "alias") == 0)
+		return (builtin_alias(node->data.cmd.argv, shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "unalias") == 0)
+		return (builtin_unalias(node->data.cmd.argv, shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "source") == 0)
+		return (builtin_source(node->data.cmd.argv, shell));
 	return (-1);
 }
 

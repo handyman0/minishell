@@ -68,6 +68,10 @@ int	builtin_env(t_env *env);
  */
 int	builtin_exit(char **argv, t_shell *shell);
 
+int			builtin_alias(char **argv, t_shell *shell);
+int			builtin_unalias(char **argv, t_shell *shell);
+int			builtin_source(char **argv, t_shell *shell);
+int			source_file(const char *path, t_shell *shell);
 const char	**builtin_names(void);
 int			is_builtin(const char *name);
 
