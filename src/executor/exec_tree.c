@@ -19,6 +19,7 @@
 #include <string.h>
 #include <signal.h>
 #include "../../includes/signals.h"
+#include "../../includes/jobs.h"
 
 static int	execute_and(t_node *node, t_shell *shell)
 {
@@ -69,6 +70,12 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 		return (builtin_env(shell->env));
 	else if (ft_strcmp(node->data.cmd.argv[0], "exit") == 0)
 		return (builtin_exit(node->data.cmd.argv, shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "jobs") == 0)
+		return (builtin_jobs(shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "fg") == 0)
+		return (builtin_fg(node->data.cmd.argv, shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "bg") == 0)
+		return (builtin_bg(node->data.cmd.argv, shell));
 	return (-1);
 }
 
@@ -184,8 +191,10 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (pid == 0)
 	{
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
+		job_child_setup(shell, 0, 1);
+		close(backup[0]);
+		close(backup[1]);
+		close(backup[2]);
 		if (!apply_redirections(node->data.cmd.redirs,
 				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL, shell))
 		{
@@ -202,17 +211,10 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	free(path);
 	free_str_array(env_array);
-	signals_ignore();
-	waitpid(pid, &status, 0);
-	if (isatty(STDIN_FILENO))
-		setup_signals();
-	if (WIFSIGNALED(status) && WTERMSIG(status) == SIGINT)
-		write(STDERR_FILENO, "\n", 1);
+	job_parent_setup(shell, pid, 0);
+	status = job_wait(shell, node, &pid, 1);
 	restore_fds(backup);
-
-	if (WIFSIGNALED(status))
-		return (128 + WTERMSIG(status));
-	return (WEXITSTATUS(status));
+	return (status);
 }
 
 static int	pipe_child(t_node *node, t_shell *shell)
@@ -222,79 +224,87 @@ static int	pipe_child(t_node *node, t_shell *shell)
 	status = execute_tree(node, shell);
 	free_ast(shell->ast);
 	free_tokens(shell->tokens);
+	jobs_free(shell, 0);
 	env_free(shell->env);
 	return (status);
 }
 
+static void	pipe_stage(t_node *node, t_shell *shell, int fds[2], int is_left)
+{
+	job_child_setup(shell, is_left ? 0 : getpgrp(), 1);
+	if (is_left)
+		dup2(fds[1], STDOUT_FILENO);
+	else
+		dup2(fds[0], STDIN_FILENO);
+	close(fds[0]);
+	close(fds[1]);
+	exit(pipe_child(node, shell));
+}
+
 static int	execute_pipe(t_node *node, t_shell *shell)
 {
-	int		pipefd[2];
-	int		status_left;
-	int		status_right;
-	pid_t	pid_left, pid_right;
+	int		fds[2];
+	pid_t	pids[2];
+	int		status;
 
-	if (pipe(pipefd) == -1)
+	if (pipe(fds) == -1)
 		return (1);
-
-	pid_left = fork();
-	if (pid_left == 0)
+	pids[0] = fork();
+	if (pids[0] == 0)
+		pipe_stage(node->data.op.left, shell, fds, 1);
+	job_parent_setup(shell, pids[0], 0);
+	pids[1] = fork();
+	if (pids[1] == 0)
 	{
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
-		close(pipefd[0]);
-		dup2(pipefd[1], STDOUT_FILENO);
-		close(pipefd[1]);
-		exit(pipe_child(node->data.op.left, shell));
+		if (shell->interactive && !shell->in_child)
+			setpgid(0, pids[0]);
+		pipe_stage(node->data.op.right, shell, fds, 0);
 	}
-
-	pid_right = fork();
-	if (pid_right == 0)
-	{
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
-		close(pipefd[1]);
-		dup2(pipefd[0], STDIN_FILENO);
-		close(pipefd[0]);
-		exit(pipe_child(node->data.op.right, shell));
-	}
-
-	close(pipefd[0]);
-	close(pipefd[1]);
-	signals_ignore();
-	waitpid(pid_left, &status_left, 0);
-	waitpid(pid_right, &status_right, 0);
-	if (isatty(STDIN_FILENO))
-		setup_signals();
-	if (WIFSIGNALED(status_right))
-	{
-		if (WTERMSIG(status_right) == SIGINT)
-			write(STDERR_FILENO, "\n", 1);
-		return (128 + WTERMSIG(status_right));
-	}
-	return (WEXITSTATUS(status_right));
+	job_parent_setup(shell, pids[1], pids[0]);
+	close(fds[0]);
+	close(fds[1]);
+	status = job_wait(shell, node, pids, 2);
+	return (status);
 }
 
 static int	execute_subshell(t_node *node, t_shell *shell)
 {
 	pid_t	pid;
-	int		status;
 
 	pid = fork();
 	if (pid == -1)
 		return (1);
 	if (pid == 0)
 	{
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
+		job_child_setup(shell, 0, 1);
 		exit(pipe_child(node->data.op.left, shell));
 	}
-	signals_ignore();
-	waitpid(pid, &status, 0);
-	if (isatty(STDIN_FILENO))
-		setup_signals();
-	if (WIFSIGNALED(status))
-		return (128 + WTERMSIG(status));
-	return (WEXITSTATUS(status));
+	job_parent_setup(shell, pid, 0);
+	return (job_wait(shell, node, &pid, 1));
+}
+
+static int	execute_background(t_node *node, t_shell *shell)
+{
+	pid_t	pid;
+	int		fd;
+
+	pid = fork();
+	if (pid == -1)
+		return (1);
+	if (pid == 0)
+	{
+		job_child_setup(shell, 0, 0);
+		if (!shell->interactive)
+		{
+			fd = open("/dev/null", O_RDONLY);
+			dup2(fd, STDIN_FILENO);
+			close(fd);
+		}
+		exit(pipe_child(node->data.op.left, shell));
+	}
+	job_parent_setup(shell, pid, 0);
+	job_add_background(shell, node->data.op.left, pid);
+	return (0);
 }
 
 int	execute_tree(t_node *node, t_shell *shell)
@@ -314,6 +324,8 @@ int	execute_tree(t_node *node, t_shell *shell)
 			return (execute_or(node, shell));
 		case NODE_PAREN:
 			return (execute_subshell(node, shell));
+		case NODE_BG:
+			return (execute_background(node, shell));
 		case NODE_SEQ:
 			return (execute_seq(node, shell));
 		default:
