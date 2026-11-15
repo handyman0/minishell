@@ -17,8 +17,6 @@
 # include "minishell.h"
 
 int		ft_isspace(char c);
-void	print_tokens(t_token *tokens); // Para debug
-void	print_tree(t_node *node, int depth); // Para debug
 void	free_str_array(char **arr);
 
 #endif
