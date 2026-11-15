@@ -82,6 +82,7 @@ void	run_line(char *line, t_shell *shell)
 	tokens = tokenize_line(line);
 	if (!tokens)
 		return ;
+	expand_aliases(&tokens, shell);
 	if (check_syntax(tokens))
 	{
 		shell->exit_status = 2;
