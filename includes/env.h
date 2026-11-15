@@ -14,10 +14,8 @@
 # define ENV_H
 
 # include "../libft/include/libft.h"
-# include "../libft/include/ft_printf.h"
 # include "utils.h"
 # include <stdlib.h>
-# include <stdio.h>
 # include <unistd.h>
 
 /**

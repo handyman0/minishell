@@ -1,6 +1,7 @@
 #include "../includes/builtins.h"
 #include "../includes/minishell.h"
 #include "../includes/executor.h"
+#include "../includes/output.h"
 
 static void	not_found(char *cmd, char *name)
 {
@@ -18,13 +19,13 @@ static int	describe_type(char *name, t_shell *shell)
 
 	alias = env_get(shell->aliases, name);
 	if (alias)
-		return (ft_printf("%s is aliased to `%s'\n", name, alias), 0);
+		return (put_all(STDOUT_FILENO, name, " is aliased to `", alias, "'\n", NULL), 0);
 	if (is_builtin(name))
-		return (ft_printf("%s is a shell builtin\n", name), 0);
+		return (put_all(STDOUT_FILENO, name, " is a shell builtin\n", NULL), 0);
 	path = find_executable(name, shell);
 	if (!path)
 		return (not_found("type", name), 1);
-	ft_printf("%s is %s\n", name, path);
+	put_all(STDOUT_FILENO, name, " is ", path, "\n", NULL);
 	free(path);
 	return (0);
 }
@@ -36,13 +37,13 @@ static int	describe_which(char *name, t_shell *shell)
 
 	alias = env_get(shell->aliases, name);
 	if (alias)
-		return (ft_printf("%s: aliased to %s\n", name, alias), 0);
+		return (put_all(STDOUT_FILENO, name, ": aliased to ", alias, "\n", NULL), 0);
 	if (is_builtin(name))
-		return (ft_printf("%s: shell built-in command\n", name), 0);
+		return (put_all(STDOUT_FILENO, name, ": shell built-in command\n", NULL), 0);
 	path = find_executable(name, shell);
 	if (!path)
 		return (not_found("which", name), 1);
-	ft_printf("%s\n", path);
+	put_all(STDOUT_FILENO, path, "\n", NULL);
 	free(path);
 	return (0);
 }

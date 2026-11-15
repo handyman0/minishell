@@ -11,12 +11,13 @@
 /* ************************************************************************** */
 
 #include "../../includes/env.h"
+#include "../../includes/output.h"
 
 void	env_print(t_env *env)
 {
 	while (env)
 	{
-		ft_printf("%s=%s\n", env->key, env->value);
+		put_all(STDOUT_FILENO, env->key, "=", env->value, "\n", NULL);
 		env = env->next;
 	}
 }

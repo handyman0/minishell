@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../../includes/builtins.h"
+#include "../includes/output.h"
 
 int builtin_pwd(void)
 {
@@ -21,6 +22,6 @@ int builtin_pwd(void)
 		ft_putendl_fd(cwd, STDOUT_FILENO);
 		return (0);
 	}
-	perror("minishell: pwd");
+	put_errno("pwd", NULL);
 	return (1);
 }

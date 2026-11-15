@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../includes/builtins.h"
+#include "../includes/output.h"
 #include "../includes/minishell.h"
 #include <unistd.h>
 
@@ -28,7 +29,7 @@ int	builtin_cd(char **argv, t_shell *shell)
 	oldpwd = getcwd(NULL, 0);
 	if (!oldpwd)
 	{
-		perror("minishell: cd");
+		put_errno("cd", NULL);
 		return (1);
 	}
 	if (!argv[1] || ft_strcmp(argv[1], "~") == 0)
@@ -57,10 +58,7 @@ int	builtin_cd(char **argv, t_shell *shell)
 		path = argv[1];
 	if (chdir(path) != 0)
 	{
-		ft_putstr_fd("minishell: cd: ", STDERR_FILENO);
-		ft_putstr_fd(path, STDERR_FILENO);
-		ft_putstr_fd(": ", STDERR_FILENO);
-		perror("");
+		put_errno("cd", path);
 		free(oldpwd);
 		return (1);
 	}
@@ -73,7 +71,7 @@ int	builtin_cd(char **argv, t_shell *shell)
 		env_set(&shell->env, "PWD", cwd);
 	else
 	{
-		perror("minishell: cd");
+		put_errno("cd", NULL);
 		return (1);
 	}
 	return (0);
