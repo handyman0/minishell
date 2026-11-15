@@ -184,35 +184,68 @@ char	*remove_quotes(char *token)
 	return (ft_strdup(token));
 }
 
-static char	*append_str(char *dst, char *src)
+typedef struct s_buf
 {
-	char	*joined;
+	char	*str;
+	size_t	len;
+	size_t	cap;
+}	t_buf;
 
-	joined = ft_strjoin(dst, src);
-	free(dst);
-	free(src);
-	return (joined);
+static int	buf_put(t_buf *buf, const char *src, size_t n)
+{
+	char	*bigger;
+	size_t	cap;
+
+	if (buf->len + n + 1 > buf->cap)
+	{
+		cap = buf->cap ? buf->cap : 64;
+		while (buf->len + n + 1 > cap)
+			cap *= 2;
+		bigger = malloc(cap);
+		if (!bigger)
+			return (0);
+		ft_memcpy(bigger, buf->str, buf->len);
+		free(buf->str);
+		buf->str = bigger;
+		buf->cap = cap;
+	}
+	ft_memcpy(buf->str + buf->len, src, n);
+	buf->len += n;
+	buf->str[buf->len] = '\0';
+	return (1);
 }
 
 char	*expand_heredoc_line(char *line, t_shell *shell)
 {
-	char	*result;
+	t_buf	buf;
+	char	*value;
+	int		start;
 	int		i;
 
-	result = ft_strdup("");
+	buf.str = NULL;
+	buf.len = 0;
+	buf.cap = 0;
 	i = 0;
-	while (result && line[i])
+	while (line[i])
 	{
-		if (line[i] == '$' && is_ref(&line[i + 1]))
-		{
-			result = append_str(result, get_var_value(&line[i + 1], shell));
-			i += ref_length(&line[i + 1]) + 1;
-		}
-		else
-			result = append_str(result, ft_substr(line, i++, 1));
+		start = i;
+		while (line[i] && !(line[i] == '$' && is_ref(&line[i + 1])))
+			i++;
+		if (i > start && !buf_put(&buf, line + start, i - start))
+			return (free(buf.str), NULL);
+		if (!line[i])
+			break ;
+		value = get_var_value(&line[i + 1], shell);
+		i += ref_length(&line[i + 1]) + 1;
+		if (!value || !buf_put(&buf, value, ft_strlen(value)))
+			return (free(value), free(buf.str), NULL);
+		free(value);
 	}
-	return (result);
+	if (!buf.str)
+		return (ft_strdup(""));
+	return (buf.str);
 }
+
 
 # define SPLIT 1
 # define QUOTED 2
