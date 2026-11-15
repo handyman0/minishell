@@ -13,6 +13,7 @@
 #include "../includes/minishell.h"
 #include "../includes/builtins.h"
 #include "../includes/output.h"
+#include "../includes/prompt.h"
 #include "../../includes/reader.h"
 
 static void	init_env_defaults(t_shell *shell)
@@ -97,35 +98,6 @@ void	run_line(char *line, t_shell *shell)
 		return ;
 	}
 	run_tokens(tokens, shell);
-}
-
-static char	*build_prompt(t_shell *shell)
-{
-	char	cwd[1024];
-	char	*home;
-	char	*path;
-	char	*tmp;
-	char	*prompt;
-
-	if (!getcwd(cwd, sizeof(cwd)))
-		return (ft_strdup("minishell> "));
-	home = env_get(shell->env, "HOME");
-	path = ft_strdup(cwd);
-	if (home && *home && path && ft_strncmp(cwd, home, ft_strlen(home)) == 0
-		&& (cwd[ft_strlen(home)] == '/' || !cwd[ft_strlen(home)]))
-	{
-		free(path);
-		path = ft_strjoin("~", cwd + ft_strlen(home));
-	}
-	if (!path)
-		return (ft_strdup("minishell> "));
-	tmp = ft_strjoin("minishell:", path);
-	free(path);
-	if (!tmp)
-		return (ft_strdup("minishell> "));
-	prompt = ft_strjoin(tmp, "> ");
-	free(tmp);
-	return (prompt);
 }
 
 static char	*read_input(t_shell *shell, int interactive)
