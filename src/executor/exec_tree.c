@@ -15,6 +15,7 @@
 #include "../../includes/utils.h"
 #include "../../includes/builtins.h"
 #include <errno.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <signal.h>
 #include "../../includes/signals.h"
@@ -120,6 +121,13 @@ static int	apply_redirections(t_redir *redirs, char *cmd_name)
 	return (1);
 }
 
+static int	is_dir(char *path)
+{
+	struct stat	st;
+
+	return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
+}
+
 static int	execute_command(t_node *node, t_shell *shell)
 {
 	char	*path;
@@ -168,7 +176,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!path)
 	{
 		if (ft_strchr(node->data.cmd.argv[0], '/'))
-			fprintf(stderr, "%s: %s\n", node->data.cmd.argv[0], strerror(ENOENT));
+			fprintf(stderr, "minishell: %s: %s\n", node->data.cmd.argv[0], strerror(ENOENT));
 		else
 			fprintf(stderr, "minishell: %s: command not found\n", node->data.cmd.argv[0]);
 		restore_fds(backup);
@@ -199,7 +207,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 			exit(1);
 		}
 		execve(path, node->data.cmd.argv, env_array);
-		perror("minishell");
+		fprintf(stderr, "minishell: %s: %s\n", node->data.cmd.argv[0], errno == EACCES && is_dir(path) ? "Is a directory" : strerror(errno));
 		free(path);
 		free_str_array(env_array);
 		exit(126);
