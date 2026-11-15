@@ -88,6 +88,12 @@ static int	handle_operator(char *line, int i,
 			token_add_back(head, current, TOKEN_RPAREN, NULL);
 		return (1);
 	}
+	else if (line[i] == ';')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_SEMI, NULL);
+		return (1);
+	}
 	return (0);
 }
 

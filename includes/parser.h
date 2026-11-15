@@ -33,6 +33,7 @@ typedef enum e_toktype
 	TOKEN_OR, // ||
 	TOKEN_LPAREN, // (
 	TOKEN_RPAREN, // )
+	TOKEN_SEMI, // ;
 } t_toktype;
 
 /**
@@ -72,6 +73,7 @@ typedef enum e_nodetype
 	NODE_AND, // &&
 	NODE_OR, // ||
 	NODE_PAREN, // ( ... )
+	NODE_SEQ, // ;
 } t_nodetype;
 
 typedef struct s_node
