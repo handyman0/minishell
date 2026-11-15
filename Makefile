@@ -5,7 +5,7 @@
 NAME        = minishell
 
 CC          = cc
-CFLAGS      = -Wall -Wextra -Werror -g3 -fsanitize=address
+CFLAGS      = -Wall -Wextra -Werror -O2
 RM          = rm -rf
 
 SRC_DIR     = src
@@ -63,7 +63,7 @@ fclean: clean
 re: fclean all
 	@echo "$(BLUE)🔁 Recompilação completa$(RESET)"
 
-debug: CFLAGS += -DDEBUG -g3 -fsanitize=address
+debug: CFLAGS += -DDEBUG -g3 -fsanitize=address -O0
 debug: re
 	@echo "$(YELLOW)🐛 Compilado em modo debug$(RESET)"
 
