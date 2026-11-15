@@ -130,9 +130,22 @@ static char	*extract_word(char *line, int *i, int len)
 	word = malloc(len + 1);
 	if (!word)
 		return (NULL);
-	ft_strlcpy(word, &line[*i], len + 1);
+	ft_memcpy(word, &line[*i], len);
+	word[len] = '\0';
 	*i += len;
 	return (word);
+}
+
+static char	*copy_range(const char *src, size_t n)
+{
+	char	*out;
+
+	out = malloc(n + 1);
+	if (!out)
+		return (NULL);
+	ft_memcpy(out, src, n);
+	out[n] = '\0';
+	return (out);
 }
 
 static int	fd_redirection(char *line, int *i, t_token **head, t_token **cur)
@@ -147,7 +160,7 @@ static int	fd_redirection(char *line, int *i, t_token **head, t_token **cur)
 		return (0);
 	op_len = handle_operator(line, *i + digits, head, cur);
 	if (op_len > 0 && *cur)
-		(*cur)->value = ft_substr(line, *i, digits);
+		(*cur)->value = copy_range(line + *i, digits);
 	*i += digits + op_len;
 	return (op_len);
 }
