@@ -31,6 +31,7 @@ typedef struct s_shell t_shell;
 # include "executor.h"
 # include "signals.h"
 # include "utils.h"
+# include "completion.h"
 
 /**
  * @struct s_shell
