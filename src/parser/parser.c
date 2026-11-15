@@ -275,30 +275,42 @@ t_node	*parse_pipeline(t_token **tokens)
 	return (left);
 }
 
+static t_node	*make_node(t_nodetype type, t_node *left, t_node *right)
+{
+	t_node	*node;
+
+	node = malloc(sizeof(t_node));
+	if (!node)
+		return (NULL);
+	node->type = type;
+	node->data.op.left = left;
+	node->data.op.right = right;
+	return (node);
+}
+
 t_node	*parse_tokens(t_token **tokens)
 {
 	t_node	*left;
-	t_node	*node;
+	t_node	*right;
 
 	if (!tokens || !*tokens)
 		return (NULL);
 	left = parse_expression(tokens);
-	while (left && *tokens && (*tokens)->type == TOKEN_SEMI)
+	while (left && *tokens && ((*tokens)->type == TOKEN_SEMI
+			|| (*tokens)->type == TOKEN_BG))
 	{
+		if ((*tokens)->type == TOKEN_BG)
+			left = make_node(NODE_BG, left, NULL);
 		*tokens = (*tokens)->next;
-		if (!*tokens)
+		if (!left || !*tokens || (*tokens)->type == TOKEN_RPAREN)
 			break ;
-		node = malloc(sizeof(t_node));
-		if (!node)
+		right = parse_expression(tokens);
+		if (!right)
 			return (free_ast(left), NULL);
-		node->type = NODE_SEQ;
-		node->data.op.left = left;
-		node->data.op.right = parse_expression(tokens);
-		if (!node->data.op.right)
-			return (free(node), free_ast(left), NULL);
-		left = node;
+		left = make_node(NODE_SEQ, left, right);
 	}
 	return (left);
+}
 }
 
 void	free_ast(t_node *node)
