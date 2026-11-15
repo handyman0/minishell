@@ -20,6 +20,24 @@ static int	match_pattern(const char *pattern, const char *filename)
 	return (fnmatch(pattern, filename, 0) == 0);
 }
 
+static int	has_unquoted_star(const char *str)
+{
+	char	quote;
+
+	quote = 0;
+	while (*str)
+	{
+		if (!quote && (*str == '\'' || *str == '"'))
+			quote = *str;
+		else if (quote && *str == quote)
+			quote = 0;
+		else if (!quote && *str == '*')
+			return (1);
+		str++;
+	}
+	return (0);
+}
+
 static void	expand_token(t_token **tokens, t_token **current, char *pattern)
 {
 	DIR				*dir;
@@ -66,7 +84,7 @@ void	expand_wildcards(t_token **tokens)
 	while (current)
 	{
 		next = current->next;
-		if (current->type == TOKEN_WORD && ft_strchr(current->value, '*'))
+		if (current->type == TOKEN_WORD && has_unquoted_star(current->value))
 			expand_token(&new_list, &new_current, current->value);
 		else
 		{
