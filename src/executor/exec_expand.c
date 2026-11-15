@@ -52,7 +52,9 @@ static void	expand_redirs(t_redir *redir, t_shell *shell)
 
 	while (redir)
 	{
-		expanded = expand_variables(redir->file, shell);
+		expanded = NULL;
+		if (redir->type != REDIR_HEREDOC)
+			expanded = expand_variables(redir->file, shell);
 		if (expanded)
 		{
 			free(redir->file);
