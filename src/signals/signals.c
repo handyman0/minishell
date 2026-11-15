@@ -29,6 +29,9 @@ static void	sigint_handler(int sig)
 void	setup_signals(void)
 {
 	signal(SIGINT, sigint_handler);
+	signal(SIGTSTP, SIG_IGN);
+	signal(SIGTTIN, SIG_IGN);
+	signal(SIGTTOU, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
 }
 
@@ -42,4 +45,13 @@ void	signals_ignore(void)
 {
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
+}
+
+void	signals_child(void)
+{
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
+	signal(SIGTSTP, SIG_DFL);
+	signal(SIGTTIN, SIG_DFL);
+	signal(SIGTTOU, SIG_DFL);
 }

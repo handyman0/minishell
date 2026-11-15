@@ -20,5 +20,6 @@ extern volatile sig_atomic_t	g_signal;
 void	setup_signals(void);
 void	setup_signals_noninteractive(void);
 void	signals_ignore(void);
+void	signals_child(void);
 
 #endif
