@@ -175,7 +175,7 @@ char	*expand_heredoc_line(char *line, t_shell *shell);
 void	expand_tokens(t_token **tokens, t_shell *shell);
 
 // expand_wildcards.c
-void	expand_wildcards(t_token **tokens);
+int		expand_glob(char *pattern, t_token **head, t_token **cur);
 
 // syntax_check.c
 /**

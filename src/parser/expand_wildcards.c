@@ -15,27 +15,27 @@
 #include <dirent.h>
 #include <fnmatch.h>
 
-static int	match_pattern(const char *pattern, const char *filename)
-{
-	return (fnmatch(pattern, filename, 0) == 0);
-}
+#define MAX_MATCHES 4096
 
-static int	has_unquoted_star(const char *str)
+static char	*unescape(const char *str, size_t len)
 {
-	char	quote;
+	char	*out;
+	size_t	i;
+	size_t	j;
 
-	quote = 0;
-	while (*str)
+	out = malloc(len + 1);
+	if (!out)
+		return (NULL);
+	i = 0;
+	j = 0;
+	while (i < len)
 	{
-		if (!quote && (*str == '\'' || *str == '"'))
-			quote = *str;
-		else if (quote && *str == quote)
-			quote = 0;
-		else if (!quote && *str == '*')
-			return (1);
-		str++;
+		if (str[i] == '\\' && i + 1 < len)
+			i++;
+		out[j++] = str[i++];
 	}
-	return (0);
+	out[j] = '\0';
+	return (out);
 }
 
 static void	sort_names(char **names, int count)
@@ -59,21 +59,30 @@ static void	sort_names(char **names, int count)
 	}
 }
 
-static int	collect_matches(char *pattern, char **names, int max)
+static int	is_match(const char *base, struct dirent *entry)
+{
+	if (ft_strcmp(entry->d_name, ".") == 0
+		|| ft_strcmp(entry->d_name, "..") == 0)
+		return (0);
+	if (entry->d_name[0] == '.' && base[0] != '.')
+		return (0);
+	return (fnmatch(base, entry->d_name, 0) == 0);
+}
+
+static int	collect(const char *dirpath, const char *base, char **names)
 {
 	DIR				*dir;
 	struct dirent	*entry;
 	int				count;
 
-	dir = opendir(".");
+	dir = opendir(dirpath);
 	if (!dir)
 		return (0);
 	count = 0;
 	entry = readdir(dir);
-	while (entry && count < max)
+	while (entry && count < MAX_MATCHES)
 	{
-		if ((entry->d_name[0] != '.' || pattern[0] == '.')
-			&& match_pattern(pattern, entry->d_name))
+		if (is_match(base, entry))
 			names[count++] = ft_strdup(entry->d_name);
 		entry = readdir(dir);
 	}
@@ -81,53 +90,32 @@ static int	collect_matches(char *pattern, char **names, int max)
 	return (count);
 }
 
-static void	expand_token(t_token **tokens, t_token **current, char *pattern)
+int	expand_glob(char *pattern, t_token **head, t_token **cur)
 {
-	char	*names[4096];
+	char	*names[MAX_MATCHES];
+	char	*slash;
+	char	*prefix;
 	int		count;
 	int		i;
 
-	count = collect_matches(pattern, names, 4096);
-	if (count == 0)
+	slash = ft_strrchr(pattern, '/');
+	prefix = ft_strdup("");
+	if (slash)
 	{
-		token_add_back(tokens, current, TOKEN_WORD, ft_strdup(pattern));
-		return ;
+		free(prefix);
+		prefix = unescape(pattern, slash - pattern + 1);
 	}
+	count = 0;
+	if (prefix && (!slash || slash[1]))
+		count = collect(slash ? prefix : ".", slash ? slash + 1 : pattern,
+				names);
 	sort_names(names, count);
 	i = 0;
 	while (i < count)
 	{
-		token_add_back(tokens, current, TOKEN_WORD, names[i]);
-		i++;
+		token_add_back(head, cur, TOKEN_WORD, ft_strjoin(prefix, names[i]));
+		free(names[i++]);
 	}
-}
-
-void	expand_wildcards(t_token **tokens)
-{
-	t_token	*new_list;
-	t_token	*new_current;
-	t_token	*current;
-	t_token	*next;
-
-	if(!tokens || !*tokens)
-		return ;
-	new_list = NULL;
-	new_current = NULL;
-	current = *tokens;
-	while (current)
-	{
-		next = current->next;
-		if (current->type == TOKEN_WORD && has_unquoted_star(current->value))
-			expand_token(&new_list, &new_current, current->value);
-		else
-		{
-			char	*dup_value = current->value ? ft_strdup(current->value) : NULL;
-			token_add_back(&new_list, &new_current, current->type, dup_value);
-		}
-		if (current->value)
-			free(current->value);
-		free(current);
-		current = next;
-	}
-	*tokens = new_list;
+	free(prefix);
+	return (count);
 }

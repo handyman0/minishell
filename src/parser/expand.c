@@ -186,6 +186,9 @@ char	*expand_heredoc_line(char *line, t_shell *shell)
 	return (result);
 }
 
+# define SPLIT 1
+# define QUOTED 2
+
 typedef struct s_word
 {
 	char	*str;
@@ -193,7 +196,7 @@ typedef struct s_word
 	int		len;
 }	t_word;
 
-static void	put_value(t_word *w, char *val, int splittable)
+static void	put_value(t_word *w, char *val, int flags)
 {
 	int	k;
 
@@ -201,14 +204,14 @@ static void	put_value(t_word *w, char *val, int splittable)
 	while (val && val[k])
 	{
 		w->str[w->len] = val[k++];
-		w->mask[w->len++] = splittable;
+		w->mask[w->len++] = flags;
 	}
 	free(val);
 }
 
 static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 {
-	put_value(w, get_var_value(raw + 1, shell), quote == 0);
+	put_value(w, get_var_value(raw + 1, shell), quote == 0 ? SPLIT : QUOTED);
 	return (var_name_length(raw + 1) + 1);
 }
 
@@ -223,7 +226,7 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 	home = env_get(shell->env, "HOME");
 	if (raw[0] == '~' && (!raw[1] || raw[1] == '/') && home)
 	{
-		put_value(w, ft_strdup(home), 0);
+		put_value(w, ft_strdup(home), QUOTED);
 		i = 1;
 	}
 	while (raw[i])
@@ -237,12 +240,39 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 			continue ;
 		}
 		else
-			put_value(w, ft_substr(raw, i, 1), 0);
+			put_value(w, ft_substr(raw, i, 1), quote ? QUOTED : 0);
 		i++;
 	}
 }
 
-static int	emit_fields(t_word *w, t_token **head, t_token **cur)
+static void	emit_one(t_word *w, int start, int end, t_token **tok[2])
+{
+	char	*pattern;
+	int		k;
+	int		j;
+	int		has_glob;
+
+	pattern = malloc((end - start) * 2 + 1);
+	j = 0;
+	has_glob = 0;
+	k = start;
+	while (pattern && k < end)
+	{
+		if (w->mask[k] & QUOTED && ft_strchr("*?[\\", w->str[k]))
+			pattern[j++] = '\\';
+		else if (ft_strchr("*?[", w->str[k]))
+			has_glob = 1;
+		pattern[j++] = w->str[k++];
+	}
+	if (pattern)
+		pattern[j] = '\0';
+	if (!has_glob || !pattern || !expand_glob(pattern, tok[0], tok[1]))
+		token_add_back(tok[0], tok[1], TOKEN_WORD,
+			ft_substr(w->str, start, end - start));
+	free(pattern);
+}
+
+static int	emit_fields(t_word *w, t_token **tok[2])
 {
 	int	start;
 	int	k;
@@ -253,14 +283,10 @@ static int	emit_fields(t_word *w, t_token **head, t_token **cur)
 	k = 0;
 	while (k <= w->len)
 	{
-		if (k == w->len || (w->mask[k] && ft_isspace(w->str[k])))
+		if (k == w->len || ((w->mask[k] & SPLIT) && ft_isspace(w->str[k])))
 		{
-			if (start >= 0)
-			{
-				token_add_back(head, cur, TOKEN_WORD,
-					ft_substr(w->str, start, k - start));
-				count++;
-			}
+			if (start >= 0 && ++count)
+				emit_one(w, start, k, tok);
 			start = -1;
 		}
 		else if (start < 0)
@@ -274,6 +300,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 				t_token **cur)
 {
 	t_word	w;
+	t_token	**tok[2];
 	char	*home;
 	size_t	cap;
 
@@ -282,10 +309,12 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	w.len = 0;
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
+	tok[0] = head;
+	tok[1] = cur;
 	if (w.str && w.mask)
 	{
 		fill_word(&w, raw, shell);
-		if (!emit_fields(&w, head, cur)
+		if (!emit_fields(&w, tok)
 			&& (ft_strchr(raw, '\'') || ft_strchr(raw, '"')))
 			token_add_back(head, cur, TOKEN_WORD, ft_strdup(""));
 	}
