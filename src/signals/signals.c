@@ -20,7 +20,7 @@ volatile sig_atomic_t	g_signal = 0;
 static void	sigint_handler(int sig)
 {
 	g_signal = sig;
-	write(STDOUT_FILENO, "\n", 1);
+	write(STDOUT_FILENO, "\033[K\n", 4);
 	rl_on_new_line();
 	rl_replace_line("", 0);
 	rl_redisplay();
