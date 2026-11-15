@@ -1,7 +1,7 @@
 #include "../includes/builtins.h"
 
 static const char	*g_builtin_names[] = {"echo", "cd", "pwd", "export",
-	"unset", "env", "exit", "jobs", "fg", "bg", "alias", "unalias", "source", NULL};
+	"unset", "env", "exit", "jobs", "fg", "bg", "alias", "unalias", "source", "type", "which", NULL};
 
 const char	**builtin_names(void)
 {

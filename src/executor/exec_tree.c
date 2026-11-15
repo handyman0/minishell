@@ -82,6 +82,10 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 		return (builtin_unalias(node->data.cmd.argv, shell));
 	else if (ft_strcmp(node->data.cmd.argv[0], "source") == 0)
 		return (builtin_source(node->data.cmd.argv, shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "type") == 0)
+		return (builtin_type(node->data.cmd.argv, shell));
+	else if (ft_strcmp(node->data.cmd.argv[0], "which") == 0)
+		return (builtin_which(node->data.cmd.argv, shell));
 	return (-1);
 }
 
