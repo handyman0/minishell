@@ -85,4 +85,6 @@ char	**env_to_array(t_env *env);
  */
 int		execute_tree(t_node *node, t_shell *shell);
 
+void	expand_command(t_node *node, t_shell *shell);
+
 #endif

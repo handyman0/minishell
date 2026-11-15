@@ -36,8 +36,6 @@ static void	run_line(char *line, t_shell *shell)
 	tokens = tokenize_line(line);
 	if (!tokens)
 		return ;
-	expand_wildcards(&tokens);
-	process_tokens_before_parsing(&tokens, shell);
 	tokens_start = tokens;
 	ast = parse_tokens(&tokens);
 	if (ast)
