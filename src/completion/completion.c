@@ -79,15 +79,10 @@ static void	build_matches(const char *text)
 	g_cursor = g_matches;
 }
 
-static char	*command_generator(const char *text, int state)
+static char	*next_match(void)
 {
 	char	*result;
 
-	if (state == 0)
-	{
-		ft_lstclear(&g_matches, free);
-		build_matches(text);
-	}
 	if (!g_cursor)
 	{
 		ft_lstclear(&g_matches, free);
@@ -96,6 +91,40 @@ static char	*command_generator(const char *text, int state)
 	result = ft_strdup(g_cursor->content);
 	g_cursor = g_cursor->next;
 	return (result);
+}
+
+static char	*command_generator(const char *text, int state)
+{
+	if (state == 0)
+	{
+		ft_lstclear(&g_matches, free);
+		build_matches(text);
+	}
+	return (next_match());
+}
+
+static void	build_var_matches(const char *text)
+{
+	t_env	*env;
+
+	env = g_completion_shell->env;
+	while (env)
+	{
+		if (ft_strncmp(env->key, text, ft_strlen(text)) == 0)
+			add_match(env->key);
+		env = env->next;
+	}
+	g_cursor = g_matches;
+}
+
+static char	*variable_generator(const char *text, int state)
+{
+	if (state == 0)
+	{
+		ft_lstclear(&g_matches, free);
+		build_var_matches(text);
+	}
+	return (next_match());
 }
 
 static int	is_command_position(int start)
@@ -111,6 +140,11 @@ static int	is_command_position(int start)
 static char	**complete_hook(const char *text, int start, int end)
 {
 	(void)end;
+	if (start > 0 && rl_line_buffer[start - 1] == '$')
+	{
+		rl_attempted_completion_over = 1;
+		return (rl_completion_matches(text, variable_generator));
+	}
 	if (!is_command_position(start) || ft_strchr(text, '/'))
 		return (NULL);
 	rl_attempted_completion_over = 1;
