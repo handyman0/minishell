@@ -13,6 +13,7 @@
 #include "../../includes/executor.h"
 #include "../../includes/minishell.h"
 #include "../../includes/env.h"
+#include <sys/stat.h>
 
 static char	*search_in_path(char *cmd, char **paths)
 {
@@ -64,4 +65,39 @@ char	*find_path(char *cmd, t_shell *shell)
 			full_path = ft_strdup(cmd);
 	}
 	return (full_path);
+}
+
+static int	is_exec_file(const char *path)
+{
+	struct stat	st;
+
+	return (stat(path, &st) == 0 && S_ISREG(st.st_mode)
+		&& access(path, X_OK) == 0);
+}
+
+char	*find_executable(const char *name, t_shell *shell)
+{
+	char	**dirs;
+	char	*dir;
+	char	*full;
+	int		i;
+
+	if (!name || !*name)
+		return (NULL);
+	if (ft_strchr(name, '/'))
+		return (is_exec_file(name) ? ft_strdup(name) : NULL);
+	dir = env_get(shell->env, "PATH");
+	dirs = ft_split(dir ? dir : "", ':');
+	i = 0;
+	while (dirs && dirs[i])
+	{
+		dir = ft_strjoin(dirs[i++], "/");
+		full = ft_strjoin(dir, name);
+		free(dir);
+		if (full && is_exec_file(full))
+			return (free_str_array(dirs), full);
+		free(full);
+	}
+	free_str_array(dirs);
+	return (NULL);
 }

@@ -71,6 +71,12 @@ int	handle_redirection_out(const char *file, int append);
 char	*find_path(char *cmd, t_shell *shell);
 
 /**
+ * @brief Procura um executavel valido, no PATH ou por caminho direto.
+ * @return Caminho alocado ou NULL se nao houver executavel.
+ */
+char	*find_executable(const char *name, t_shell *shell);
+
+/**
  * @brief Converte a lista de ambiente em array de strings para execve.
  * @param env Lista encadeada de variáveis de ambiente.
  * @return Array terminado em NULL ou NULL em erro.
