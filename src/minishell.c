@@ -35,9 +35,20 @@ static void	run_line(char *line, t_shell *shell)
 	t_token	*tokens_start;
 	t_node	*ast;
 
+	if (check_quotes(line))
+	{
+		shell->exit_status = 2;
+		return ;
+	}
 	tokens = tokenize_line(line);
 	if (!tokens)
 		return ;
+	if (check_syntax(tokens))
+	{
+		shell->exit_status = 2;
+		free_tokens(tokens);
+		return ;
+	}
 	tokens_start = tokens;
 	shell->tokens = tokens_start;
 	ast = parse_tokens(&tokens);
