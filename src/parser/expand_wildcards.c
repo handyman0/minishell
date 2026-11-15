@@ -38,34 +38,67 @@ static int	has_unquoted_star(const char *str)
 	return (0);
 }
 
-static void	expand_token(t_token **tokens, t_token **current, char *pattern)
+static void	sort_names(char **names, int count)
+{
+	char	*tmp;
+	int		i;
+	int		j;
+
+	i = 1;
+	while (i < count)
+	{
+		tmp = names[i];
+		j = i - 1;
+		while (j >= 0 && ft_strcmp(names[j], tmp) > 0)
+		{
+			names[j + 1] = names[j];
+			j--;
+		}
+		names[j + 1] = tmp;
+		i++;
+	}
+}
+
+static int	collect_matches(char *pattern, char **names, int max)
 {
 	DIR				*dir;
 	struct dirent	*entry;
 	int				count;
-	char			*dup_str;
 
 	dir = opendir(".");
 	if (!dir)
-		return ;
+		return (0);
 	count = 0;
-	while ((entry = readdir(dir)) != NULL)
+	entry = readdir(dir);
+	while (entry && count < max)
 	{
-		if (entry->d_name[0] != '.' || pattern[0] == '.')
-		{
-			if (match_pattern(pattern, entry->d_name))
-			{
-				dup_str = ft_strdup(entry->d_name);
-				token_add_back(tokens, current, TOKEN_WORD, dup_str);
-				count++;
-			}
-		}
+		if ((entry->d_name[0] != '.' || pattern[0] == '.')
+			&& match_pattern(pattern, entry->d_name))
+			names[count++] = ft_strdup(entry->d_name);
+		entry = readdir(dir);
 	}
 	closedir(dir);
+	return (count);
+}
+
+static void	expand_token(t_token **tokens, t_token **current, char *pattern)
+{
+	char	*names[4096];
+	int		count;
+	int		i;
+
+	count = collect_matches(pattern, names, 4096);
 	if (count == 0)
 	{
-		dup_str = ft_strdup(pattern);
-		token_add_back(tokens, current, TOKEN_WORD, dup_str);
+		token_add_back(tokens, current, TOKEN_WORD, ft_strdup(pattern));
+		return ;
+	}
+	sort_names(names, count);
+	i = 0;
+	while (i < count)
+	{
+		token_add_back(tokens, current, TOKEN_WORD, names[i]);
+		i++;
 	}
 }
 
