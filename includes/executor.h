@@ -17,7 +17,6 @@
 # include <stdlib.h>
 # include <fcntl.h>
 # include <sys/wait.h>
-# include <stdio.h>
 # include "../libft/include/libft.h"
 # include "minishell.h"
 

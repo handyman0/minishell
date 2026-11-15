@@ -12,6 +12,7 @@
 
 #include "../includes/minishell.h"
 #include "../includes/builtins.h"
+#include "../includes/output.h"
 #include "../../includes/reader.h"
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -45,7 +46,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else
-		perror("minishell: getcwd");
+		put_errno("getcwd", NULL);
 }
 
 static void	run_tokens(t_token *tokens, t_shell *shell)
@@ -249,6 +250,6 @@ int	main(int argc, char **argv, char **envp)
 	env_free(shell.aliases);
 	env_free(shell.env);
 	if (interactive)
-		printf("exit\n");
+		put_all(STDOUT_FILENO, "exit\n", NULL);
 	return (shell.exit_status);
 }

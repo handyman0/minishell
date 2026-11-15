@@ -14,7 +14,6 @@
 # define PARSER_H
 
 # include <stdlib.h>
-# include <stdio.h>
 # include "minishell.h"
 
 /* ==================================== */
@@ -191,12 +190,6 @@ void	expand_aliases(t_token **tokens, t_shell *shell);
 int		check_syntax(t_token *tokens);
 int		check_quotes(char *line);
 
-// debug_print.c (sera movido para utils depois)
-/**
- * @brief Imprime tokens para depuração.
- * @param tokens Lista de tokens.
- */
-void	print_tokens(t_token *tokens);
 
 // prototipos temporarios
 /**
