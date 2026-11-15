@@ -1,6 +1,6 @@
 #include "../../includes/completion.h"
 #include "../../includes/builtins.h"
-#include <sys/stat.h>
+#include "../../includes/executor.h"
 
 #define C_GREEN "\033[32m"
 #define C_RED "\033[31m"
@@ -26,49 +26,20 @@ static void	put_color(t_out *out, const char *color)
 	put(out, color, ft_strlen(color));
 }
 
-static int	is_exec_file(const char *path)
-{
-	struct stat	st;
-
-	return (stat(path, &st) == 0 && S_ISREG(st.st_mode)
-		&& access(path, X_OK) == 0);
-}
-
-static int	in_path(const char *name, t_shell *shell)
-{
-	char	**dirs;
-	char	*full;
-	char	*dir;
-	int		i;
-	int		found;
-
-	dir = env_get(shell->env, "PATH");
-	dirs = ft_split(dir ? dir : "", ':');
-	found = 0;
-	i = 0;
-	while (dirs && dirs[i] && !found)
-	{
-		dir = ft_strjoin(dirs[i++], "/");
-		full = ft_strjoin(dir, name);
-		found = full && is_exec_file(full);
-		free(dir);
-		free(full);
-	}
-	free_str_array(dirs);
-	return (found);
-}
-
 static int	command_exists(const char *word, size_t len, t_shell *shell)
 {
 	char	*name;
+	char	*path;
 	int		ok;
 
 	name = ft_substr(word, 0, len);
 	ok = is_builtin(name);
-	if (name && !ok && ft_strchr(name, '/'))
-		ok = is_exec_file(name);
-	else if (name && !ok && *name)
-		ok = in_path(name, shell);
+	if (name && !ok)
+	{
+		path = find_executable(name, shell);
+		ok = path != NULL;
+		free(path);
+	}
 	free(name);
 	return (ok);
 }
