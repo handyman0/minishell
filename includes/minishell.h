@@ -50,6 +50,7 @@ struct s_shell
 	int			running;
 	t_node		*ast;
 	t_token		*tokens;
+	t_env		*aliases;
 	t_job		*jobs;
 	int			next_job_id;
 	int			interactive;
@@ -57,5 +58,7 @@ struct s_shell
 	pid_t		pgid;
 	struct termios	tmodes;
 };
+
+void	run_line(char *line, t_shell *shell);
 
 #endif

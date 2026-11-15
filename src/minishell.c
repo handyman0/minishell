@@ -39,17 +39,40 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->running = 1;
 	shell->ast = NULL;
 	shell->tokens = NULL;
+	shell->aliases = NULL;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else
 		perror("minishell: getcwd");
 }
 
-static void	run_line(char *line, t_shell *shell)
+static void	run_tokens(t_token *tokens, t_shell *shell)
+{
+	t_token	*start;
+	t_node	*ast;
+	t_node	*saved_ast;
+	t_token	*saved_tokens;
+
+	saved_ast = shell->ast;
+	saved_tokens = shell->tokens;
+	start = tokens;
+	shell->tokens = start;
+	ast = parse_tokens(&tokens);
+	if (ast)
+	{
+		shell->ast = ast;
+		shell->exit_status = execute_tree(ast, shell);
+		shell->ast = NULL;
+		free_ast(ast);
+	}
+	free_tokens(start);
+	shell->ast = saved_ast;
+	shell->tokens = saved_tokens;
+}
+
+void	run_line(char *line, t_shell *shell)
 {
 	t_token	*tokens;
-	t_token	*tokens_start;
-	t_node	*ast;
 
 	if (check_quotes(line))
 	{
@@ -65,18 +88,7 @@ static void	run_line(char *line, t_shell *shell)
 		free_tokens(tokens);
 		return ;
 	}
-	tokens_start = tokens;
-	shell->tokens = tokens_start;
-	ast = parse_tokens(&tokens);
-	if (ast)
-	{
-		shell->ast = ast;
-		shell->exit_status = execute_tree(ast, shell);
-		shell->ast = NULL;
-		free_ast(ast);
-	}
-	free_tokens(tokens_start);
-	shell->tokens = NULL;
+	run_tokens(tokens, shell);
 }
 
 static char	*build_prompt(t_shell *shell)
@@ -196,6 +208,7 @@ int	main(int argc, char **argv, char **envp)
 		setup_signals_noninteractive();
 		run_line(argv[2], &shell);
 		jobs_free(&shell, 0);
+		env_free(shell.aliases);
 		env_free(shell.env);
 		return (shell.exit_status);
 	}
@@ -215,6 +228,7 @@ int	main(int argc, char **argv, char **envp)
 	if (interactive)
 		history_save(&shell);
 	jobs_free(&shell, 1);
+	env_free(shell.aliases);
 	env_free(shell.env);
 	if (interactive)
 		printf("exit\n");
