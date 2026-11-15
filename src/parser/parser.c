@@ -296,7 +296,8 @@ void	process_tokens_before_parsing(t_token **tokens, t_shell *shell)
 			{
 				clean = remove_quotes(expanded);
 				free(expanded);
-				if (clean[0] == '\0')
+				if (clean[0] == '\0' && !ft_strchr(current->value, '\'')
+					&& !ft_strchr(current->value, '"'))
 				{
 					free(current->value);
 					free(clean);
