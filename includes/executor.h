@@ -22,12 +22,6 @@
 # include "minishell.h"
 
 /**
- * @brief Exibe uma mensagem de erro e encerra o programa.
- * @param msg Mensagem a ser exibida.
- */
-void	error_exit(const char *msg);
-
-/**
  * @brief Libera um array de strings terminado em NULL.
  * @param arr Array alocado.
  */
@@ -39,29 +33,6 @@ void	free_str_array(char **arr);
  */
 int	heredoc_read(const char *raw, t_shell *shell);
 int	prepare_heredocs(t_node *node, t_shell *shell);
-
-/**
- * @brief Abre um arquivo com modo de leitura ou escrita.
- * @param path Caminho do arquivo.
- * @param mode 0 = append, 1 = truncate, outro = read.
- * @return File descriptor ou -1 em erro.
- */
-int	open_file(char *path, int mode);
-
-/**
- * @brief Redireciona stdin para um arquivo de entrada.
- * @param file Caminho do arquivo.
- * @return 1 em sucesso, 0 em erro.
- */
-int	handle_redirection_in(const char *file);
-
-/**
- * @brief Redireciona stdout para um arquivo de saída.
- * @param file Caminho do arquivo.
- * @param append Se 1, faz append; caso contrário, trunca o arquivo.
- * @return 1 em sucesso, 0 em erro.
- */
-int	handle_redirection_out(const char *file, int append);
 
 /**
  * @brief Procura o caminho executável para um comando interno.
