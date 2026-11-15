@@ -71,63 +71,36 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 	return (-1);
 }
 
+static int	open_redir(t_redir *redir)
+{
+	if (redir->type == REDIR_IN)
+		return (open(redir->file, O_RDONLY));
+	if (redir->type == REDIR_OUT)
+		return (open(redir->file, O_WRONLY | O_CREAT | O_TRUNC, 0644));
+	return (open(redir->file, O_WRONLY | O_CREAT | O_APPEND, 0644));
+}
+
 static int	apply_redirections(t_redir *redirs, char *cmd_name)
 {
-	t_redir	*current;
-	int		fd;
+	int	fd;
 
-	current = redirs;
-	while (current)
+	while (redirs)
 	{
-		if (current->type == REDIR_HEREDOC)
+		if (redirs->type == REDIR_HEREDOC)
+			exec_heredoc(redirs->file);
+		else
 		{
-			exec_heredoc(current->file);
-			current = current->next;
-			continue ;
-		}
-		if (current->type == REDIR_IN)
-		{
-			fd = open(current->file, O_RDONLY);
+			fd = open_redir(redirs);
 			if (fd == -1)
 			{
-				if (cmd_name)
-					fprintf(stderr, "%s: %s: %s\n", cmd_name, current->file, strerror(errno));
-				else
-					perror(current->file);
+				fprintf(stderr, "%s: %s: %s\n", cmd_name ? cmd_name
+					: "minishell", redirs->file, strerror(errno));
 				return (0);
 			}
-			dup2(fd, STDIN_FILENO);
+			dup2(fd, redirs->fd);
 			close(fd);
 		}
-		else if (current->type == REDIR_OUT)
-		{
-			fd = open(current->file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-			if (fd == -1)
-			{
-				if (cmd_name)
-					fprintf(stderr, "%s: %s: %s\n", cmd_name, current->file, strerror(errno));
-				else
-					perror(current->file);
-				return (0);
-			}
-			dup2(fd, STDOUT_FILENO);
-			close(fd);
-		}
-		else if (current->type == REDIR_APPEND)
-		{
-			fd = open(current->file, O_WRONLY | O_CREAT | O_APPEND, 0644);
-			if (fd == -1)
-			{
-				if (cmd_name)
-					fprintf(stderr, "%s: %s: %s\n", cmd_name, current->file, strerror(errno));
-				else
-					perror(current->file);
-				return (0);
-			}
-			dup2(fd, STDOUT_FILENO);
-			close(fd);
-		}
-		current = current->next;
+		redirs = redirs->next;
 	}
 	return (1);
 }
