@@ -38,7 +38,9 @@ static char	*strip_quotes(const char *raw)
 	j = 0;
 	while (raw[i])
 	{
-		if (!quote && (raw[i] == '\'' || raw[i] == '"'))
+		if (raw[i] == '\\' && raw[i + 1] && quote != '\'')
+			out[j++] = raw[++i];
+		else if (!quote && (raw[i] == '\'' || raw[i] == '"'))
 			quote = raw[i];
 		else if (quote && raw[i] == quote)
 			quote = 0;
@@ -110,7 +112,7 @@ int	heredoc_read(const char *raw, t_shell *shell)
 	if (fd == -1 || !limiter)
 		return (free(limiter), fd == -1 ? -1 : (close(fd), -1));
 	g_signal = 0;
-	done = heredoc_fill(fd, limiter, !ft_strchr(raw, '\'')
+	done = heredoc_fill(fd, limiter, !ft_strchr(raw, '\\') && !ft_strchr(raw, '\'')
 			&& !ft_strchr(raw, '"'), shell);
 	free(limiter);
 	if (!done)
