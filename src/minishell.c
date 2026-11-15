@@ -21,6 +21,8 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->env = env_init(envp);
 	shell->exit_status = 0;
 	shell->running = 1;
+	shell->ast = NULL;
+	shell->tokens = NULL;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else
@@ -37,13 +39,17 @@ static void	run_line(char *line, t_shell *shell)
 	if (!tokens)
 		return ;
 	tokens_start = tokens;
+	shell->tokens = tokens_start;
 	ast = parse_tokens(&tokens);
 	if (ast)
 	{
+		shell->ast = ast;
 		shell->exit_status = execute_tree(ast, shell);
+		shell->ast = NULL;
 		free_ast(ast);
 	}
 	free_tokens(tokens_start);
+	shell->tokens = NULL;
 }
 
 static char	*build_prompt(t_shell *shell)

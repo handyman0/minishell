@@ -44,6 +44,8 @@ struct s_shell
 	t_env		*env;
 	int			exit_status;
 	int			running;
+	t_node		*ast;
+	t_token		*tokens;
 };
 
 #endif

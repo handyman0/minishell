@@ -220,6 +220,17 @@ static int	execute_command(t_node *node, t_shell *shell)
 	return (WEXITSTATUS(status));
 }
 
+static int	pipe_child(t_node *node, t_shell *shell)
+{
+	int	status;
+
+	status = execute_tree(node, shell);
+	free_ast(shell->ast);
+	free_tokens(shell->tokens);
+	env_free(shell->env);
+	return (status);
+}
+
 static int	execute_pipe(t_node *node, t_shell *shell)
 {
 	int		pipefd[2];
@@ -238,7 +249,7 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 		close(pipefd[0]);
 		dup2(pipefd[1], STDOUT_FILENO);
 		close(pipefd[1]);
-		exit(execute_tree(node->data.op.left, shell));
+		exit(pipe_child(node->data.op.left, shell));
 	}
 
 	pid_right = fork();
@@ -249,7 +260,7 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 		close(pipefd[1]);
 		dup2(pipefd[0], STDIN_FILENO);
 		close(pipefd[0]);
-		exit(execute_tree(node->data.op.right, shell));
+		exit(pipe_child(node->data.op.right, shell));
 	}
 
 	close(pipefd[0]);
