@@ -37,7 +37,7 @@ void	free_str_array(char **arr);
  * @brief Executa um heredoc e redireciona stdin para o pipe interno.
  * @param limiter Texto que encerra o heredoc.
  */
-void	exec_heredoc(const char *limiter);
+void	exec_heredoc(const char *raw, t_shell *shell);
 
 /**
  * @brief Abre um arquivo com modo de leitura ou escrita.

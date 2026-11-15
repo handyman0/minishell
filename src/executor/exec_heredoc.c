@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 #include "../../includes/executor.h"
+#include "../../includes/parser.h"
 #include <readline/readline.h>
 
 static char	*read_heredoc_line(void)
@@ -28,27 +29,73 @@ static char	*read_heredoc_line(void)
 	return (line);
 }
 
-void	exec_heredoc(const char *limiter)
+static char	*strip_quotes(const char *raw)
+{
+	char	*out;
+	char	quote;
+	int		i;
+	int		j;
+
+	out = malloc(ft_strlen(raw) + 1);
+	if (!out)
+		return (NULL);
+	quote = 0;
+	i = 0;
+	j = 0;
+	while (raw[i])
+	{
+		if (!quote && (raw[i] == '\'' || raw[i] == '"'))
+			quote = raw[i];
+		else if (quote && raw[i] == quote)
+			quote = 0;
+		else
+			out[j++] = raw[i];
+		i++;
+	}
+	out[j] = '\0';
+	return (out);
+}
+
+static void	write_line(int fd, char *line, int expand, t_shell *shell)
+{
+	char	*expanded;
+
+	if (expand)
+	{
+		expanded = expand_heredoc_line(line, shell);
+		if (expanded)
+		{
+			ft_putendl_fd(expanded, fd);
+			free(expanded);
+			return ;
+		}
+	}
+	ft_putendl_fd(line, fd);
+}
+
+void	exec_heredoc(const char *raw, t_shell *shell)
 {
 	int		fd[2];
 	char	*line;
+	char	*limiter;
+	int		expand;
 
 	if (pipe(fd) == -1)
 		error_exit("pipe");
-	while (1)
+	expand = !ft_strchr(raw, '\'') && !ft_strchr(raw, '"');
+	limiter = strip_quotes(raw);
+	while (limiter)
 	{
 		line = read_heredoc_line();
-		if (!line)
-			break ;
-		if (ft_strncmp(line, limiter, ft_strlen(limiter)) == 0
-			&& line[ft_strlen(limiter)] == '\0')
+		if (!line || ft_strcmp(line, limiter) == 0)
 		{
 			free(line);
 			break ;
 		}
-		ft_putendl_fd(line, fd[1]);
+		write_line(fd[1], line, expand, shell);
 		free(line);
 	}
+	free(limiter);
 	close(fd[1]);
 	dup2(fd[0], STDIN_FILENO);
 	close(fd[0]);

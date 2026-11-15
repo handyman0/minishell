@@ -94,14 +94,14 @@ static int	open_redir(t_redir *redir)
 	return (open(redir->file, O_WRONLY | O_CREAT | O_APPEND, 0644));
 }
 
-static int	apply_redirections(t_redir *redirs, char *cmd_name)
+static int	apply_redirections(t_redir *redirs, char *cmd_name, t_shell *shell)
 {
 	int	fd;
 
 	while (redirs)
 	{
 		if (redirs->type == REDIR_HEREDOC)
-			exec_heredoc(redirs->file);
+			exec_heredoc(redirs->file, shell);
 		else if (redirs->type == REDIR_DUP)
 			dup2(ft_atoi(redirs->file + 1), redirs->fd);
 		else
@@ -161,7 +161,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (is_builtin)
 	{
 		if (!apply_redirections(node->data.cmd.redirs,
-				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
+				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL, shell))
 		{
 			restore_fds(backup);
 			return (1);
@@ -199,7 +199,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 		signal(SIGINT, SIG_DFL);
 		signal(SIGQUIT, SIG_DFL);
 		if (!apply_redirections(node->data.cmd.redirs,
-				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
+				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL, shell))
 		{
 			free(path);
 			free_str_array(env_array);
