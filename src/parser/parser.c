@@ -311,7 +311,6 @@ t_node	*parse_tokens(t_token **tokens)
 	}
 	return (left);
 }
-}
 
 void	free_ast(t_node *node)
 {
