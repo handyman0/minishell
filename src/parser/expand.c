@@ -175,3 +175,34 @@ void	process_tokens(t_token *tokens, t_shell *shell)
 		current = current->next;
 	}
 }
+
+static char	*append_str(char *dst, char *src)
+{
+	char	*joined;
+
+	joined = ft_strjoin(dst, src);
+	free(dst);
+	free(src);
+	return (joined);
+}
+
+char	*expand_heredoc_line(char *line, t_shell *shell)
+{
+	char	*result;
+	int		i;
+
+	result = ft_strdup("");
+	i = 0;
+	while (result && line[i])
+	{
+		if (line[i] == '$' && (ft_isalnum(line[i + 1]) || line[i + 1] == '?'
+				|| line[i + 1] == '_'))
+		{
+			result = append_str(result, get_var_value(&line[i + 1], shell));
+			i += var_name_length(&line[i + 1]) + 1;
+		}
+		else
+			result = append_str(result, ft_substr(line, i++, 1));
+	}
+	return (result);
+}

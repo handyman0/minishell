@@ -185,6 +185,8 @@ void	process_tokens(t_token *tokens, t_shell *shell);
  */
 void	process_tokens_before_parsing(t_token **tokens, t_shell *shell);
 
+char	*expand_heredoc_line(char *line, t_shell *shell);
+
 // expand_wildcards.c
 void	expand_wildcards(t_token **tokens);
 
