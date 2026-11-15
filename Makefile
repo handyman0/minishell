@@ -5,7 +5,7 @@
 NAME        = minishell
 
 CC          = cc
-CFLAGS      = -Wall -Wextra -Werror -O2
+CFLAGS      = -Wall -Wextra -Werror -O2 -MMD -MP
 RM          = rm -rf
 
 SRC_DIR     = src
@@ -71,6 +71,8 @@ valgrind: CFLAGS += -g3
 valgrind: re
 	@echo "$(BLUE)🧠 Build pronto para Valgrind$(RESET)"
 	@echo "    👉 valgrind --leak-check=full ./$(NAME)"
+
+-include $(OBJS:.o=.d)
 
 PREFIX      ?= $(HOME)/.local
 
