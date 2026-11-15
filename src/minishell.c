@@ -46,13 +46,48 @@ static void	run_line(char *line, t_shell *shell)
 	free_tokens(tokens_start);
 }
 
-static char	*read_input(int interactive)
+static char	*build_prompt(t_shell *shell)
+{
+	char	cwd[1024];
+	char	*home;
+	char	*path;
+	char	*tmp;
+	char	*prompt;
+
+	if (!getcwd(cwd, sizeof(cwd)))
+		return (ft_strdup("minishell> "));
+	home = env_get(shell->env, "HOME");
+	path = ft_strdup(cwd);
+	if (home && *home && path && ft_strncmp(cwd, home, ft_strlen(home)) == 0
+		&& (cwd[ft_strlen(home)] == '/' || !cwd[ft_strlen(home)]))
+	{
+		free(path);
+		path = ft_strjoin("~", cwd + ft_strlen(home));
+	}
+	if (!path)
+		return (ft_strdup("minishell> "));
+	tmp = ft_strjoin("minishell:", path);
+	free(path);
+	if (!tmp)
+		return (ft_strdup("minishell> "));
+	prompt = ft_strjoin(tmp, "> ");
+	free(tmp);
+	return (prompt);
+}
+
+static char	*read_input(t_shell *shell, int interactive)
 {
 	char	*line;
+	char	*prompt;
 	size_t	len;
 
 	if (interactive)
-		return (readline("minishell> "));
+	{
+		prompt = build_prompt(shell);
+		line = readline(prompt ? prompt : "minishell> ");
+		free(prompt);
+		return (line);
+	}
 	line = get_next_line(STDIN_FILENO);
 	if (!line)
 		return (NULL);
@@ -69,7 +104,7 @@ static void	shell_loop(t_shell *shell, int interactive)
 	while (shell->running)
 	{
 		g_signal = 0;
-		line = read_input(interactive);
+		line = read_input(shell, interactive);
 		if (g_signal == SIGINT)
 			shell->exit_status = 130;
 		if (!line)
