@@ -1,4 +1,5 @@
 #include "../../includes/completion.h"
+#include "../../includes/builtins.h"
 #include <sys/stat.h>
 
 #define C_GREEN "\033[32m"
@@ -13,9 +14,6 @@ typedef struct s_out
 	char	*buf;
 	size_t	len;
 }	t_out;
-
-static const char	*g_names[] = {"echo", "cd", "pwd", "export", "unset",
-	"env", "exit", NULL};
 
 static void	put(t_out *out, const char *str, size_t n)
 {
@@ -63,14 +61,10 @@ static int	in_path(const char *name, t_shell *shell)
 static int	command_exists(const char *word, size_t len, t_shell *shell)
 {
 	char	*name;
-	int		i;
 	int		ok;
 
 	name = ft_substr(word, 0, len);
-	ok = 0;
-	i = 0;
-	while (name && g_names[i] && !ok)
-		ok = ft_strcmp(name, g_names[i++]) == 0;
+	ok = is_builtin(name);
 	if (name && !ok && ft_strchr(name, '/'))
 		ok = is_exec_file(name);
 	else if (name && !ok && *name)

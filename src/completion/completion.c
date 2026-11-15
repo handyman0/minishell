@@ -1,13 +1,12 @@
 #include "../../includes/completion.h"
 #include <dirent.h>
+#include "../../includes/builtins.h"
 #include <readline/readline.h>
 
 static t_shell	*g_completion_shell = NULL;
 static t_list	*g_matches = NULL;
 static t_list	*g_cursor = NULL;
 
-static const char	*g_builtins[] = {"echo", "cd", "pwd", "export", "unset",
-	"env", "exit", NULL};
 
 static int	has_match(const char *name)
 {
@@ -61,13 +60,15 @@ static void	build_matches(const char *text)
 {
 	char	**dirs;
 	char	*path;
+	const char	**names;
 	int		i;
 
+	names = builtin_names();
 	i = 0;
-	while (g_builtins[i])
+	while (names[i])
 	{
-		if (ft_strncmp(g_builtins[i], text, ft_strlen(text)) == 0)
-			add_match(g_builtins[i]);
+		if (ft_strncmp(names[i], text, ft_strlen(text)) == 0)
+			add_match(names[i]);
 		i++;
 	}
 	path = env_get(g_completion_shell->env, "PATH");

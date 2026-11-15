@@ -146,19 +146,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	backup[0] = dup(STDIN_FILENO);
 	backup[1] = dup(STDOUT_FILENO);
 	backup[2] = dup(STDERR_FILENO);
-	int	is_builtin = 0;
-	if (node->data.cmd.argv && node->data.cmd.argv[0])
-	{
-		if (ft_strcmp(node->data.cmd.argv[0], "echo") == 0
-			|| ft_strcmp(node->data.cmd.argv[0], "cd") == 0
-			|| ft_strcmp(node->data.cmd.argv[0], "pwd") == 0
-			|| ft_strcmp(node->data.cmd.argv[0], "export") == 0
-			|| ft_strcmp(node->data.cmd.argv[0], "unset") == 0
-			|| ft_strcmp(node->data.cmd.argv[0], "env") == 0
-			|| ft_strcmp(node->data.cmd.argv[0], "exit") == 0)
-			is_builtin = 1;
-	}
-	if (is_builtin)
+	if (is_builtin(node->data.cmd.argv[0]))
 	{
 		if (!apply_redirections(node->data.cmd.redirs,
 				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL, shell))
