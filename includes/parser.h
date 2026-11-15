@@ -87,6 +87,7 @@ typedef struct s_node
 		// para comandos simples
 		struct {
 			char **argv;
+			char **assigns;
 			t_redir *redirs;
 		} cmd;
 		// para operadores binarios

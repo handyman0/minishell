@@ -164,6 +164,7 @@ t_node	*parse_command(t_token **tokens)
 	node->type = NODE_CMD;
 	node->data.cmd.argv = NULL;
 	node->data.cmd.redirs = NULL;
+	node->data.cmd.assigns = NULL;
 	args = NULL;
 	tail = NULL;
 	count = 0;
@@ -324,6 +325,9 @@ t_node	*parse_tokens(t_token **tokens)
 static void	free_command(t_node *node)
 {
 	int	i;
+
+	if (node->data.cmd.assigns)
+		free_str_array(node->data.cmd.assigns);
 
 	if (node->data.cmd.argv)
 	{
