@@ -179,6 +179,8 @@ void	expand_tokens(t_token **tokens, t_shell *shell);
 // expand_wildcards.c
 int		expand_glob(char *pattern, t_token **head, t_token **cur);
 
+void	expand_aliases(t_token **tokens, t_shell *shell);
+
 // syntax_check.c
 /**
  * @brief Verifica a sintaxe dos tokens.
