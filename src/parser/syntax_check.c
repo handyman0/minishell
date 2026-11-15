@@ -122,3 +122,51 @@ int	check_quotes(char *line)
 	ft_putstr_fd("'\n", 2);
 	return (2);
 }
+
+static int	trailing_backslash(const char *line)
+{
+	char	quote;
+
+	quote = 0;
+	while (*line)
+	{
+		if (*line == '\\' && quote != '\'')
+		{
+			if (!line[1])
+				return (1);
+			line++;
+		}
+		else if (!quote && (*line == '\'' || *line == '"'))
+			quote = *line;
+		else if (quote && *line == quote)
+			quote = 0;
+		line++;
+	}
+	return (0);
+}
+
+int	line_incomplete(char *line)
+{
+	t_token	*tokens;
+	t_token	*cur;
+	t_token	*last;
+	int		depth;
+	int		result;
+
+	if (open_quote(line) || trailing_backslash(line))
+		return (1);
+	tokens = tokenize_line(line);
+	depth = 0;
+	last = NULL;
+	cur = tokens;
+	while (cur)
+	{
+		depth += (cur->type == TOKEN_LPAREN) - (cur->type == TOKEN_RPAREN);
+		last = cur;
+		cur = cur->next;
+	}
+	result = depth > 0 || (last && (last->type == TOKEN_PIPE
+				|| last->type == TOKEN_AND || last->type == TOKEN_OR));
+	free_tokens(tokens);
+	return (result);
+}

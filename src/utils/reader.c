@@ -1,4 +1,5 @@
 #include "../../includes/reader.h"
+#include "../../libft/include/libft.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -77,5 +78,32 @@ char	*reader_line(t_reader *reader)
 		line = grow(line, 0, &cap);
 	if (line)
 		line[len] = '\0';
+	return (line);
+}
+
+char	*reader_command(t_reader *reader, int (*incomplete)(char *))
+{
+	char	*line;
+	char	*next;
+	char	*joined;
+	size_t	len;
+
+	line = reader_line(reader);
+	while (line && incomplete(line))
+	{
+		next = reader_line(reader);
+		if (!next)
+			break ;
+		len = ft_strlen(line);
+		joined = malloc(len + ft_strlen(next) + 2);
+		if (!joined)
+			return (free(next), line);
+		ft_memcpy(joined, line, len);
+		joined[len] = '\n';
+		ft_memcpy(joined + len + 1, next, ft_strlen(next) + 1);
+		free(line);
+		free(next);
+		line = joined;
+	}
 	return (line);
 }
