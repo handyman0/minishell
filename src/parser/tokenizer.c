@@ -172,6 +172,8 @@ t_token	*tokenize_line(char *line)
 			i++;
 			continue ;
 		}
+		if (line[i] == '#')
+			break ;
 		op_len = fd_redirection(line, &i, &head, &current);
 		if (op_len > 0)
 			continue ;
