@@ -66,6 +66,24 @@ static void	gen_noise(void)
 	fputc('\n', stdout);
 }
 
+static const char	*g_keys[] = {"\033[A", "\033[B", "\033[C", "\033[D",
+	"\033[H", "\033[F", "\033[3~", "\033[1;5C", "\033[1;5D", "\033OA",
+	"\033OH", "\033b", "\033f", "\033d", "\033\177", "\033", "\033[",
+	"\033[99;99;", "\033[200~", "\033[201~", "\033[200~a b\nc\r\033[201~",
+	"\t", "\t\t", "\177", "\177\177", "\001", "\002", "\005", "\006",
+	"\013", "\025", "\027", "\f", "\003", "\032", "\r", "\r",
+	"\303\251", "\346\227\245\346\234\254", "\360\237\230\200", "\377",
+	"\200", "\303", "\342\202", " ", "  ", "echo ", "ls ", "cd ", "$HOME",
+	"${", "$", "\"", "'", "|", "&&", ";", "(", ")", "<", ">", "*", "~/",
+	"/", "./", "sub/", "ec", "a", "z", "0", NULL};
+
+static void	gen_keys(void)
+{
+	fputs(g_keys[rnd(count(g_keys))], stdout);
+	if (rnd(6) == 0)
+		fputc(32 + rnd(95), stdout);
+}
+
 static void	mutate(char *line)
 {
 	size_t	len;
@@ -125,7 +143,7 @@ int	main(int argc, char **argv)
 
 	if (argc < 4)
 	{
-		fprintf(stderr, "uso: fuzz gen|noise|mutate seed n [casos]\n");
+		fprintf(stderr, "uso: fuzz gen|noise|mutate|keys seed n [casos]\n");
 		return (2);
 	}
 	g_state = strtoul(argv[2], NULL, 10) * 2654435761UL + 12345;
@@ -136,6 +154,8 @@ int	main(int argc, char **argv)
 	{
 		if (mode == 'g')
 			gen_line();
+		else if (mode == 'k')
+			gen_keys();
 		else if (mode == 'n')
 			gen_noise();
 		else if (cases)

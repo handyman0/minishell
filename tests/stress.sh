@@ -146,6 +146,30 @@ exec 3>&-
 wait $SPID
 check fd_sessao $? err_fd.txt || echo "sessao fd falhou"
 
+section "9. editor de linha (teclas aleatorias em pty)"
+if command -v script > /dev/null; then
+	mkdir -p "$WORK/home"
+	for seed in 1 2 3 4; do
+		"$WORK/fuzz" keys $seed 2500 > keys.bin
+		size=$(stat -c %s keys.bin)
+		(
+			o=0
+			while [ $o -lt $size ]; do
+				tail -c +$((o + 1)) keys.bin | head -c 48
+				sleep 0.004
+				o=$((o + 48))
+			done
+			printf '\r\025\004\025\004\025exit\r'
+		) | HOME="$WORK/home" timeout 90 script -qec "$SHELL_BIN" /dev/null > keys_out.bin 2> keys_err.txt
+		rc=$?
+		cat keys_out.bin >> keys_err.txt
+		check "teclas-$seed" $rc keys_err.txt || echo "editor: semente $seed falhou (rc=$rc)"
+	done
+	echo "acumulado: $TOTAL executados, $BAD problemas"
+else
+	echo "script nao encontrado, secao ignorada"
+fi
+
 section "RESULTADO"
 echo "executados: $TOTAL   problemas: $BAD"
 if [ "$BAD" -gt 0 ]; then
