@@ -159,7 +159,7 @@ if command -v script > /dev/null; then
 				sleep 0.004
 				o=$((o + 48))
 			done
-			printf '\r\025\004\025\004\025exit\r'
+			printf '\003\003\003exit\r'
 		) | HOME="$WORK/home" timeout 90 script -qec "$SHELL_BIN" /dev/null > keys_out.bin 2> keys_err.txt
 		rc=$?
 		cat keys_out.bin >> keys_err.txt
