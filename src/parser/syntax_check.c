@@ -7,6 +7,11 @@ static int	is_binop(t_token *tok)
 		|| tok->type == TOKEN_OR);
 }
 
+static int	is_sep(t_token *tok)
+{
+	return (tok->type == TOKEN_SEMI || tok->type == TOKEN_BG);
+}
+
 static const char	*token_text(t_token *tok)
 {
 	if (!tok)
@@ -19,6 +24,8 @@ static const char	*token_text(t_token *tok)
 		return ("||");
 	if (tok->type == TOKEN_SEMI)
 		return (";");
+	if (tok->type == TOKEN_BG)
+		return ("&");
 	if (tok->type == TOKEN_LPAREN)
 		return ("(");
 	if (tok->type == TOKEN_RPAREN)
@@ -48,13 +55,12 @@ static int	bad_follow(t_token *cur)
 
 	next = cur->next;
 	if (is_binop(cur) || cur->type == TOKEN_LPAREN)
-		return (!next || is_binop(next) || next->type == TOKEN_SEMI
+		return (!next || is_binop(next) || is_sep(next)
 			|| next->type == TOKEN_RPAREN);
 	if (is_redirection_token(cur))
 		return (!next || next->type != TOKEN_WORD);
-	if (cur->type == TOKEN_SEMI)
-		return (next && (is_binop(next) || next->type == TOKEN_SEMI
-				|| next->type == TOKEN_RPAREN));
+	if (is_sep(cur))
+		return (next && (is_binop(next) || is_sep(next)));
 	if (cur->type == TOKEN_RPAREN)
 		return (next && (next->type == TOKEN_WORD
 				|| next->type == TOKEN_LPAREN));
@@ -66,7 +72,7 @@ int	check_syntax(t_token *tokens)
 	t_token	*cur;
 	int		depth;
 
-	if (tokens && (is_binop(tokens) || tokens->type == TOKEN_SEMI
+	if (tokens && (is_binop(tokens) || is_sep(tokens)
 			|| tokens->type == TOKEN_RPAREN))
 		return (syntax_error(tokens));
 	depth = 0;
