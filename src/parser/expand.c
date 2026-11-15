@@ -133,7 +133,21 @@ static char	*process_token_with_quotes(char *token, t_shell *shell)
 
 char	*expand_variables(char *token, t_shell *shell)
 {
-	return (process_token_with_quotes(token, shell));
+	char	*result;
+	char	*home;
+	char	*joined;
+
+	result = process_token_with_quotes(token, shell);
+	if (!result || token[0] != '~' || (token[1] && token[1] != '/'))
+		return (result);
+	home = env_get(shell->env, "HOME");
+	if (!home)
+		return (result);
+	joined = ft_strjoin(home, result + 1);
+	if (!joined)
+		return (result);
+	free(result);
+	return (joined);
 }
 
 char	*remove_quotes(char *token)
