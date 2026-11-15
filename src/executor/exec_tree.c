@@ -287,6 +287,29 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	return (WEXITSTATUS(status_right));
 }
 
+static int	execute_subshell(t_node *node, t_shell *shell)
+{
+	pid_t	pid;
+	int		status;
+
+	pid = fork();
+	if (pid == -1)
+		return (1);
+	if (pid == 0)
+	{
+		signal(SIGINT, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+		exit(pipe_child(node->data.op.left, shell));
+	}
+	signals_ignore();
+	waitpid(pid, &status, 0);
+	if (isatty(STDIN_FILENO))
+		setup_signals();
+	if (WIFSIGNALED(status))
+		return (128 + WTERMSIG(status));
+	return (WEXITSTATUS(status));
+}
+
 int	execute_tree(t_node *node, t_shell *shell)
 {
 	if (!node)
@@ -302,6 +325,8 @@ int	execute_tree(t_node *node, t_shell *shell)
 			return (execute_and(node, shell));
 		case NODE_OR:
 			return (execute_or(node, shell));
+		case NODE_PAREN:
+			return (execute_subshell(node, shell));
 		case NODE_SEQ:
 			return (execute_seq(node, shell));
 		default:
