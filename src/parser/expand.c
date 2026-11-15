@@ -206,3 +206,132 @@ char	*expand_heredoc_line(char *line, t_shell *shell)
 	}
 	return (result);
 }
+
+typedef struct s_word
+{
+	char	*str;
+	char	*mask;
+	int		len;
+}	t_word;
+
+static void	put_value(t_word *w, char *val, int splittable)
+{
+	int	k;
+
+	k = 0;
+	while (val && val[k])
+	{
+		w->str[w->len] = val[k++];
+		w->mask[w->len++] = splittable;
+	}
+	free(val);
+}
+
+static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
+{
+	put_value(w, get_var_value(raw + 1, shell), quote == 0);
+	return (var_name_length(raw + 1) + 1);
+}
+
+static void	fill_word(t_word *w, char *raw, t_shell *shell)
+{
+	int		i;
+	int		quote;
+	char	*home;
+
+	i = 0;
+	quote = 0;
+	home = env_get(shell->env, "HOME");
+	if (raw[0] == '~' && (!raw[1] || raw[1] == '/') && home)
+	{
+		put_value(w, ft_strdup(home), 0);
+		i = 1;
+	}
+	while (raw[i])
+	{
+		if ((raw[i] == '\'' || raw[i] == '"') && (!quote || quote == raw[i]))
+			quote = (quote == 0) * raw[i];
+		else if (raw[i] == '$' && quote != '\'' && (ft_isalnum(raw[i + 1])
+				|| raw[i + 1] == '?' || raw[i + 1] == '_'))
+		{
+			i += put_dollar(w, &raw[i], quote, shell);
+			continue ;
+		}
+		else
+			put_value(w, ft_substr(raw, i, 1), 0);
+		i++;
+	}
+}
+
+static int	emit_fields(t_word *w, t_token **head, t_token **cur)
+{
+	int	start;
+	int	k;
+	int	count;
+
+	start = -1;
+	count = 0;
+	k = 0;
+	while (k <= w->len)
+	{
+		if (k == w->len || (w->mask[k] && ft_isspace(w->str[k])))
+		{
+			if (start >= 0)
+			{
+				token_add_back(head, cur, TOKEN_WORD,
+					ft_substr(w->str, start, k - start));
+				count++;
+			}
+			start = -1;
+		}
+		else if (start < 0)
+			start = k;
+		k++;
+	}
+	return (count);
+}
+
+static void	expand_word(char *raw, t_shell *shell, t_token **head,
+				t_token **cur)
+{
+	t_word	w;
+	char	*home;
+	size_t	cap;
+
+	home = env_get(shell->env, "HOME");
+	cap = calculate_expanded_size(raw, shell) + (home ? ft_strlen(home) : 0);
+	w.len = 0;
+	w.str = malloc(cap + 1);
+	w.mask = ft_calloc(cap + 1, 1);
+	if (w.str && w.mask)
+	{
+		fill_word(&w, raw, shell);
+		if (!emit_fields(&w, head, cur)
+			&& (ft_strchr(raw, '\'') || ft_strchr(raw, '"')))
+			token_add_back(head, cur, TOKEN_WORD, ft_strdup(""));
+	}
+	free(w.str);
+	free(w.mask);
+}
+
+void	expand_tokens(t_token **tokens, t_shell *shell)
+{
+	t_token	*head;
+	t_token	*cur;
+	t_token	*old;
+	t_token	*next;
+
+	head = NULL;
+	cur = NULL;
+	old = *tokens;
+	while (old)
+	{
+		next = old->next;
+		if (old->type == TOKEN_WORD && old->value)
+			expand_word(old->value, shell, &head, &cur);
+		free(old->value);
+		free(old);
+		old = next;
+	}
+	*tokens = head;
+}
