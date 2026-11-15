@@ -74,6 +74,6 @@ void	expand_command(t_node *node, t_shell *shell)
 	tokens = argv_to_tokens(node->data.cmd.argv);
 	free(node->data.cmd.argv);
 	expand_wildcards(&tokens);
-	process_tokens_before_parsing(&tokens, shell);
+	expand_tokens(&tokens, shell);
 	node->data.cmd.argv = tokens_to_argv(tokens);
 }
