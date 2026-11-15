@@ -4,6 +4,7 @@
 
 static rl_voidfunc_t	*g_default_display = NULL;
 static int				g_shown = 0;
+static t_shell			*g_suggest_shell = NULL;
 
 static int	is_main_prompt(void)
 {
@@ -84,6 +85,42 @@ static void	draw_ghost(char *suggestion)
 	g_shown = 1;
 }
 
+static void	move_cursor(char dir, int cols)
+{
+	char	*num;
+	char	*seq;
+
+	if (cols <= 0)
+		return ;
+	num = ft_itoa(cols);
+	seq = ft_strjoin("\033[", num);
+	if (seq)
+	{
+		write(STDOUT_FILENO, seq, ft_strlen(seq));
+		write(STDOUT_FILENO, &dir, 1);
+	}
+	free(num);
+	free(seq);
+}
+
+static void	paint_line(void)
+{
+	char	*colored;
+	int		rows;
+	int		cols;
+
+	rl_get_screen_size(&rows, &cols);
+	if (rl_end == 0 || (int)ft_strlen(rl_display_prompt) + rl_end + 2 > cols)
+		return ;
+	colored = highlight_build(rl_line_buffer, rl_end, g_suggest_shell);
+	if (!colored)
+		return ;
+	move_cursor('D', columns(rl_line_buffer, rl_point));
+	write(STDOUT_FILENO, colored, ft_strlen(colored));
+	move_cursor('D', columns(rl_line_buffer + rl_point, rl_end - rl_point));
+	free(colored);
+}
+
 static void	clear_ghost(void)
 {
 	char	*num;
@@ -117,6 +154,8 @@ static void	display_hook(void)
 	if (is_main_prompt() && !rl_done && rl_point == rl_end)
 		suggestion = find_suggestion();
 	g_default_display();
+	if (is_main_prompt() && !rl_done)
+		paint_line();
 	if (suggestion)
 		draw_ghost(suggestion);
 	else if (g_shown)
@@ -155,8 +194,9 @@ static int	newline_clean(int count, int key)
 	return (rl_newline(count, key));
 }
 
-void	setup_suggestions(void)
+void	setup_suggestions(t_shell *shell)
 {
+	g_suggest_shell = shell;
 	g_default_display = rl_redisplay_function;
 	rl_redisplay_function = display_hook;
 	rl_bind_keyseq("\\e[C", accept_or_forward);

@@ -189,7 +189,7 @@ int	main(int argc, char **argv, char **envp)
 	if (interactive)
 	{
 		setup_completion(&shell);
-		setup_suggestions();
+		setup_suggestions(&shell);
 	}
 	shell_loop(&shell, interactive);
 	if (interactive)
