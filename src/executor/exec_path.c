@@ -41,7 +41,6 @@ char	*find_path(char *cmd, t_shell *shell)
 	char	*path_env;
 	char	**paths;
 	char	*full_path;
-	const char *default_path = "/bin:/usr/bin:/usr/local/bin";
 
 	if (!cmd || !*cmd || !shell)
 		return (NULL);
@@ -51,7 +50,7 @@ char	*find_path(char *cmd, t_shell *shell)
 		path_env = env_get(shell->env, "PATH");
 
 	if (!path_env || *path_env == '\0')
-		path_env = (char *)default_path;
+		path_env = "";
 
 	paths = ft_split(path_env, ':');
 	if (!paths)
