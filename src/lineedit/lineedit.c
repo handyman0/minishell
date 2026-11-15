@@ -173,8 +173,6 @@ static void	edit_key(t_edit *e, t_key *key)
 		le_erase(e, e->pos, word_right(e));
 	else if (key->type == K_CHAR)
 	{
-		if (e->paste && (key->ch[0] == '\n' || key->ch[0] == '\r'))
-			key->ch[0] = ' ';
 		le_insert(e, key->ch, key->n);
 	}
 }
@@ -194,12 +192,20 @@ static char	*finish(t_edit *e, int interrupted)
 	return (ft_substr(e->buf, 0, e->len));
 }
 
+static int	g_paste = 0;
+
 static int	handle_key(t_edit *e, t_key *key, char **line)
 {
-	if (key->type == K_ENTER && !e->paste)
+	if (key->type == K_ENTER)
 		return (*line = finish(e, 0), 1);
+	if (g_paste && key->type == K_TAB)
+	{
+		key->type = K_CHAR;
+		key->ch[0] = '\t';
+		key->n = 1;
+	}
 	if (key->type == K_INTERRUPT)
-		return (*line = finish(e, 1), 1);
+		return (g_paste = 0, *line = finish(e, 1), 1);
 	if (key->type == K_ERROR || (key->type == K_EOF && e->len == 0))
 		return (*line = NULL, 1);
 	if (key->type == K_SEARCH && e->fancy)
@@ -209,7 +215,7 @@ static int	handle_key(t_edit *e, t_key *key, char **line)
 		return (0);
 	}
 	if (key->type == K_PASTE_START || key->type == K_PASTE_END)
-		e->paste = (key->type == K_PASTE_START);
+		g_paste = (key->type == K_PASTE_START);
 	if (key->type == K_UP || key->type == K_DOWN)
 		history_move(e, key->type == K_UP ? -1 : 1);
 	else
@@ -243,7 +249,6 @@ static void	edit_init(t_edit *e, const char *prompt, t_shell *shell, int fancy)
 	e->cur_row = 0;
 	e->fancy = fancy;
 	e->ghost = 1;
-	e->paste = 0;
 	e->hist_idx = le_history_count();
 	e->saved = NULL;
 	e->prefix = NULL;

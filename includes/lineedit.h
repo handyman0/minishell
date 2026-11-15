@@ -67,7 +67,6 @@ typedef struct s_edit
 	int			cur_row;
 	int			fancy;
 	int			ghost;
-	int			paste;
 	int			hist_idx;
 	char		*saved;
 	char		*prefix;
