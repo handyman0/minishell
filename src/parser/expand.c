@@ -301,7 +301,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	home = env_get(shell->env, "HOME");
 	cap = calculate_expanded_size(raw, shell) + (home ? ft_strlen(home) : 0);
 	w.len = 0;
-	w.str = malloc(cap + 1);
+	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	if (w.str && w.mask)
 	{
