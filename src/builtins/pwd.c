@@ -18,7 +18,7 @@ int builtin_pwd(void)
 
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 	{
-		printf("%s\n", cwd);
+		ft_putendl_fd(cwd, STDOUT_FILENO);
 		return (0);
 	}
 	perror("minishell: pwd");
