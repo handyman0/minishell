@@ -270,6 +270,12 @@ static void	put_value(t_word *w, char *val, int flags)
 	free(val);
 }
 
+static void	put_char(t_word *w, char c, int flags)
+{
+	w->str[w->len] = c;
+	w->mask[w->len++] = flags;
+}
+
 static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	put_value(w, get_var_value(raw + 1, shell), quote == 0 ? SPLIT : QUOTED);
@@ -300,7 +306,7 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 			continue ;
 		}
 		else
-			put_value(w, ft_substr(raw, i, 1), quote ? QUOTED : 0);
+			put_char(w, raw[i], quote ? QUOTED : 0);
 		i++;
 	}
 }
