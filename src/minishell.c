@@ -186,6 +186,8 @@ int	main(int argc, char **argv, char **envp)
 		setup_signals_noninteractive();
 	if (interactive)
 		history_load(&shell);
+	if (interactive)
+		setup_completion(&shell);
 	shell_loop(&shell, interactive);
 	if (interactive)
 		history_save(&shell);
