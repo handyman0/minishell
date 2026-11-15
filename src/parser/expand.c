@@ -25,12 +25,41 @@ static int	var_name_length(char *str)
 	return (i);
 }
 
+static int	brace_offset(const char *s)
+{
+	int	i;
+
+	if (s[0] != '{')
+		return (0);
+	i = 1;
+	if (s[i] == '?')
+		i++;
+	else
+		while (ft_isalnum(s[i]) || s[i] == '_')
+			i++;
+	return (i > 1 && s[i] == '}');
+}
+
+static int	is_ref(const char *s)
+{
+	return (brace_offset(s) || ft_isalnum(s[0]) || s[0] == '?'
+		|| s[0] == '_');
+}
+
+static int	ref_length(char *s)
+{
+	if (brace_offset(s))
+		return (var_name_length(s + 1) + 2);
+	return (var_name_length(s));
+}
+
 static char	*get_var_value(char *var_name, t_shell *shell)
 {
 	int		len;
 	char	*name;
 	char	*value;
 
+	var_name += brace_offset(var_name);
 	len = var_name_length(var_name);
 	if (len == 0)
 		return (ft_strdup("$"));
@@ -59,7 +88,7 @@ static size_t	calculate_expanded_size(char *token, t_shell *shell)
 	i = 0;
 	while (token[i])
 	{
-		if (token[i] == '$' && (ft_isalnum(token[i+1]) || token[i+1] == '?' || token[i+1] == '_'))
+		if (token[i] == '$' && is_ref(&token[i + 1]))
 		{
 			var_value = get_var_value(&token[i+1], shell);
 			if (var_value)
@@ -67,7 +96,7 @@ static size_t	calculate_expanded_size(char *token, t_shell *shell)
 				size += ft_strlen(var_value);
 				free(var_value);
 			}
-			i += var_name_length(&token[i+1]) + 1;
+			i += ref_length(&token[i + 1]) + 1;
 		}
 		else
 		{
@@ -110,7 +139,7 @@ static char	*process_token_with_quotes(char *token, t_shell *shell)
 			in_dquote = !in_dquote;
 			i++;
 		}
-		else if (token[i] == '$' && !in_squote && (ft_isalnum(token[i+1]) || token[i+1] == '?' || token[i+1] == '_'))
+		else if (token[i] == '$' && !in_squote && is_ref(&token[i + 1]))
 		{
 			var_value = get_var_value(&token[i+1], shell);
 			if (var_value)
@@ -119,10 +148,10 @@ static char	*process_token_with_quotes(char *token, t_shell *shell)
 				while (var_value[k] && j < (int)size - 1)
 					result[j++] = var_value[k++];
 				free(var_value);
-				i += var_name_length(&token[i+1]) + 1;
+				i += ref_length(&token[i + 1]) + 1;
 			}
 			else
-				i += var_name_length(&token[i+1]) + 1;
+				i += ref_length(&token[i + 1]) + 1;
 		}
 		else
 			result[j++] = token[i++];
@@ -174,11 +203,10 @@ char	*expand_heredoc_line(char *line, t_shell *shell)
 	i = 0;
 	while (result && line[i])
 	{
-		if (line[i] == '$' && (ft_isalnum(line[i + 1]) || line[i + 1] == '?'
-				|| line[i + 1] == '_'))
+		if (line[i] == '$' && is_ref(&line[i + 1]))
 		{
 			result = append_str(result, get_var_value(&line[i + 1], shell));
-			i += var_name_length(&line[i + 1]) + 1;
+			i += ref_length(&line[i + 1]) + 1;
 		}
 		else
 			result = append_str(result, ft_substr(line, i++, 1));
@@ -212,7 +240,7 @@ static void	put_value(t_word *w, char *val, int flags)
 static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	put_value(w, get_var_value(raw + 1, shell), quote == 0 ? SPLIT : QUOTED);
-	return (var_name_length(raw + 1) + 1);
+	return (ref_length(raw + 1) + 1);
 }
 
 static void	fill_word(t_word *w, char *raw, t_shell *shell)
@@ -233,8 +261,7 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 	{
 		if ((raw[i] == '\'' || raw[i] == '"') && (!quote || quote == raw[i]))
 			quote = (quote == 0) * raw[i];
-		else if (raw[i] == '$' && quote != '\'' && (ft_isalnum(raw[i + 1])
-				|| raw[i + 1] == '?' || raw[i + 1] == '_'))
+		else if (raw[i] == '$' && quote != '\'' && is_ref(&raw[i + 1]))
 		{
 			i += put_dollar(w, &raw[i], quote, shell);
 			continue ;
