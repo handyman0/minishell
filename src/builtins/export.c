@@ -60,10 +60,12 @@ int	builtin_export(char **argv, t_shell *shell)
 			{
 				*equal_sign = '\0';
 				env_set(&shell->env, argv[i], equal_sign + 1);
+				env_export(shell->env, argv[i]);
 				*equal_sign = '=';
 			}
 			else
-				env_set(&shell->env, argv[i], "");
+				if (!env_export(shell->env, argv[i]))
+					env_set(&shell->env, argv[i], "");
 		}
 		i++;
 	}

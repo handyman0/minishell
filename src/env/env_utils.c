@@ -17,9 +17,23 @@ void	env_print(t_env *env)
 {
 	while (env)
 	{
-		put_all(STDOUT_FILENO, env->key, "=", env->value, "\n", NULL);
+		if (env->exported)
+			put_all(STDOUT_FILENO, env->key, "=", env->value, "\n", NULL);
 		env = env->next;
 	}
+}
+
+int	env_exported_size(t_env *env)
+{
+	int	i;
+
+	i = 0;
+	while (env)
+	{
+		i += env->exported;
+		env = env->next;
+	}
+	return (i);
 }
 
 int	env_size(t_env *env)
@@ -37,33 +51,25 @@ int	env_size(t_env *env)
 
 char	**env_to_array(t_env *env)
 {
-	int		i;
-	int		size;
 	char	**array;
 	char	*tmp;
+	int		i;
 
-	size = env_size(env);
-	array = malloc(sizeof(char *) * (size + 1));
+	array = malloc(sizeof(char *) * (env_exported_size(env) + 1));
 	if (!array)
 		return (NULL);
 	i = 0;
-	while (env && i < size)
+	while (env)
 	{
-		tmp = ft_strjoin(env->key, "=");
-		if (!tmp)
+		if (env->exported)
 		{
-			free_str_array(array);
-			return (NULL);
-		}
-		array[i] = ft_strjoin(tmp, env->value);
-		free(tmp);
-		if (!array[i])
-		{
-			free_str_array(array);
-			return (NULL);
+			tmp = ft_strjoin(env->key, "=");
+			array[i] = ft_strjoin(tmp, env->value);
+			free(tmp);
+			if (!array[i++])
+				return (array[i - 1] = NULL, free_str_array(array), NULL);
 		}
 		env = env->next;
-		i++;
 	}
 	array[i] = NULL;
 	return (array);

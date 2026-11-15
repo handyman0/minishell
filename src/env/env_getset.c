@@ -81,3 +81,33 @@ void	env_unset(t_env **env, const char *key)
 		tmp = tmp->next;
 	}
 }
+
+void	env_assign(t_env **env, const char *key, const char *value)
+{
+	t_env	*tmp;
+
+	tmp = *env;
+	while (tmp && ft_strcmp(tmp->key, key) != 0)
+		tmp = tmp->next;
+	if (tmp)
+	{
+		free(tmp->value);
+		tmp->value = ft_strdup(value);
+		return ;
+	}
+	tmp = env_new((char *)key, (char *)value);
+	if (!tmp)
+		return ;
+	tmp->exported = 0;
+	env_add_back(env, tmp);
+}
+
+int	env_export(t_env *env, const char *key)
+{
+	while (env && ft_strcmp(env->key, key) != 0)
+		env = env->next;
+	if (!env)
+		return (0);
+	env->exported = 1;
+	return (1);
+}

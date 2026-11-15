@@ -26,6 +26,7 @@ typedef struct s_env
 {
 	char			*key; /**< Nome da variável. */
 	char			*value; /**< Valor da variável. */
+	int				exported; /**< 1 se vai para o ambiente dos filhos. */
 	struct s_env	*next; /**< Próximo nó na lista. */
 }	t_env;
 
@@ -71,6 +72,9 @@ void	env_set(t_env **env, const char *key, const char *value);
  * @param key Nome da variável.
  */
 void	env_unset(t_env **env, const char *key);
+void	env_assign(t_env **env, const char *key, const char *value);
+int		env_export(t_env *env, const char *key);
+int		env_exported_size(t_env *env);
 
 /* =================== */
 /* Utilitarios e debug */
