@@ -97,6 +97,39 @@ static char	*read_input(t_shell *shell, int interactive)
 	return (line);
 }
 
+static char	*history_path(t_shell *shell)
+{
+	char	*home;
+
+	home = env_get(shell->env, "HOME");
+	if (!home || !*home)
+		return (NULL);
+	return (ft_strjoin(home, "/.minishell_history"));
+}
+
+static void	history_load(t_shell *shell)
+{
+	char	*path;
+
+	path = history_path(shell);
+	if (!path)
+		return ;
+	read_history(path);
+	free(path);
+}
+
+static void	history_save(t_shell *shell)
+{
+	char	*path;
+
+	path = history_path(shell);
+	if (!path)
+		return ;
+	stifle_history(1000);
+	write_history(path);
+	free(path);
+}
+
 static void	shell_loop(t_shell *shell, int interactive)
 {
 	char	*line;
@@ -134,7 +167,11 @@ int	main(int argc, char **argv, char **envp)
 		setup_signals();
 	else
 		setup_signals_noninteractive();
+	if (interactive)
+		history_load(&shell);
 	shell_loop(&shell, interactive);
+	if (interactive)
+		history_save(&shell);
 	env_free(shell.env);
 	if (interactive)
 		printf("exit\n");
