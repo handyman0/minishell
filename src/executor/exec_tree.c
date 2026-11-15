@@ -15,6 +15,7 @@
 #include "../../includes/utils.h"
 #include "../../includes/builtins.h"
 #include <errno.h>
+#include "../../includes/output.h"
 #include <sys/stat.h>
 #include <string.h>
 #include <signal.h>
@@ -111,7 +112,7 @@ static int	open_redir(t_redir *redir)
 	return (open(redir->file, O_WRONLY | O_CREAT | O_APPEND, 0644));
 }
 
-static int	apply_redirections(t_redir *redirs, char *cmd_name)
+static int	apply_redirections(t_redir *redirs)
 {
 	int	fd;
 
@@ -130,8 +131,7 @@ static int	apply_redirections(t_redir *redirs, char *cmd_name)
 			fd = open_redir(redirs);
 			if (fd == -1)
 			{
-				fprintf(stderr, "%s: %s: %s\n", cmd_name ? cmd_name
-					: "minishell", redirs->file, strerror(errno));
+				put_errno(redirs->file, NULL);
 				return (0);
 			}
 			dup2(fd, redirs->fd);
@@ -169,8 +169,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	backup[2] = dup(STDERR_FILENO);
 	if (is_builtin(node->data.cmd.argv[0]))
 	{
-		if (!apply_redirections(node->data.cmd.redirs,
-				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
+		if (!apply_redirections(node->data.cmd.redirs))
 		{
 			restore_fds(backup);
 			return (1);
@@ -184,9 +183,11 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!path)
 	{
 		if (ft_strchr(node->data.cmd.argv[0], '/'))
-			fprintf(stderr, "minishell: %s: %s\n", node->data.cmd.argv[0], strerror(ENOENT));
+			put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
+				": No such file or directory\n", NULL);
 		else
-			fprintf(stderr, "minishell: %s: command not found\n", node->data.cmd.argv[0]);
+			put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
+				": command not found\n", NULL);
 		restore_fds(backup);
 		return (127);
 	}
@@ -196,7 +197,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	pid = fork();
 	if (pid == -1)
 	{
-		perror("minishell: fork");
+		put_errno("fork", NULL);
 		restore_fds(backup);
 		free(path);
 		free_str_array(env_array);
@@ -209,15 +210,18 @@ static int	execute_command(t_node *node, t_shell *shell)
 		close(backup[0]);
 		close(backup[1]);
 		close(backup[2]);
-		if (!apply_redirections(node->data.cmd.redirs,
-				node->data.cmd.argv ? node->data.cmd.argv[0] : NULL))
+		if (!apply_redirections(node->data.cmd.redirs))
 		{
 			free(path);
 			free_str_array(env_array);
 			exit(1);
 		}
 		execve(path, node->data.cmd.argv, env_array);
-		fprintf(stderr, "minishell: %s: %s\n", node->data.cmd.argv[0], errno == EACCES && is_dir(path) ? "Is a directory" : strerror(errno));
+		if (errno == EACCES && is_dir(path))
+			put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
+				": Is a directory\n", NULL);
+		else
+			put_errno(node->data.cmd.argv[0], NULL);
 		free(path);
 		free_str_array(env_array);
 		exit(126);
@@ -343,7 +347,7 @@ int	execute_tree(t_node *node, t_shell *shell)
 		case NODE_SEQ:
 			return (execute_seq(node, shell));
 		default:
-			printf("minishell: unknown node type\n");
+			put_all(STDERR_FILENO, "minishell: unknown node type\n", NULL);
 			return (1);
 	}
 }
