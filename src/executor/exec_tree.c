@@ -24,6 +24,7 @@ static int	execute_and(t_node *node, t_shell *shell)
 	int	left_status;
 
 	left_status = execute_tree(node->data.op.left, shell);
+	shell->exit_status = left_status;
 	if (left_status == 0)
 		return (execute_tree(node->data.op.right, shell));
 	return (left_status);
@@ -34,6 +35,7 @@ static int	execute_or(t_node *node, t_shell *shell)
 	int	left_status;
 
 	left_status = execute_tree(node->data.op.left, shell);
+	shell->exit_status = left_status;
 	if (left_status != 0)
 		return (execute_tree(node->data.op.right, shell));
 	return (left_status);
@@ -141,7 +143,9 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
-	if (node->data.cmd.argv[0] && node->data.cmd.argv[0][0] == '\0')
+	expand_command(node, shell);
+	if (!node->data.cmd.argv || !node->data.cmd.argv[0]
+		|| node->data.cmd.argv[0][0] == '\0')
 		return (0);
 
 	stdin_backup = dup(STDIN_FILENO);
