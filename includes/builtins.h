@@ -68,4 +68,7 @@ int	builtin_env(t_env *env);
  */
 int	builtin_exit(char **argv, t_shell *shell);
 
+const char	**builtin_names(void);
+int			is_builtin(const char *name);
+
 #endif
