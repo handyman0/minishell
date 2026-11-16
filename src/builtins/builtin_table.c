@@ -17,7 +17,7 @@ static const t_ext	g_ext[] = {{"true", builtin_true}, {"false", builtin_false},
 static const char	*g_builtin_names[] = {"echo", "cd", "pwd", "export",
 	"unset", "env", "exit", "jobs", "fg", "bg", "alias", "unalias", "source",
 	"type", "which", "true", "false", "break", "continue", "return", "local",
-	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", "times", NULL};
+	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", "times", "exec", NULL};
 
 const char	**builtin_names(void)
 {

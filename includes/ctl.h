@@ -41,6 +41,7 @@ int		builtin_test(char **argv, t_shell *shell);
 int		builtin_read(char **argv, t_shell *shell);
 int		builtin_umask(char **argv, t_shell *shell);
 int		builtin_times(char **argv, t_shell *shell);
+int		run_exec_builtin(t_node *node, t_shell *shell, int backup[3]);
 int		builtin_command(char **argv, t_shell *shell);
 void	push_local(t_shell *shell, const char *key);
 int		builtin_true(char **argv, t_shell *shell);

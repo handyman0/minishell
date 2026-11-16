@@ -212,6 +212,8 @@ static int	run_command(t_node *node, t_shell *shell)
 	backup[0] = dup(STDIN_FILENO);
 	backup[1] = dup(STDOUT_FILENO);
 	backup[2] = dup(STDERR_FILENO);
+	if (ft_strcmp(node->data.cmd.argv[0], "exec") == 0)
+		return (run_exec_builtin(node, shell, backup));
 	func = shell->bypass_func ? NULL : find_func(shell, node->data.cmd.argv[0]);
 	shell->bypass_func = 0;
 	if (func || is_builtin(node->data.cmd.argv[0]))
