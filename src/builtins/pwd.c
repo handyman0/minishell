@@ -1,27 +1,30 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   pwd.c                                              :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: lmelo-do <lmelo-do@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/11/04 18:24:25 by lmelo-do          #+#    #+#             */
-/*   Updated: 2025/11/04 18:26:52 by lmelo-do         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include "../../includes/builtins.h"
 #include "../includes/output.h"
 
-int builtin_pwd(void)
+int	builtin_pwd(char **argv, t_shell *shell)
 {
-	char cwd[1024];
+	char	*cwd;
+	int		physical;
+	int		i;
 
-	if (getcwd(cwd, sizeof(cwd)) != NULL)
+	physical = 0;
+	i = 1;
+	while (argv[i] && argv[i][0] == '-' && argv[i][1])
 	{
-		ft_putendl_fd(cwd, STDOUT_FILENO);
-		return (0);
+		if (ft_strcmp(argv[i], "-P") == 0)
+			physical = 1;
+		else if (ft_strcmp(argv[i], "-L") == 0)
+			physical = 0;
+		else if (ft_strcmp(argv[i], "--") == 0)
+			break ;
+		else
+			return (ml_put_all(2, "minishell: pwd: invalid option\n", NULL), 2);
+		i++;
 	}
-	put_errno("pwd", NULL);
-	return (1);
+	cwd = physical ? getcwd(NULL, 0) : logical_pwd(shell);
+	if (!cwd)
+		return (put_errno("pwd", NULL), 1);
+	ml_put_all(STDOUT_FILENO, cwd, "\n", NULL);
+	free(cwd);
+	return (0);
 }

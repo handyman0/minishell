@@ -102,7 +102,7 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 	else if (ft_strcmp(node->data.cmd.argv[0], "cd") == 0)
 		return (builtin_cd(node->data.cmd.argv, shell));
 	else if (ft_strcmp(node->data.cmd.argv[0], "pwd") == 0)
-		return (builtin_pwd());
+		return (builtin_pwd(node->data.cmd.argv, shell));
 	else if (ft_strcmp(node->data.cmd.argv[0], "export") == 0)
 		return (builtin_export(node->data.cmd.argv, shell));
 	else if (ft_strcmp(node->data.cmd.argv[0], "unset") == 0)

@@ -20,7 +20,8 @@
  * @brief Executa o builtin pwd imprimindo o diretório atual.
  * @return 0 em sucesso ou 1 em erro.
  */
-int	builtin_pwd(void);
+int	builtin_pwd(char **argv, t_shell *shell);
+char	*logical_pwd(t_shell *shell);
 
 /**
  * @brief Executa o builtin echo.
