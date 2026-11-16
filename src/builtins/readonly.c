@@ -34,9 +34,9 @@ static int	readonly_one(char *arg, t_shell *shell)
 	else
 	{
 		if (equal)
-			env_set(&shell->env, key, equal + 1);
+			env_assign(&shell->env, key, equal + 1);
 		else if (!env_get(shell->env, key))
-			env_set(&shell->env, key, "");
+			env_assign(&shell->env, key, "");
 		env_set_readonly(shell->env, key);
 	}
 	free(key);

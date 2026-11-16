@@ -40,6 +40,7 @@ int	builtin_pushd(char **argv, t_shell *shell);
 int	builtin_popd(char **argv, t_shell *shell);
 void	dirs_free(void);
 int	builtin_ulimit(char **argv, t_shell *shell);
+int	builtin_mapfile(char **argv, t_shell *shell);
 int	stdout_failed(const char *name);
 int	builtin_echo(char **argv);
 

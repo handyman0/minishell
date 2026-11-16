@@ -174,6 +174,8 @@ static char	*lookup(const char *name, t_shell *shell)
 			return (free(value), NULL);
 		return (value);
 	}
+	if (arr_is(env_get(shell->env, name)))
+		return (arr_first(env_get(shell->env, name)));
 	if (env_get(shell->env, name))
 		return (ft_strdup(env_get(shell->env, name)));
 	return (NULL);
@@ -850,6 +852,133 @@ static int	put_extra(t_word *w, char *inner, int quote, t_shell *shell)
 	return (0);
 }
 
+typedef struct s_aref
+{
+	char	*value;
+	char	*sub;
+	char	*rest;
+	int		count;
+	int		quote;
+	int		neg;
+	int		bang;
+}	t_aref;
+
+static void	put_elems(t_word *w, char **el, int range[2], t_aref *r)
+{
+	int	i;
+
+	i = range[0];
+	while (i < range[1])
+	{
+		if (i > range[0])
+			put_char(w, ' ', r->sub[0] == '@' ? (r->quote ? SEP | QUOTED | KEEP
+					: SEP) : (r->quote ? QUOTED : SEP));
+		put_value(w, ft_strdup(el[i]), r->quote ? QUOTED : SPLIT);
+		i++;
+	}
+	if (range[0] >= range[1] && r->quote && r->sub[0] == '@')
+		w->nat++;
+}
+
+static void	slice_range(t_aref *r, int range[2], t_shell *shell)
+{
+	char	*colon;
+
+	range[0] = 0;
+	range[1] = r->count;
+	if (r->rest[0] != ':' || !r->rest[1])
+		return ;
+	colon = ft_strchr(r->rest + 1, ':');
+	range[0] = (int)arith_part(r->rest + 1, colon ? colon - r->rest - 1
+			: (int)ft_strlen(r->rest + 1), shell);
+	if (range[0] < 0)
+		range[0] += r->count;
+	range[0] = range[0] < 0 ? r->count : (range[0] > r->count ? r->count
+			: range[0]);
+	if (colon)
+		range[1] = range[0] + (int)arith_text(colon + 1, shell);
+	range[1] = range[1] > r->count ? r->count : range[1];
+}
+
+static int	array_all(t_word *w, t_aref *r, t_shell *shell)
+{
+	char	**el;
+	int		range[2];
+	int		n;
+	int		i;
+
+	el = r->bang ? NULL : arr_split(r->value, &n);
+	r->count = r->bang ? arr_count(r->value) : n;
+	if (r->neg)
+		put_value(w, ft_itoa(r->count), r->quote ? QUOTED : SPLIT);
+	else
+	{
+		if (r->bang)
+		{
+			el = ft_calloc(r->count + 1, sizeof(char *));
+			i = -1;
+			while (el && ++i < r->count)
+				el[i] = ft_itoa(i);
+		}
+		slice_range(r, range, shell);
+		put_elems(w, el, range, r);
+	}
+	return (free_str_array(el), 1);
+}
+
+static int	array_one(t_word *w, t_aref *r, t_shell *shell)
+{
+	char	*elem;
+	char	*num;
+	long	idx;
+
+	if (r->rest[0])
+		return (0);
+	num = arith_string(r->sub, shell);
+	idx = num ? ft_atoi(num) : 0;
+	free(num);
+	elem = arr_elem(r->value, idx);
+	if (r->neg)
+	{
+		put_value(w, ft_itoa(elem ? (int)ft_strlen(elem) : 0),
+			r->quote ? QUOTED : SPLIT);
+		return (free(elem), 1);
+	}
+	put_value(w, elem ? elem : ft_strdup(""), r->quote ? QUOTED : SPLIT);
+	return (1);
+}
+
+static int	put_array(t_word *w, char *inner, int quote, t_shell *shell)
+{
+	t_aref	r;
+	char	*name;
+	int		p;
+	int		n;
+	int		close;
+	int		done;
+
+	p = inner[0] == '#' || inner[0] == '!';
+	n = 0;
+	while (ft_isalnum(inner[p + n]) || inner[p + n] == '_')
+		n++;
+	close = p + n + 1;
+	while (inner[p + n] == '[' && inner[close] && inner[close] != ']')
+		close++;
+	if (!n || inner[p + n] != '[' || inner[close] != ']'
+		|| ft_isdigit(inner[p]))
+		return (0);
+	name = ft_substr(inner, p, n);
+	r.value = env_get(shell->env, name);
+	r.sub = ft_substr(inner, p + n + 1, close - p - n - 1);
+	r.rest = inner + close + 1;
+	r.quote = quote;
+	r.neg = inner[0] == '#';
+	r.bang = inner[0] == '!';
+	done = (r.sub[0] == '@' || r.sub[0] == '*') && !r.sub[1]
+		? array_all(w, &r, shell) : array_one(w, &r, shell);
+	return (free(name), free(r.sub), done);
+}
+
 static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	char	*inner;
@@ -861,6 +990,8 @@ static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
 	int		colon;
 
 	inner = ft_substr(raw, 1, brace_end(raw) - 1);
+	if (put_array(w, inner, quote, shell))
+		return (free(inner), 1);
 	if (inner[0] != '#' && put_trim(w, inner, quote, shell))
 		return (free(inner), 1);
 	if (put_extra(w, inner, quote, shell))

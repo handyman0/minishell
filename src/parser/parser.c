@@ -23,7 +23,7 @@ int	is_redirection_token(t_token *token)
 		|| token->type == TOKEN_REDIR_CLOBBER
 		|| token->type == TOKEN_HEREDOC || token->type == TOKEN_HEREDOC_DASH
 		|| token->type == TOKEN_DUP_IN || token->type == TOKEN_DUP_OUT
-		|| token->type == TOKEN_RDWR);
+		|| token->type == TOKEN_RDWR || token->type == TOKEN_HERESTR);
 }
 
 int	handle_redirection(t_token **tokens, t_redir **redirs)
@@ -48,6 +48,7 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 		case TOKEN_DUP_IN: new_redir->type = REDIR_DUP_IN; break ;
 		case TOKEN_DUP_OUT: new_redir->type = REDIR_DUP; break ;
 		case TOKEN_RDWR: new_redir->type = REDIR_RDWR; break ;
+		case TOKEN_HERESTR: new_redir->type = REDIR_HERESTR; break ;
 		default :
 			free(new_redir);
 			return (0);

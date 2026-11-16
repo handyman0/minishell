@@ -22,6 +22,9 @@
  * @struct s_env
  * @brief Nó da lista encadeada de variáveis de ambiente.
  */
+# define ARR_MARK 30
+# define ARR_SEP 31
+
 typedef struct s_env
 {
 	char			*key; /**< Nome da variável. */

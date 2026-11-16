@@ -61,7 +61,7 @@ char	**env_to_array(t_env *env)
 	i = 0;
 	while (env)
 	{
-		if (env->exported)
+		if (env->exported && env->value[0] != ARR_MARK)
 		{
 			tmp = ft_strjoin(env->key, "=");
 			array[i] = ft_strjoin(tmp, env->value);

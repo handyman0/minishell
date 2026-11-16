@@ -350,3 +350,7 @@ let x=1+2 y=x*2; echo $x $y; let 0; echo $?; builtin echo hi; builtin nope 2>/de
 declare -i n=2+3; echo $n; declare -x E=1; sh -c 'echo $E'; f() { declare l=1; declare -g g=2; echo $l; }; f; echo ${l-unset} $g
 cd /; pushd /tmp >/dev/null; pushd /usr >/dev/null; dirs; popd >/dev/null; popd >/dev/null; pwd
 ulimit -n 512; ulimit -n; ulimit -Sn 256; ulimit -n; ulimit -Hn
+a=(x y "z w"); echo $a ${a[1]} "${a[2]}" ${#a[@]} ${#a[2]}; for e in "${a[@]}"; do echo "<$e>"; done; a+=(q); a[4]=five; echo ${#a[@]} ${a[@]:1:2} "${a[@]: -1}"
+b=(1 2 3); echo $((b[1]+10)) ${!b[@]} "${b[*]}"; c=hi; c+=" there"; echo $c; b[1]+=X; echo ${b[@]}; n=(); echo ${#n[@]} "[${n[@]}]"; i=1; echo ${b[i]} ${b[i+1]} ${b[-1]}
+f() { local a=(1 "2 3"); echo ${#a[@]} "${a[1]}"; }; f; declare -a d=(p q); echo ${d[1]}; a=(1 2 3 4); unset a[1]; echo ${a[@]} ${#a[@]}
+read -a arr <<< "p q r"; echo ${arr[1]} ${#arr[@]}; cat <<< "here $arr"; x=abc; tr a-z A-Z <<< "$x"; printf 'l1\nl2\n' | { mapfile -t L; echo ${#L[@]} ${L[1]}; }

@@ -221,7 +221,7 @@ static int	apply_one(t_redir *redir)
 {
 	int	fd;
 
-	if (redir->type == REDIR_HEREDOC)
+	if (redir->type == REDIR_HEREDOC || redir->type == REDIR_HERESTR)
 	{
 		lseek(redir->hd_fd, 0, SEEK_SET);
 		if (redir->hd_fd != redir->fd)

@@ -66,18 +66,11 @@ static long	number(t_arith *a)
 	return ((long)value);
 }
 
-static long	read_var(t_arith *a, const char *name)
+static long	read_scalar(t_arith *a, char *value)
 {
-	char	*value;
 	char	*end;
 	long	n;
 
-	value = env_get(a->shell->env, name);
-	if (!value && !a->skip && (a->shell->opts & OPT_U))
-	{
-		ml_put_all(2, "minishell: ", name, ": unbound variable\n", NULL);
-		return (a->err = a->reported = 1, 0);
-	}
 	if (!value || !*value)
 		return (0);
 	n = strtol(value, &end, 0);
@@ -86,6 +79,45 @@ static long	read_var(t_arith *a, const char *name)
 	if (a->depth > 16)
 		return (fail(a, "expression recursion level exceeded"));
 	return (arith_value(a, value));
+}
+
+static long	read_var(t_arith *a, const char *name)
+{
+	char	*value;
+	char	*first;
+	long	n;
+
+	value = env_get(a->shell->env, name);
+	if (!value && !a->skip && (a->shell->opts & OPT_U))
+	{
+		ml_put_all(2, "minishell: ", name, ": unbound variable\n", NULL);
+		return (a->err = a->reported = 1, 0);
+	}
+	if (!arr_is(value))
+		return (read_scalar(a, value));
+	first = arr_first(value);
+	n = read_scalar(a, first);
+	return (free(first), n);
+}
+
+static long	read_elem(t_arith *a, const char *name)
+{
+	const char	*close;
+	char		*text;
+	char		*elem;
+	long		idx;
+	long		res;
+
+	close = ft_strchr(a->p, ']');
+	if (!close)
+		return (fail(a, "syntax error in arithmetic expression"));
+	text = ft_substr(a->p, 1, close - a->p - 1);
+	idx = arith_value(a, text ? text : "0");
+	free(text);
+	a->p = close + 1;
+	elem = arr_elem(env_get(a->shell->env, name), idx);
+	res = read_scalar(a, elem);
+	return (free(elem), res);
 }
 
 static long	power(long base, long exp)
@@ -401,6 +433,8 @@ static long	primary(t_arith *a)
 	ft_memcpy(name, a->p, len);
 	name[len] = '\0';
 	a->p += len;
+	if (*a->p == '[')
+		return (read_elem(a, name));
 	return (read_var(a, name));
 }
 

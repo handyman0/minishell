@@ -141,6 +141,63 @@ static int	assign_fields(char **names, t_rline *l, t_shell *shell)
 	return (bad);
 }
 
+static void	assign_array(char *name, t_rline *l, t_shell *shell)
+{
+	const char	*ifs;
+	char		**el;
+	size_t		pos;
+	size_t		end;
+	char		*joined;
+	int			n;
+
+	ifs = env_get(shell->env, "IFS");
+	if (!ifs)
+		ifs = " \t\n";
+	el = ft_calloc(l->len + 2, sizeof(char *));
+	n = 0;
+	pos = skip_blanks(l, 0, ifs);
+	while (el && pos < l->len)
+	{
+		end = pos;
+		while (end < l->len && !is_delim(l, end, ifs))
+			end++;
+		el[n++] = ft_substr(l->buf, pos, end - pos);
+		pos = next_field(l, end, ifs);
+	}
+	joined = el ? arr_join(el, n) : NULL;
+	if (joined)
+		env_assign(&shell->env, name, joined);
+	free(joined);
+	free_str_array(el);
+}
+
+static int	read_options(char **argv, int *raw, char **array, char **prompt)
+{
+	int	i;
+	int	k;
+
+	i = 1;
+	while (argv[i] && argv[i][0] == '-' && argv[i][1])
+	{
+		if (ft_strcmp(argv[i], "--") == 0 && ++i)
+			break ;
+		k = 0;
+		while (argv[i][++k])
+		{
+			*raw |= argv[i][k] == 'r';
+			if (argv[i][k] == 'a' && argv[i + 1])
+				*array = argv[++i];
+			else if (argv[i][k] == 'p' && argv[i + 1])
+				*prompt = argv[++i];
+			else if ((argv[i][k] == 'n' || argv[i][k] == 't'
+				|| argv[i][k] == 'd' || argv[i][k] == 'u') && argv[i + 1])
+				i++;
+		}
+		i++;
+	}
+	return (i);
+}
+
 int	builtin_read(char **argv, t_shell *shell)
 {
 	t_rline	l;
@@ -149,11 +206,15 @@ int	builtin_read(char **argv, t_shell *shell)
 	int		raw;
 	int		i;
 	int		got;
+	char	*array;
+	char	*prompt;
 
 	raw = 0;
-	i = 1;
-	while (argv[i] && argv[i][0] == '-' && argv[i][1])
-		raw |= ft_strchr(argv[i++], 'r') != NULL;
+	array = NULL;
+	prompt = NULL;
+	i = read_options(argv, &raw, &array, &prompt);
+	if (prompt && isatty(STDIN_FILENO))
+		ml_put_all(2, prompt, NULL);
 	def[0] = "REPLY";
 	def[1] = NULL;
 	names = argv[i] ? argv + i : def;
@@ -164,7 +225,11 @@ int	builtin_read(char **argv, t_shell *shell)
 	got = read_line(&l, raw);
 	push(&l, 0, 0);
 	l.len--;
-	i = assign_fields(names, &l, shell);
+	i = 0;
+	if (array)
+		assign_array(array, &l, shell);
+	else
+		i = assign_fields(names, &l, shell);
 	free(l.buf);
 	free(l.quoted);
 	if (i)

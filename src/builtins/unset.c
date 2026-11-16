@@ -13,6 +13,7 @@
 #include "../includes/builtins.h"
 #include "../includes/minishell.h"
 #include "../includes/output.h"
+#include "../includes/parser.h"
 
 static int	is_valid_identifier(char *str)
 {
@@ -29,10 +30,44 @@ static int	is_valid_identifier(char *str)
 	return (1);
 }
 
+static int	unset_element(char *name, t_shell *shell)
+{
+	char	*open;
+	char	*key;
+	char	*num;
+	char	*sub;
+	char	**el;
+	char	*joined;
+	int		n;
+	long	idx;
+
+	open = ft_strchr(name, '[');
+	key = ft_substr(name, 0, open - name);
+	sub = ft_substr(open + 1, 0, ft_strlen(open) - 2);
+	num = arith_string(sub ? sub : "0", shell);
+	free(sub);
+	idx = num ? ft_atoi(num) : 0;
+	free(num);
+	el = arr_split(env_get(shell->env, key), &n);
+	if (el && idx >= 0 && idx < n)
+	{
+		free(el[idx]);
+		while (idx++ < n)
+			el[idx - 1] = el[idx];
+		joined = arr_join(el, n - 1);
+		env_assign(&shell->env, key, joined);
+		free(joined);
+	}
+	free_str_array(el);
+	return (free(key), 0);
+}
+
 static int	unset_one(char *name, int functions, t_shell *shell)
 {
 	if (functions)
 		return (func_remove(shell, name), 0);
+	if (ft_strchr(name, '[') && name[ft_strlen(name) - 1] == ']')
+		return (unset_element(name, shell));
 	if (!is_valid_identifier(name))
 		return (ml_put_all(2, "minishell: unset: '", name,
 				"': not a valid identifier\n", NULL), 1);

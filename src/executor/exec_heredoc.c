@@ -197,3 +197,16 @@ int	prepare_heredocs(t_node *root, t_shell *shell)
 	free(stack);
 	return (bad);
 }
+
+int	herestring_fd(const char *text)
+{
+	int	fd;
+
+	fd = heredoc_tmpfile();
+	if (fd == -1)
+		return (-1);
+	write(fd, text ? text : "", ft_strlen(text ? text : ""));
+	write(fd, "\n", 1);
+	lseek(fd, 0, SEEK_SET);
+	return (fd);
+}

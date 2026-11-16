@@ -10,6 +10,7 @@ typedef struct s_decl
 	int	print;
 	int	global;
 	int	funcs;
+	int	array;
 }	t_decl;
 
 static int	parse_flags(char **argv, t_decl *d, int *i)
@@ -33,9 +34,11 @@ static int	parse_flags(char **argv, t_decl *d, int *i)
 				d->print = 1;
 			else if (argv[*i][k] == 'g')
 				d->global = 1;
+			else if (argv[*i][k] == 'a')
+				d->array = 1;
 			else if (argv[*i][k] == 'f' || argv[*i][k] == 'F')
 				d->funcs = 1;
-			else if (!ft_strchr("alutnA", argv[*i][k]))
+			else if (!ft_strchr("lutnA", argv[*i][k]))
 				return (ml_put_all(2, "minishell: declare: -",
 						(char []){argv[*i][k], 0}, ": invalid option\n", NULL),
 					0);
@@ -45,6 +48,15 @@ static int	parse_flags(char **argv, t_decl *d, int *i)
 	return (1);
 }
 
+static void	show_array(const char *v)
+{
+	char	*text;
+
+	text = arr_display(v);
+	ml_put_all(STDOUT_FILENO, "=", text, NULL);
+	free(text);
+}
+
 static void	print_one(t_env *var, t_decl *d)
 {
 	char	flags[8];
@@ -52,6 +64,8 @@ static void	print_one(t_env *var, t_decl *d)
 
 	n = 0;
 	flags[n++] = '-';
+	if (arr_is(var->value))
+		flags[n++] = 'a';
 	if (var->readonly)
 		flags[n++] = 'r';
 	if (var->exported)
@@ -61,7 +75,9 @@ static void	print_one(t_env *var, t_decl *d)
 	flags[n] = '\0';
 	(void)d;
 	ml_put_all(STDOUT_FILENO, "declare ", flags, " ", var->key, NULL);
-	if (var->value)
+	if (arr_is(var->value))
+		show_array(var->value);
+	else if (var->value)
 		ml_put_all(STDOUT_FILENO, "=\"", var->value, "\"", NULL);
 	ft_putchar_fd('\n', STDOUT_FILENO);
 }
@@ -118,7 +134,9 @@ static int	declare_one(char *arg, t_decl *d, t_shell *shell)
 	if (val)
 		env_assign(&shell->env, key, val);
 	else if (!env_get(shell->env, key))
-		env_set(&shell->env, key, "");
+		env_assign(&shell->env, key, d->array ? (char []){ARR_MARK, 0} : "");
+	else if (d->array && !arr_is(env_get(shell->env, key)))
+		val = NULL;
 	if (d->exp)
 		env_export(shell->env, key);
 	if (d->ro)

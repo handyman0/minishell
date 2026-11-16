@@ -33,6 +33,7 @@ typedef enum e_toktype
 	TOKEN_DUP_IN, // <&
 	TOKEN_DUP_OUT, // >&
 	TOKEN_RDWR, // <>
+	TOKEN_HERESTR, // <<<
 	TOKEN_AND, // &&
 	TOKEN_OR, // ||
 	TOKEN_LPAREN, // (
@@ -69,6 +70,7 @@ typedef enum e_redir_type
 	REDIR_DUP, // >&N
 	REDIR_DUP_IN, // <&N
 	REDIR_RDWR, // <>
+	REDIR_HERESTR, // <<<
 } t_redir_type;
 
 typedef struct s_redir
@@ -207,6 +209,18 @@ char	*expand_variables(char *token, t_shell *shell);
 char	*expand_pattern(char *word, t_shell *shell);
 char	*dynamic_value(const char *name, t_shell *shell);
 int	opens_command(t_token *tok);
+int	assign_eq_index(const char *w);
+char	*assign_with_index(const char *base, const char *sub, int plus, const char *val, t_shell *shell);
+char	*arr_display(const char *v);
+int	arr_is(const char *v);
+int	arr_count(const char *v);
+char	**arr_split(const char *v, int *n);
+char	*arr_join(char **elems, int n);
+char	*arr_elem(const char *v, long idx);
+char	*arr_first(const char *v);
+char	*arr_set(const char *v, long idx, const char *val);
+int	skip_array_literal(const char *s, int i);
+int	is_array_assign_prefix(const char *s, int len);
 void	fold_conds(t_token *head);
 char	*param_substring(const char *value, long off, long len, int has_len);
 char	*param_replace(const char *value, const char *pat, const char *rep, int mode);

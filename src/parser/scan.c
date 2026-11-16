@@ -199,3 +199,47 @@ int	skip_brace(const char *s, int i)
 	}
 	return (-1);
 }
+
+int	skip_array_literal(const char *s, int i)
+{
+	int	depth;
+
+	depth = 1;
+	i++;
+	while (s[i])
+	{
+		if (s[i] == '\\' && s[i + 1])
+			i += 2;
+		else if (s[i] == '(')
+			i++, depth++;
+		else if (s[i] == ')' && --depth == 0)
+			return (i + 1);
+		else if (s[i] == ')')
+			i++;
+		else
+			i = skip_nested(s, i);
+		if (i < 0)
+			return (-1);
+	}
+	return (-1);
+}
+
+int	is_array_assign_prefix(const char *s, int len)
+{
+	int	i;
+
+	if (len < 2 || !(ft_isalpha(s[0]) || s[0] == '_'))
+		return (0);
+	i = 1;
+	while (i < len && (ft_isalnum(s[i]) || s[i] == '_'))
+		i++;
+	if (i < len && s[i] == '[')
+	{
+		while (i < len && s[i] != ']')
+			i++;
+		i += i < len;
+	}
+	if (i < len && s[i] == '+')
+		i++;
+	return (i == len - 1 && s[i] == '=');
+}

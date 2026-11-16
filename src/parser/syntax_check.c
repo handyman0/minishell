@@ -48,6 +48,8 @@ const char	*token_text(t_token *tok)
 		return (">&");
 	if (tok->type == TOKEN_RDWR)
 		return ("<>");
+	if (tok->type == TOKEN_HERESTR)
+		return ("<<<");
 	if (tok->type == TOKEN_DSEMI)
 		return (";;");
 	return (tok->value ? tok->value : "?");

@@ -148,6 +148,14 @@ static void	print_variables(t_shell *shell)
 	n = 0;
 	while (keys && n < i)
 	{
+		if (arr_is(env_get(shell->env, keys[n])))
+		{
+			quoted = arr_display(env_get(shell->env, keys[n]));
+			ml_put_all(STDOUT_FILENO, keys[n], "=", quoted, "\n", NULL);
+			free(quoted);
+			n++;
+			continue ;
+		}
 		quoted = needs_quoting(env_get(shell->env, keys[n]))
 			? quote_word(env_get(shell->env, keys[n])) : NULL;
 		ml_put_all(STDOUT_FILENO, keys[n], "=", quoted ? quoted

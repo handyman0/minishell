@@ -60,6 +60,12 @@ static int	handle_operator(char *line, int i,
 			token_add_back(head, current, TOKEN_BG, NULL);
 		return (1);
 	}
+	else if (line[i] == '<' && line[i + 1] == '<' && line[i + 2] == '<')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_HERESTR, NULL);
+		return (3);
+	}
 	else if (line[i] == '<' && line[i + 1] == '<' && line[i + 2] == '-')
 	{
 		if (head && current)
@@ -164,11 +170,15 @@ static char	*extract_word(char *line, int *i, int len)
 	int		p;
 
 	p = *i + len;
-	while (line[p] && !ft_isspace(line[p]) && !handle_operator(line, p, NULL,
-			NULL))
+	while (line[p] && !ft_isspace(line[p]) && (!handle_operator(line, p, NULL,
+				NULL) || (line[p] == '('
+				&& is_array_assign_prefix(line + *i, p - *i))))
 	{
 		if (line[p] == '\\' && line[p + 1])
 			p += 2;
+		else if (line[p] == '(' && is_array_assign_prefix(line + *i, p - *i))
+			p = skip_array_literal(line, p) < 0 ? (int)ft_strlen(line)
+				: skip_array_literal(line, p);
 		else if (line[p] == '\'' || line[p] == '"' || line[p] == '`'
 			|| (line[p] == '$' && (line[p + 1] == '(' || line[p + 1] == '{')))
 			p = skip_construct(line, p);
