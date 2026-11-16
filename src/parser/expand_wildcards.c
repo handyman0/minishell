@@ -13,6 +13,8 @@
 #include "../../includes/parser.h"
 #include "../../mylib/include/mylib.h"
 #include <dirent.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #define MAX_MATCHES 4096
 
@@ -241,55 +243,172 @@ static int	is_match(const char *base, struct dirent *entry)
 	return (match_pattern(base, entry->d_name));
 }
 
-static int	collect(const char *dirpath, const char *base, char **names)
+typedef struct s_glob
+{
+	char	**out;
+	int		count;
+	char	**segs;
+	int		nsegs;
+}	t_glob;
+
+static int	has_magic(const char *seg)
+{
+	int	i;
+
+	i = 0;
+	while (seg[i])
+	{
+		if (seg[i] == '\\' && seg[i + 1])
+			i++;
+		else if (seg[i] == '*' || seg[i] == '?'
+			|| (seg[i] == '[' && class_close(seg + i)))
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
+static int	is_dir_path(const char *path)
+{
+	struct stat	st;
+
+	return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
+}
+
+static char	*join_path(const char *base, const char *name)
+{
+	char	*tmp;
+	char	*res;
+
+	if (!*base)
+		return (ft_strdup(name));
+	if (base[ft_strlen(base) - 1] == '/')
+		return (ft_strjoin(base, name));
+	tmp = ft_strjoin(base, "/");
+	res = ft_strjoin(tmp, name);
+	return (free(tmp), res);
+}
+
+static void	walk(t_glob *g, const char *base, int idx);
+
+static void	walk_entry(t_glob *g, const char *base, int idx, const char *name)
+{
+	char	*path;
+	char	*slashed;
+
+	path = join_path(base, name);
+	if (idx == g->nsegs - 1)
+	{
+		if (g->count < MAX_MATCHES)
+			g->out[g->count++] = path;
+		else
+			free(path);
+		return ;
+	}
+	if (is_dir_path(path))
+	{
+		slashed = ft_strjoin(path, "/");
+		walk(g, slashed, idx + 1);
+		free(slashed);
+	}
+	free(path);
+}
+
+static void	walk_dir(t_glob *g, const char *base, int idx)
 {
 	DIR				*dir;
 	struct dirent	*entry;
-	int				count;
 
-	dir = opendir(dirpath);
+	dir = opendir(*base ? base : ".");
 	if (!dir)
-		return (0);
-	count = 0;
+		return ;
 	entry = readdir(dir);
-	while (entry && count < MAX_MATCHES)
+	while (entry && g->count < MAX_MATCHES)
 	{
-		if (is_match(base, entry))
-			names[count++] = ft_strdup(entry->d_name);
+		if (is_match(g->segs[idx], entry))
+			walk_entry(g, base, idx, entry->d_name);
 		entry = readdir(dir);
 	}
 	closedir(dir);
-	return (count);
+}
+
+static void	walk(t_glob *g, const char *base, int idx)
+{
+	char	*name;
+	char	*path;
+
+	if (idx >= g->nsegs)
+		return ;
+	if (!g->segs[idx][0])
+	{
+		if (idx == g->nsegs - 1 && is_dir_path(*base ? base : "."))
+			g->out[g->count++] = ft_strdup(base);
+		return ;
+	}
+	if (has_magic(g->segs[idx]))
+		return (walk_dir(g, base, idx));
+	name = unescape(g->segs[idx], ft_strlen(g->segs[idx]));
+	path = join_path(base, name);
+	if (idx == g->nsegs - 1)
+	{
+		if (access(path, F_OK) == 0 && g->count < MAX_MATCHES)
+			g->out[g->count++] = ft_strdup(path);
+	}
+	else
+		walk_entry(g, base, idx, name);
+	free(name);
+	free(path);
+}
+
+static char	**split_segments(const char *pattern, int *n)
+{
+	char	**segs;
+	int		i;
+	int		start;
+
+	*n = 1;
+	i = -1;
+	while (pattern[++i])
+		*n += pattern[i] == '/';
+	segs = ft_calloc(*n + 1, sizeof(char *));
+	i = 0;
+	start = 0;
+	*n = 0;
+	while (segs)
+	{
+		if (!pattern[i] || pattern[i] == '/')
+		{
+			segs[(*n)++] = ft_substr(pattern, start, i - start);
+			start = i + 1;
+		}
+		if (!pattern[i++])
+			break ;
+	}
+	return (segs);
 }
 
 int	expand_glob(char *pattern, t_token **head, t_token **cur)
 {
-	char	*names[MAX_MATCHES];
-	char	*slash;
-	char	*prefix;
-	int		count;
+	t_glob	g;
 	int		i;
 
-	slash = ft_strrchr(pattern, '/');
-	prefix = ft_strdup("");
-	if (slash)
+	g.out = ft_calloc(MAX_MATCHES + 1, sizeof(char *));
+	g.count = 0;
+	g.segs = split_segments(pattern, &g.nsegs);
+	if (g.out && g.segs)
 	{
-		free(prefix);
-		prefix = unescape(pattern, slash - pattern + 1);
+		if (pattern[0] == '/')
+			walk(&g, "/", 1);
+		else
+			walk(&g, "", 0);
+		sort_names(g.out, g.count);
 	}
-	count = 0;
-	if (prefix && (!slash || slash[1]))
-		count = collect(slash ? prefix : ".", slash ? slash + 1 : pattern,
-				names);
-	sort_names(names, count);
 	i = 0;
-	while (i < count)
-	{
-		token_add_back(head, cur, TOKEN_WORD, ft_strjoin(prefix, names[i]));
-		free(names[i++]);
-	}
-	free(prefix);
-	return (count);
+	while (g.out && i < g.count)
+		token_add_back(head, cur, TOKEN_WORD, g.out[i++]);
+	free(g.out);
+	free_str_array(g.segs);
+	return (g.count);
 }
 
 int	glob_match(const char *pattern, const char *name)
