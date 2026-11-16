@@ -16,12 +16,12 @@ int	source_file(const char *path, t_shell *shell)
 		return (-1);
 	saved = reader;
 	ml_reader_init(&reader, fd);
-	line = ml_reader_line(&reader);
+	line = ml_reader_command(&reader, line_incomplete);
 	while (line && shell->running)
 	{
 		run_line(line, shell);
 		free(line);
-		line = ml_reader_line(&reader);
+		line = ml_reader_command(&reader, line_incomplete);
 	}
 	free(line);
 	close(fd);

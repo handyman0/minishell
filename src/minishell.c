@@ -127,7 +127,7 @@ static char	*read_input(t_shell *shell, int interactive)
 	char	*prompt;
 
 	if (!interactive)
-		return (ml_reader_line(ml_stdin_reader()));
+		return (ml_reader_command(ml_stdin_reader(), line_incomplete));
 	prompt = build_prompt(shell);
 	line = le_readline(prompt ? prompt : "minishell> ", shell, LE_FANCY);
 	free(prompt);
@@ -203,37 +203,115 @@ static void	shell_loop(t_shell *shell, int interactive)
 	}
 }
 
+typedef struct s_opts
+{
+	char	*cmd;
+	char	*script;
+	int		use_stdin;
+	int		bad;
+	int		rest;
+}	t_opts;
+
+static void	parse_args(int argc, char **argv, t_opts *o)
+{
+	int	i;
+
+	ft_bzero(o, sizeof(t_opts));
+	i = 1;
+	while (i < argc && argv[i][0] == '-' && argv[i][1])
+	{
+		if (ft_strcmp(argv[i], "--") == 0)
+		{
+			i++;
+			break ;
+		}
+		if (ft_strcmp(argv[i], "-c") == 0)
+		{
+			o->bad = (i + 1 >= argc);
+			o->cmd = i + 1 < argc ? argv[i + 1] : NULL;
+			i++;
+		}
+		else if (ft_strcmp(argv[i], "-s") == 0)
+			o->use_stdin = 1;
+		i++;
+	}
+	if (!o->cmd && !o->use_stdin && i < argc)
+		o->script = argv[i++];
+	o->rest = i;
+}
+
+static void	set_params(t_shell *shell, char **args, int n)
+{
+	int	i;
+
+	shell->params = ft_calloc(n + 1, sizeof(char *));
+	shell->nparams = 0;
+	i = 0;
+	while (shell->params && i < n)
+	{
+		shell->params[i] = ft_strdup(args[i]);
+		shell->nparams++;
+		i++;
+	}
+}
+
+static int	run_noninteractive(t_shell *shell, t_opts *o)
+{
+	setup_signals_noninteractive();
+	if (o->cmd)
+		run_line(o->cmd, shell);
+	else if (source_file(o->script, shell) == -1)
+	{
+		put_errno(o->script, NULL);
+		shell->exit_status = 127;
+	}
+	return (shell->exit_status);
+}
+
+static void	cleanup(t_shell *shell, int hangup)
+{
+	jobs_free(shell, hangup);
+	funcs_free(shell);
+	free_str_array(shell->params);
+	env_free(shell->aliases);
+	env_free(shell->env);
+}
+
 int	main(int argc, char **argv, char **envp)
 {
 	t_shell	shell;
+	t_opts	o;
 	int		interactive;
 
+	parse_args(argc, argv, &o);
+	if (o.bad)
+		return (ml_put_all(2, "minishell: -c: option requires an argument\n",
+				NULL), 2);
 	init_shell(&shell, envp);
-	jobs_init(&shell, !(argc >= 3 && ft_strcmp(argv[1], "-c") == 0));
-	if (argc >= 3 && ft_strcmp(argv[1], "-c") == 0)
+	jobs_init(&shell, !o.cmd && !o.script);
+	if (o.cmd || o.script)
 	{
-		setup_signals_noninteractive();
-		run_line(argv[2], &shell);
-		jobs_free(&shell, 0);
-		env_free(shell.aliases);
-		env_free(shell.env);
-		return (shell.exit_status);
+		if (o.script || o.rest < argc)
+			shell.argv0 = o.script ? o.script : argv[o.rest++];
+		set_params(&shell, argv + o.rest, argc - o.rest);
+		o.bad = run_noninteractive(&shell, &o);
+		return (cleanup(&shell, 0), o.bad);
 	}
+	set_params(&shell, argv + o.rest, argc - o.rest);
 	interactive = shell.interactive;
 	if (interactive)
 		setup_signals();
 	else
 		setup_signals_noninteractive();
 	if (interactive)
+	{
 		history_load(&shell);
-	if (interactive)
 		load_rc(&shell);
+	}
 	shell_loop(&shell, interactive);
 	if (interactive)
 		history_save(&shell);
-	jobs_free(&shell, 1);
-	env_free(shell.aliases);
-	env_free(shell.env);
+	cleanup(&shell, 1);
 	if (interactive)
 		ml_put_all(STDOUT_FILENO, "exit\n", NULL);
 	return (shell.exit_status);

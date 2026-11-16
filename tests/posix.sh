@@ -48,7 +48,7 @@ fi
 RUN=$(mktemp -d /tmp/minishell_posix.XXXXXX)
 RESULTS="$RUN/results.txt"
 : > "$RESULTS"
-trap 'rm -rf "$RUN"' EXIT
+trap 'chmod -R u+rwx "$RUN" 2> /dev/null; rm -rf "$RUN"' EXIT
 
 SETUP=
 setup() {
