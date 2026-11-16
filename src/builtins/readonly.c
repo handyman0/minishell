@@ -30,7 +30,7 @@ static int	readonly_one(char *arg, t_shell *shell)
 					": not a valid identifier\n", NULL), 1);
 	else if (equal && env_is_readonly(shell->env, key))
 		status = (ml_put_all(2, "minishell: ", key,
-					": readonly variable\n", NULL), 1);
+					": readonly variable\n", NULL), shell->running = shell->spare, 1);
 	else
 	{
 		if (equal)
