@@ -343,3 +343,6 @@ x=hello; y=; [[ $x == h* && -z $y ]] && echo 1; [[ $x == "h*" ]] || echo 2; [[ $
 n=5; [[ n -eq 5 && $((n+1)) -gt 5 ]] && echo 5; if [[ ( a == a ) && -f /etc/passwd ]]; then echo 6; fi; [[ -v n ]] && echo 7
 x=hello; [[ $x == hello &&
  $x != bye ]] && echo ok; f() { [[ $1 == a* ]]; }; f abc && echo f; echo [[ lit ]]
+printf '%s\n' a b c; printf '%d-%s\n' 1 x 2 y 3; printf '%5d|%-5d|%05d|%x|%X|%o|%c\n' 42 42 42 255 255 8 hello
+printf '%.2f %e %g\n' 3.14159 1234.5 0.0001; printf 'a\tb\\n\x41\101\n'; printf '%b\n' 'x\ty\0101\cz'; printf '%10s|%-10s|%.3s\n' abc abc abcdef
+printf '%d\n' 0x1f 010 "'A"; printf '%s %s\n' only; printf -v v '%s-%s' a b; echo $v; printf 'x\n' e1 e2; printf '%u\n' -1
