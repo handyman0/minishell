@@ -55,8 +55,14 @@ static int	expand_one(t_token **link, t_shell *shell, char **seen, int depth)
 		return (0);
 	value = env_get(shell->aliases, tok->value);
 	fresh = value ? tokenize_line(value) : NULL;
+	if (!fresh && value)
+	{
+		*link = tok->next;
+		blank = ends_blank(value);
+		return (free(tok->value), free(tok), 10 + blank);
+	}
 	if (!fresh)
-		return (value != NULL);
+		return (0);
 	blank = ends_blank(value);
 	seen[depth] = tok->value;
 	tail = fresh;
@@ -116,17 +122,29 @@ void	expand_aliases(t_token **tokens, t_shell *shell)
 	char	*seen[MAX_ALIAS_DEPTH];
 	int		expect_cmd;
 	int		redir;
+	int		res;
+	int		noexp;
 
 	link = tokens;
 	expect_cmd = 1;
 	redir = 0;
 	resume = NULL;
+	noexp = 0;
 	while (*link && shell->aliases)
 	{
 		if (*link == resume)
 			expect_cmd = 1;
 		after = (*link)->next;
-		if (expect_cmd && !redir && expand_one(link, shell, seen, 0) == 2)
+		res = 0;
+		if (expect_cmd && !redir && !noexp)
+			res = expand_one(link, shell, seen, 0);
+		noexp = 0;
+		if (res >= 10)
+		{
+			noexp = res == 10;
+			continue ;
+		}
+		if (res == 2)
 			resume = after;
 		classify(*link, &expect_cmd, &redir);
 		link = &(*link)->next;

@@ -322,3 +322,5 @@ set --; null=; f() { echo $#; }; f "$@"; f "$null""$@"; f "$@" ""
 printf '[%s]' ${#-""} ${#+""} ${#=""}; echo
 HOME=/foo/bar; printf '[%s]' ${a-~} ${u-~/} ${u-\~}; echo
 unset u; printf '[%s]' ${u-$(echo a b)} "${u-$(echo a b)}"; echo
+readonly a=a; a=b; echo nao
+readonly a=a; (a=b; echo nao); echo $?
