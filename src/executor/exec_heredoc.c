@@ -12,7 +12,6 @@
 #include "../../includes/executor.h"
 #include "../../includes/parser.h"
 #include "../../includes/signals.h"
-#include "../../includes/reader.h"
 #include <fcntl.h>
 #include <signal.h>
 
@@ -20,7 +19,7 @@ static char	*read_heredoc_line(void)
 {
 	if (isatty(STDIN_FILENO))
 		return (le_readline("heredoc> ", NULL, LE_PLAIN));
-	return (reader_line(stdin_reader()));
+	return (ml_reader_line(ml_stdin_reader()));
 }
 
 static char	*strip_quotes(const char *raw)

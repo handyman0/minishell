@@ -1,5 +1,4 @@
 #include "../../includes/lineedit.h"
-#include "../../includes/reader.h"
 #include <fcntl.h>
 
 static char	*g_hist[HISTORY_MAX];
@@ -50,13 +49,13 @@ void	le_history_load(const char *path)
 	fd = open(path, O_RDONLY);
 	if (fd == -1)
 		return ;
-	reader_init(&reader, fd);
-	line = reader_line(&reader);
+	ml_reader_init(&reader, fd);
+	line = ml_reader_line(&reader);
 	while (line)
 	{
 		le_history_add(line);
 		free(line);
-		line = reader_line(&reader);
+		line = ml_reader_line(&reader);
 	}
 	close(fd);
 }

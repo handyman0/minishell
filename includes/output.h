@@ -1,12 +1,6 @@
 #ifndef OUTPUT_H
 # define OUTPUT_H
 
-/**
- * @brief Escreve varias strings em um fd com um unico write.
- * @param fd Descritor de destino.
- * @param ... Strings terminadas por NULL.
- */
-void	put_all(int fd, ...);
 
 /**
  * @brief Escreve "minishell: a: b: <erro de errno>" em stderr.

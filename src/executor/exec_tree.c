@@ -208,10 +208,10 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!path)
 	{
 		if (ft_strchr(node->data.cmd.argv[0], '/'))
-			put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
+			ml_put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
 				": No such file or directory\n", NULL);
 		else
-			put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
+			ml_put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
 				": command not found\n", NULL);
 		restore_fds(backup);
 		return (127);
@@ -247,7 +247,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 		}
 		execve(path, node->data.cmd.argv, env_array);
 		if (errno == EACCES && is_dir(path))
-			put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
+			ml_put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
 				": Is a directory\n", NULL);
 		else
 			put_errno(node->data.cmd.argv[0], NULL);
@@ -375,7 +375,7 @@ int	execute_tree(t_node *node, t_shell *shell)
 		case NODE_BG:
 			return (execute_background(node, shell));
 		default:
-			put_all(STDERR_FILENO, "minishell: unknown node type\n", NULL);
+			ml_put_all(STDERR_FILENO, "minishell: unknown node type\n", NULL);
 			return (1);
 	}
 }

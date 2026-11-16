@@ -14,7 +14,6 @@
 #include "../includes/builtins.h"
 #include "../includes/output.h"
 #include "../includes/prompt.h"
-#include "../../includes/reader.h"
 
 static void	init_env_defaults(t_shell *shell)
 {
@@ -108,7 +107,7 @@ static char	*read_input(t_shell *shell, int interactive)
 	char	*prompt;
 
 	if (!interactive)
-		return (reader_line(stdin_reader()));
+		return (ml_reader_line(ml_stdin_reader()));
 	prompt = build_prompt(shell);
 	line = le_readline(prompt ? prompt : "minishell> ", shell, LE_FANCY);
 	free(prompt);
@@ -216,6 +215,6 @@ int	main(int argc, char **argv, char **envp)
 	env_free(shell.aliases);
 	env_free(shell.env);
 	if (interactive)
-		put_all(STDOUT_FILENO, "exit\n", NULL);
+		ml_put_all(STDOUT_FILENO, "exit\n", NULL);
 	return (shell.exit_status);
 }

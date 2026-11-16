@@ -92,7 +92,7 @@ int			le_history_count(void);
 const char	*le_history_get(int index);
 const char	*history_suggestion(const char *buf, size_t len);
 
-void		sort_strings(char **items, int count);
+void		ml_sort_strings(char **items, int count);
 int			complete_tab(t_edit *e);
 void		le_set_buffer(t_edit *e, const char *text);
 int			search_history(t_edit *e);

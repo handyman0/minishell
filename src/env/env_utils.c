@@ -18,7 +18,7 @@ void	env_print(t_env *env)
 	while (env)
 	{
 		if (env->exported)
-			put_all(STDOUT_FILENO, env->key, "=", env->value, "\n", NULL);
+			ml_put_all(STDOUT_FILENO, env->key, "=", env->value, "\n", NULL);
 		env = env->next;
 	}
 }

@@ -70,4 +70,23 @@ double	ft_atodbl(char *s);
 int		ft_strcmp(const char *s1, const char *s2);
 int		ft_isspace(char c);
 
+/* ---- extensoes proprias do projeto (prefixo ml_) ---- */
+
+# define ML_READER_BUF 65536
+
+typedef struct s_reader
+{
+	int		fd;
+	size_t	pos;
+	size_t	len;
+	char	buf[ML_READER_BUF];
+}	t_reader;
+
+void		ml_reader_init(t_reader *reader, int fd);
+char		*ml_reader_line(t_reader *reader);
+t_reader	*ml_stdin_reader(void);
+char		*ml_reader_command(t_reader *reader, int (*incomplete)(char *));
+void		ml_put_all(int fd, ...);
+void		ml_sort_strings(char **items, int count);
+
 #endif

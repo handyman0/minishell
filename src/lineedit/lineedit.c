@@ -1,5 +1,4 @@
 #include "../../includes/lineedit.h"
-#include "../../includes/reader.h"
 #include "../../includes/signals.h"
 
 int	le_insert(t_edit *e, const char *src, size_t n)
@@ -263,7 +262,7 @@ char	*le_readline(const char *prompt, t_shell *shell, int fancy)
 	int		done;
 
 	if (!term_raw_on())
-		return (reader_line(stdin_reader()));
+		return (ml_reader_line(ml_stdin_reader()));
 	edit_init(&e, prompt, shell, fancy);
 	if (!e.buf)
 		return (term_raw_off(), NULL);

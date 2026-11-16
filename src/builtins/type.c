@@ -19,13 +19,13 @@ static int	describe_type(char *name, t_shell *shell)
 
 	alias = env_get(shell->aliases, name);
 	if (alias)
-		return (put_all(STDOUT_FILENO, name, " is aliased to `", alias, "'\n", NULL), 0);
+		return (ml_put_all(STDOUT_FILENO, name, " is aliased to `", alias, "'\n", NULL), 0);
 	if (is_builtin(name))
-		return (put_all(STDOUT_FILENO, name, " is a shell builtin\n", NULL), 0);
+		return (ml_put_all(STDOUT_FILENO, name, " is a shell builtin\n", NULL), 0);
 	path = find_executable(name, shell);
 	if (!path)
 		return (not_found("type", name), 1);
-	put_all(STDOUT_FILENO, name, " is ", path, "\n", NULL);
+	ml_put_all(STDOUT_FILENO, name, " is ", path, "\n", NULL);
 	free(path);
 	return (0);
 }
@@ -37,13 +37,13 @@ static int	describe_which(char *name, t_shell *shell)
 
 	alias = env_get(shell->aliases, name);
 	if (alias)
-		return (put_all(STDOUT_FILENO, name, ": aliased to ", alias, "\n", NULL), 0);
+		return (ml_put_all(STDOUT_FILENO, name, ": aliased to ", alias, "\n", NULL), 0);
 	if (is_builtin(name))
-		return (put_all(STDOUT_FILENO, name, ": shell built-in command\n", NULL), 0);
+		return (ml_put_all(STDOUT_FILENO, name, ": shell built-in command\n", NULL), 0);
 	path = find_executable(name, shell);
 	if (!path)
 		return (not_found("which", name), 1);
-	put_all(STDOUT_FILENO, path, "\n", NULL);
+	ml_put_all(STDOUT_FILENO, path, "\n", NULL);
 	free(path);
 	return (0);
 }

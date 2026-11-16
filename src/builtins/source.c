@@ -1,6 +1,5 @@
 #include "../includes/builtins.h"
 #include "../includes/minishell.h"
-#include "../includes/reader.h"
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
@@ -16,13 +15,13 @@ int	source_file(const char *path, t_shell *shell)
 	if (fd == -1)
 		return (-1);
 	saved = reader;
-	reader_init(&reader, fd);
-	line = reader_line(&reader);
+	ml_reader_init(&reader, fd);
+	line = ml_reader_line(&reader);
 	while (line && shell->running)
 	{
 		run_line(line, shell);
 		free(line);
-		line = reader_line(&reader);
+		line = ml_reader_line(&reader);
 	}
 	free(line);
 	close(fd);

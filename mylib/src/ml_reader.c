@@ -1,17 +1,16 @@
-#include "../../includes/reader.h"
-#include "../../mylib/include/mylib.h"
+#include "../include/mylib.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
 
-void	reader_init(t_reader *reader, int fd)
+void	ml_reader_init(t_reader *reader, int fd)
 {
 	reader->fd = fd;
 	reader->pos = 0;
 	reader->len = 0;
 }
 
-t_reader	*stdin_reader(void)
+t_reader	*ml_stdin_reader(void)
 {
 	static t_reader	reader = {STDIN_FILENO, 0, 0, {0}};
 
@@ -24,7 +23,7 @@ static int	next_char(t_reader *reader)
 
 	while (reader->pos >= reader->len)
 	{
-		n = read(reader->fd, reader->buf, READER_BUF);
+		n = read(reader->fd, reader->buf, ML_READER_BUF);
 		if (n < 0 && errno == EINTR)
 			continue ;
 		if (n <= 0)
@@ -52,7 +51,7 @@ static char	*grow(char *line, size_t len, size_t *cap)
 	return (bigger);
 }
 
-char	*reader_line(t_reader *reader)
+char	*ml_reader_line(t_reader *reader)
 {
 	char	*line;
 	size_t	len;
@@ -81,17 +80,17 @@ char	*reader_line(t_reader *reader)
 	return (line);
 }
 
-char	*reader_command(t_reader *reader, int (*incomplete)(char *))
+char	*ml_reader_command(t_reader *reader, int (*incomplete)(char *))
 {
 	char	*line;
 	char	*next;
 	char	*joined;
 	size_t	len;
 
-	line = reader_line(reader);
+	line = ml_reader_line(reader);
 	while (line && incomplete(line))
 	{
-		next = reader_line(reader);
+		next = ml_reader_line(reader);
 		if (!next)
 			break ;
 		len = ft_strlen(line);

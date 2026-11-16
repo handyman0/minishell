@@ -1,6 +1,6 @@
-#include "../../mylib/include/mylib.h"
+#include "../include/mylib.h"
 
-void	sort_strings(char **items, int count)
+void	ml_sort_strings(char **items, int count)
 {
 	int		gap;
 	int		i;

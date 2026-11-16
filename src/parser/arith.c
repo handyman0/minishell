@@ -142,7 +142,7 @@ static long	apply(t_arith *a, const char *op, long l, long r)
 	if (op[0] == '*' && op[1] == '*')
 		return (power(l, r));
 	if ((op[0] == '/' || op[0] == '%') && r == 0)
-		return (put_all(2, "minishell: division by 0\n", NULL), a->err = 1, 0);
+		return (ml_put_all(2, "minishell: division by 0\n", NULL), a->err = 1, 0);
 	return ((op[0] == '+') * (l + r) + (op[0] == '-') * (l - r)
 		+ (op[0] == '*') * (l * r) + (op[0] == '/') * (r ? l / r : 0)
 		+ (op[0] == '%') * (r ? l % r : 0) + (op[0] == '|') * (l | r)
@@ -218,7 +218,7 @@ char	*arith_string(const char *text, t_shell *shell)
 	skip_space(&a);
 	if (a.err || *a.p)
 	{
-		put_all(2, "minishell: syntax error in arithmetic expression\n", NULL);
+		ml_put_all(2, "minishell: syntax error in arithmetic expression\n", NULL);
 		return (ft_strdup("0"));
 	}
 	return (long_text(value));

@@ -55,7 +55,7 @@ static void	unique_matches(t_matches *m)
 	int	i;
 	int	j;
 
-	sort_strings(m->items, m->count);
+	ml_sort_strings(m->items, m->count);
 	i = 0;
 	j = 0;
 	while (i < m->count)
