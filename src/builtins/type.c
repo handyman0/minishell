@@ -17,6 +17,9 @@ static int	describe_type(char *name, t_shell *shell)
 	char	*alias;
 	char	*path;
 
+	if (is_reserved_word(name))
+		return (ml_put_all(STDOUT_FILENO, name, " is a shell keyword\n", NULL),
+			0);
 	if (find_func(shell, name))
 		return (ml_put_all(STDOUT_FILENO, name, " is a function\n", NULL), 0);
 	alias = env_get(shell->aliases, name);

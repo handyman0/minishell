@@ -18,7 +18,7 @@ static int	in_list(const char **list, const char *word)
 	return (0);
 }
 
-static int	is_reserved(const char *word)
+int	is_reserved_word(const char *word)
 {
 	return (in_list(g_opens, word) || in_list(g_closes, word)
 		|| ft_strcmp(word, "for") == 0 || ft_strcmp(word, "case") == 0
@@ -50,7 +50,7 @@ static int	expand_one(t_token **link, t_shell *shell, char **seen, int depth)
 	int		blank;
 
 	tok = *link;
-	if (tok->type != TOKEN_WORD || !tok->value || is_reserved(tok->value)
+	if (tok->type != TOKEN_WORD || !tok->value || is_reserved_word(tok->value)
 		|| depth >= MAX_ALIAS_DEPTH || was_seen(seen, depth, tok->value))
 		return (0);
 	value = env_get(shell->aliases, tok->value);

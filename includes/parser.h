@@ -224,6 +224,7 @@ t_node	*make_node(t_nodetype type, t_node *left, t_node *right);
 const char	*token_text(t_token *tok);
 void	*parse_fail_at(t_token *tok);
 int		is_closer_word(t_token *tok);
+int		is_reserved_word(const char *word);
 
 // syntax_check.c
 /**
