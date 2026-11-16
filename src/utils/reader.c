@@ -1,5 +1,5 @@
 #include "../../includes/reader.h"
-#include "../../libft/include/libft.h"
+#include "../../mylib/include/mylib.h"
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>

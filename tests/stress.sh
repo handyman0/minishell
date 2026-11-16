@@ -133,7 +133,11 @@ done
 echo "echo heredoc <<EOF > /dev/null" >&3
 echo "x" >&3
 echo "EOF" >&3
-sleep 4
+for _ in $(seq 1 60); do
+	[ "$(ps --ppid $SPID -o stat= | grep -vc "^Z")" -eq 0 ] && break
+	sleep 1
+done
+sleep 1
 FD_AFTER=$(ls /proc/$SPID/fd | wc -l)
 ZOMBIES=$(ps --ppid $SPID -o stat= | grep -c '^Z')
 echo "fds antes=$FD_BEFORE depois=$FD_AFTER zumbis=$ZOMBIES"

@@ -1,4 +1,4 @@
-#include "../../libft/include/libft.h"
+#include "../../mylib/include/mylib.h"
 
 void	sort_strings(char **items, int count)
 {

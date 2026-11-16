@@ -12,10 +12,10 @@ RM          = rm -rf
 SRC_DIR     = src
 OBJ_DIR     = obj
 INC_DIR     = includes
-LIBFT_DIR   = libft
-LIBFT       = $(LIBFT_DIR)/libft.a
+MYLIB_DIR   = mylib
+MYLIB       = $(MYLIB_DIR)/libmylib.a
 
-INCLUDES    = -I$(INC_DIR) -I$(LIBFT_DIR)/include
+INCLUDES    = -I$(INC_DIR) -I$(MYLIB_DIR)/include
 
 # **************************************************************************** #
 #                                   COLORS                                     #
@@ -40,25 +40,25 @@ OBJS        = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 all: $(NAME)
 
-$(NAME): $(LIBFT) $(OBJS)
-	@$(CC) $(CFLAGS) $(OBJS) -L$(LIBFT_DIR) -lft $(LDFLAGS) -o $(NAME)
+$(NAME): $(MYLIB) $(OBJS)
+	@$(CC) $(CFLAGS) $(OBJS) -L$(MYLIB_DIR) -lmylib $(LDFLAGS) -o $(NAME)
 	@echo "$(GREEN)[✔] $(NAME) compilado com sucesso!$(RESET)"
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
-$(LIBFT):
-	@make -C $(LIBFT_DIR) -s
+$(MYLIB):
+	@make -C $(MYLIB_DIR) -s
 
 clean:
 	@$(RM) $(OBJ_DIR)
-	@make -C $(LIBFT_DIR) clean -s
+	@make -C $(MYLIB_DIR) clean -s
 	@echo "$(YELLOW)🧹 Objetos removidos$(RESET)"
 
 fclean: clean
 	@$(RM) $(NAME)
-	@make -C $(LIBFT_DIR) fclean -s
+	@make -C $(MYLIB_DIR) fclean -s
 	@echo "$(RED)💥 Binários removidos$(RESET)"
 
 re: fclean all
@@ -98,7 +98,10 @@ stress: asan
 dynamic:
 	@$(MAKE) --no-print-directory NAME=minishell_dyn OBJ_DIR=obj_dyn LDFLAGS=
 
+compare: all
+	@bash tests/compare.sh ./minishell
+
 leaks: dynamic
 	@bash tests/leaks.sh ./minishell_dyn
 
-.PHONY: asan stress leaks dynamic
+.PHONY: asan stress leaks dynamic compare

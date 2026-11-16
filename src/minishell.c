@@ -42,6 +42,8 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->ast = NULL;
 	shell->tokens = NULL;
 	shell->aliases = NULL;
+	shell->subst_status = 0;
+	shell->subst_used = 0;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else

@@ -17,7 +17,7 @@
 # include <stdlib.h>
 # include <fcntl.h>
 # include <sys/wait.h>
-# include "../libft/include/libft.h"
+# include "../mylib/include/mylib.h"
 # include "minishell.h"
 
 /**
@@ -49,6 +49,7 @@ char	*find_executable(const char *name, t_shell *shell);
 
 typedef struct s_saved	t_saved;
 
+char	*run_substitution(t_shell *shell, char *cmd);
 void	assign_shell(t_shell *shell, char **assigns);
 t_saved	*overlay_apply(t_shell *shell, char **assigns, int *count);
 void	overlay_restore(t_shell *shell, t_saved *saved, int count);

@@ -196,23 +196,54 @@ typedef struct s_word
 	char	*str;
 	char	*mask;
 	int		len;
+	size_t	cap;
 }	t_word;
+
+static int	word_reserve(t_word *w, size_t extra)
+{
+	char	*str;
+	char	*mask;
+	size_t	cap;
+
+	if (w->len + extra <= w->cap)
+		return (1);
+	cap = w->cap ? w->cap : 64;
+	while (cap < w->len + extra)
+		cap *= 2;
+	str = ft_calloc(cap + 1, 1);
+	mask = ft_calloc(cap + 1, 1);
+	if (!str || !mask)
+		return (free(str), free(mask), 0);
+	ft_memcpy(str, w->str, w->len);
+	ft_memcpy(mask, w->mask, w->len);
+	free(w->str);
+	free(w->mask);
+	w->str = str;
+	w->mask = mask;
+	w->cap = cap;
+	return (1);
+}
 
 static void	put_value(t_word *w, char *val, int flags)
 {
 	int	k;
 
 	k = 0;
-	while (val && val[k])
+	if (val && word_reserve(w, ft_strlen(val)))
 	{
-		w->str[w->len] = val[k++];
-		w->mask[w->len++] = flags;
+		while (val[k])
+		{
+			w->str[w->len] = val[k++];
+			w->mask[w->len++] = flags;
+		}
 	}
 	free(val);
 }
 
 static void	put_char(t_word *w, char c, int flags)
 {
+	if (!word_reserve(w, 1))
+		return ;
 	w->str[w->len] = c;
 	w->mask[w->len++] = flags;
 }
@@ -221,6 +252,69 @@ static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	put_value(w, get_var_value(raw + 1, shell), quote == 0 ? SPLIT : QUOTED);
 	return (ref_length(raw + 1) + 1);
+}
+
+static char	*unescape_backtick(const char *src, int len)
+{
+	char	*out;
+	int		i;
+	int		j;
+
+	out = malloc(len + 1);
+	if (!out)
+		return (NULL);
+	i = 0;
+	j = 0;
+	while (i < len)
+	{
+		if (src[i] == '\\' && i + 1 < len && ft_strchr("`\\$", src[i + 1]))
+			i++;
+		out[j++] = src[i++];
+	}
+	out[j] = '\0';
+	return (out);
+}
+
+char	*expand_subst_at(const char *s, int *consumed, t_shell *shell)
+{
+	char	*text;
+	char	*out;
+	int		end;
+
+	*consumed = 0;
+	if (s[0] == '`')
+		end = skip_backtick(s, 0);
+	else if (s[0] == '$' && s[1] == '(')
+		end = skip_dollar_paren(s, 0);
+	else
+		return (NULL);
+	if (end == -1)
+		return (NULL);
+	*consumed = end;
+	if (s[0] == '`')
+		return (run_substitution(shell, unescape_backtick(s + 1, end - 2)));
+	if (s[2] == '(' && end >= 6 && s[end - 2] == ')')
+	{
+		text = ft_substr(s, 3, end - 5);
+		out = expand_variables(text, shell);
+		free(text);
+		text = out;
+		out = arith_string(text ? text : "", shell);
+		return (free(text), out);
+	}
+	return (run_substitution(shell, ft_substr(s, 2, end - 3)));
+}
+
+static int	put_subst(t_word *w, const char *s, int quote, t_shell *shell)
+{
+	char	*out;
+	int		used;
+
+	out = expand_subst_at(s, &used, shell);
+	if (!out)
+		return (0);
+	put_value(w, out, quote ? QUOTED : SPLIT);
+	return (used);
 }
 
 static int	put_escape(t_word *w, const char *raw, int quote)
@@ -233,6 +327,15 @@ static int	put_escape(t_word *w, const char *raw, int quote)
 		return (0);
 	put_char(w, raw[1], QUOTED);
 	return (2);
+}
+
+static int	put_special(t_word *w, char *raw, int quote, t_shell *shell)
+{
+	if (raw[0] == '\\' && quote != '\'')
+		return (put_escape(w, raw, quote));
+	if (quote != '\'' && (raw[0] == '`' || (raw[0] == '$' && raw[1] == '(')))
+		return (put_subst(w, raw, quote, shell));
+	return (0);
 }
 
 static void	fill_word(t_word *w, char *raw, t_shell *shell)
@@ -252,7 +355,7 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 	}
 	while (raw[i])
 	{
-		n = (raw[i] == '\\' && quote != '\'') ? put_escape(w, raw + i, quote) : 0;
+		n = put_special(w, raw + i, quote, shell);
 		if (n)
 			i += n;
 		else if ((raw[i] == '\'' || raw[i] == '"')
@@ -327,6 +430,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	home = env_get(shell->env, "HOME");
 	cap = calculate_expanded_size(raw, shell) + (home ? ft_strlen(home) : 0);
 	w.len = 0;
+	w.cap = cap;
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	tok[0] = head;
@@ -374,6 +478,7 @@ char	*expand_variables(char *token, t_shell *shell)
 	home = env_get(shell->env, "HOME");
 	cap = calculate_expanded_size(token, shell) + (home ? ft_strlen(home) : 0);
 	w.len = 0;
+	w.cap = cap;
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	result = NULL;

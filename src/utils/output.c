@@ -1,5 +1,5 @@
 #include "../../includes/output.h"
-#include "../../libft/include/libft.h"
+#include "../../mylib/include/mylib.h"
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>

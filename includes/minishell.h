@@ -13,7 +13,7 @@
 #ifndef MINISHELL_H
 # define MINISHELL_H
 
-# include "../libft/include/libft.h"
+# include "../mylib/include/mylib.h"
 # include <unistd.h>
 # include <stdlib.h>
 # include <signal.h>
@@ -54,6 +54,8 @@ struct s_shell
 	int			next_job_id;
 	int			interactive;
 	int			in_child;
+	int			subst_status;
+	int			subst_used;
 	pid_t		pgid;
 	struct termios	tmodes;
 };

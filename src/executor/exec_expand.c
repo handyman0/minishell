@@ -12,7 +12,7 @@ static t_token	*argv_to_tokens(char **argv)
 	i = 0;
 	while (argv[i])
 	{
-		token_add_back(&head, &cur, TOKEN_WORD, argv[i]);
+		token_add_back(&head, &cur, TOKEN_WORD, ft_strdup(argv[i]));
 		i++;
 	}
 	return (head);
@@ -150,7 +150,7 @@ void	expand_command(t_node *node, t_shell *shell)
 		return ;
 	take_assignments(node, shell);
 	tokens = argv_to_tokens(node->data.cmd.argv);
-	free(node->data.cmd.argv);
 	expand_tokens(&tokens, shell);
+	free_str_array(node->data.cmd.argv);
 	node->data.cmd.argv = tokens_to_argv(tokens);
 }

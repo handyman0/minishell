@@ -177,11 +177,12 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
+	shell->subst_used = 0;
 	expand_command(node, shell);
 	if (!node->data.cmd.argv || !node->data.cmd.argv[0])
 	{
 		assign_shell(shell, node->data.cmd.assigns);
-		return (0);
+		return (shell->subst_used ? shell->subst_status : 0);
 	}
 
 	backup[0] = dup(STDIN_FILENO);
@@ -271,6 +272,7 @@ static int	pipe_child(t_node *node, t_shell *shell)
 	free_ast(shell->ast);
 	free_tokens(shell->tokens);
 	jobs_free(shell, 0);
+	env_free(shell->aliases);
 	env_free(shell->env);
 	return (status);
 }

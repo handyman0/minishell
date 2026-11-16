@@ -1,628 +1,127 @@
+<div align="center">
+
 # minishell
 
-<div align="center">
+**Um shell Unix escrito do zero em C, feito para uso diário.**
+Abre em ~2 ms, edita a linha com sugestões e destaque de sintaxe, controla jobs
+e foi testado contra o bash, com fuzz e com Valgrind.
 
 ![C](https://img.shields.io/badge/Language-C-blue.svg)
+![Deps](https://img.shields.io/badge/Deps-libc%20%2B%20libft-success)
+![Binary](https://img.shields.io/badge/Binary-~850%20KB%20est%C3%A1tico-informational)
 ![License](https://img.shields.io/badge/License-42%20School-lightgrey)
-![Status](https://img.shields.io/badge/Status-Complete-brightgreen)
 
-**Uma implementação minimalista de um shell Unix em C**
-
-[Características](#características) • [Instalação](#instalação) • [Uso](#uso) • [Estrutura](#estrutura-do-projeto) • [Regras](#regras) • [Recursos](#recursos)
+[Destaques](#-destaques) • [Instalação](#-instalação) • [Linguagem](#-linguagem) • [Editor de linha](#-editor-de-linha) • [Configuração](#-configuração) • [Testes](#-testes) • [Roteiro](#-roteiro)
 
 </div>
 
 ---
 
-## 📋 Índice
+## ✨ Destaques
 
-- [Visão Geral](#visão-geral)
-- [Características](#características)
-- [Requisitos](#requisitos)
-- [Instalação](#instalação)
-- [Uso](#uso)
-- [Exemplos de Uso](#exemplos-de-uso)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Arquitetura](#arquitetura)
-- [Regras](#regras)
-- [Funções Proibidas](#funções-proibidas)
-- [Melhorias e Extensões](#melhorias-e-extensões)
-- [Troubleshooting](#troubleshooting)
-- [Recursos](#recursos)
-- [Autor](#autor)
+- **Rápido de abrir.** Cerca de 2,3 ms por execução, contra ~2,7 ms do bash e ~40 ms
+  do fish (medido nesta máquina com `-c true`, melhor de 5 rodadas de 500).
+- **Leve e sem dependências externas.** Só a libc e a libft do projeto. O editor de
+  linha, o casador de padrões, a saída de mensagens e o leitor de linhas são código
+  próprio, e o binário é estático (~850 KB).
+- **Editor de linha completo, escrito do zero.** Sugestão em cinza a partir do
+  histórico, destaque de sintaxe em tempo real, `Tab` para comandos, arquivos e
+  variáveis, `Ctrl+R`, histórico filtrado pelo que você digitou e comandos em
+  várias linhas.
+- **Job control de verdade.** `Ctrl+Z`, `jobs`, `fg`, `bg`, `&` e aviso quando um
+  job termina.
+- **Testado a sério.** 207 casos comparados com o bash, fuzz por gramática,
+  mutação e ruído binário, entradas de 1 MB, teclas aleatórias no editor e
+  Valgrind. Os testes já acharam e consertaram bugs reais (veja o histórico).
 
----
+## 📦 Instalação
 
-## 🎯 Visão Geral
-
-**minishell** é uma implementação educacional de um shell Unix minimalista, seguindo as normas do currículo 42. O projeto demonstra compreensão profunda de conceitos fundamentais do Unix como:
-
-- **Processamento de linhas de comando**: Tokenização e parsing
-- **Expansão de variáveis**: Substituição de variáveis de ambiente
-- **Redirecionamentos**: I/O redirection (`<`, `>`, `>>`, `<<`)
-- **Pipes**: Conexão entre processos (`|`)
-- **Operadores lógicos**: Execução condicional (`&&`, `||`)
-- **Gestão de processos**: Fork, execução e sincronização
-- **Sinais**: Tratamento de SIGINT e SIGQUIT
-
-O shell implementa um subconjunto essencial de funcionalidades de bash/sh, ideal para aprendizado e demonstração de competências em C de baixo nível.
-
----
-
-## ✨ Características
-
-### Análise e Parsing
-- ✅ **Tokenização**: Quebra a linha em tokens reconhecendo operadores e palavras
-- ✅ **Árvore Sintática Abstrata (AST)**: Construção de AST para representação hierárquica de comandos
-- ✅ **Suporte a Parênteses**: Agrupamento de comandos com `(` e `)`
-- ✅ **Expansão de Wildcards**: Padrão `*` em nomes de arquivo
-
-### Expansão
-- ✅ **Variáveis de Ambiente**: Expansão de `$VAR` e `$?` (status de saída)
-- ✅ **Remoção de Aspas**: Processamento correto de `'` e `"`
-- ✅ **Tratamento de Espaços**: Splits e preservação em aspas
-
-### Redirecionamentos
-- ✅ **Entrada**: `<` (redireção de arquivo para stdin)
-- ✅ **Saída**: `>` (redireção de stdout para arquivo)
-- ✅ **Append**: `>>` (append de stdout em arquivo)
-- ✅ **Heredoc**: `<<` (entrada multi-linha até delimitador)
-
-### Pipes e Operadores
-- ✅ **Pipes**: `|` (conexão entre processos)
-- ✅ **AND Lógico**: `&&` (executa direita se esquerda sucede)
-- ✅ **OR Lógico**: `||` (executa direita se esquerda falha)
-- ✅ **Combinações**: Suporte a múltiplos operadores e pipes
-
-### Builtins (Comandos Internos)
-- ✅ `echo` com flag `-n`
-- ✅ `cd` com suporte a `~` e `-`
-- ✅ `pwd` (print working directory)
-- ✅ `export` (definir variáveis exportadas)
-- ✅ `unset` (remover variáveis)
-- ✅ `env` (listar ambiente)
-- ✅ `exit` com código de saída
-
-### Gestão de Sinais
-- ✅ `SIGINT` (Ctrl+C): Interrompe comando sem sair da shell
-- ✅ `SIGQUIT` (Ctrl+\): Interrompe com core dump (em crianças)
-- ✅ Histórico com `readline`
-
----
-
-## 📦 Requisitos
-
-### Sistema Operacional
-- Linux (testado em Linux 5.x+)
-- macOS (compatível com Homebrew)
-
-### Bibliotecas Obrigatórias
-- `readline` (para entrada interativa com histórico)
-- `libc` (padrão do sistema)
-
-### Ferramentas de Desenvolvimento
-- `gcc` ou `clang`
-- `make`
-- `ar` (para criar bibliotecas estáticas)
-
-### Instalação de Dependências
-
-**Ubuntu/Debian:**
-```bash
-sudo apt-get install build-essential libreadline-dev
+```sh
+make            # gera ./minishell (estático)
+make install    # copia para ~/.local/bin/minishell
+./minishell     # shell interativo
+./minishell -c 'echo oi | tr a-z A-Z'
 ```
 
-**macOS (Homebrew):**
-```bash
-brew install readline
+Requisitos: `cc`, `make` e uma libc com suporte a link estático. Os testes usam
+também `bash`, `valgrind` e `script`.
+
+Para abrir o minishell direto no lugar de outro shell, chame
+`exec ~/.local/bin/minishell` no `config.fish` ou no `.bashrc`, só em sessões
+interativas.
+
+## 🧠 Linguagem
+
+| Recurso | Exemplos |
+|---|---|
+| Pipes e listas | `a \| b`, `a ; b`, `a && b`, `a \|\| b`, `a &`, `( a ; b )` |
+| Redirecionamentos | `< > >> <<`, `2>`, `2>>`, `>&2`, `2>&1` |
+| Aspas e escape | `'literal'`, `"com $VAR"`, `\$`, `\ ` |
+| Variáveis | `$VAR`, `${VAR}`, `$?`, `~`, `A=1`, `A=1 cmd`, `export` |
+| Substituição | `$(cmd)`, `` `cmd` ``, `$((1+2*3))` |
+| Curingas | `*`, `?`, `[a-z]`, `[!x]`, `[[:alpha:]]`, `src/*.c` |
+| Várias linhas | o Enter continua se falta fechar aspas, parênteses, ou há `\`, `\|`, `&&`, `\|\|` no fim |
+| Comentários | `# até o fim da linha` |
+
+**Builtins:** `echo` (`-n`), `cd`, `pwd`, `export`, `unset`, `env`, `exit`,
+`alias`, `unalias`, `source`, `type`, `which`, `jobs`, `fg`, `bg`.
+
+## ⌨️ Editor de linha
+
+- **Edição:** setas, `Home`/`End`, `Ctrl+A/E/B/F/K/U/W/L`, `Alt+B/F`, `Delete`, UTF-8.
+- **Histórico:** salvo em `~/.minishell_history`; `↑`/`↓` filtram pelo que já foi
+  digitado; `Ctrl+R` busca de forma incremental (`Ctrl+S` busca para a frente).
+- **Sugestão:** texto cinza a partir do histórico; `→` ou `End` aceitam.
+- **Destaque:** comando válido em verde, inválido em vermelho; operadores, aspas
+  e variáveis têm cores próprias.
+- **Tab:** completa comandos, aliases, arquivos, diretórios e `$VAR`.
+- **Colar:** o terminal avisa quando é uma colagem, então o `Tab` não dispara no meio.
+
+## 🎛️ Configuração
+
+O `~/.minishellrc` é lido a cada shell interativo, uma linha por comando:
+
+```sh
+alias ll="ls -l"
+export EDITOR=vim
+export PS1='\e[32m\u\e[0m@\e[97m\h\e[0m \w> '
 ```
 
-**Fedora/RHEL:**
-```bash
-sudo dnf install gcc make readline-devel
-```
+O prompt padrão é `usuario@host dir>`. Em `PS1` valem `\u` usuário, `\h` host,
+`\w` diretório, `\W` só o nome do diretório, `\$`, `\?` (status do último
+comando), `\n`, `\e` (cores) e `\\`.
 
----
-
-## 🔧 Instalação
-
-### Clone e Compilação
-
-```bash
-# Clonar o repositório
-git clone <repo-url> minishell
-cd minishell
-
-# Compilar o projeto
-make
-
-# Executar
-./minishell
-```
-
-### Makefile Targets
-
-```bash
-make              # Compilar minishell
-make clean        # Remover arquivos objeto
-make fclean       # Remover executável e objeto
-make re           # Limpar e recompilar
-make libft        # Compilar libft (feito automaticamente)
-```
-
-### Estrutura de Diretórios após Make
+## 🗂️ Estrutura
 
 ```
-minishell/
-├── minishell              # Executável compilado
-├── obj/                   # Arquivos objeto (.o)
-│   ├── builtins/
-│   ├── env/
-│   ├── executor/
-│   ├── parser/
-│   ├── signals/
-│   └── utils/
-└── libft.a               # Biblioteca estática
+src/
+  minishell.c   laço principal
+  parser/       tokenizer, parser, expansão, curingas, alias, aritmética
+  executor/     execução da árvore, pipes, jobs, heredoc, substituição
+  builtins/     comandos internos
+  lineedit/     editor: teclas, tela, histórico, Tab, Ctrl+R, destaque
+  env/          variáveis (exportadas e só do shell)
+  prompt/       montagem do PS1
+libft/          funções de string e memória usadas pelo shell
+tests/          corpus, fuzz e scripts
 ```
 
----
+## 🧪 Testes
 
-## 🚀 Uso
-
-### Iniciar a Shell
-
-```bash
-./minishell
+```sh
+make compare    # compara saída e status com o bash (tests/cases.txt)
+make stress     # fuzz, entradas gigantes e teclas aleatórias, com ASan e UBSan
+make leaks      # vazamentos de memória com Valgrind
 ```
 
-Você verá o prompt:
-```
-minishell>
-```
-
-### Comandos Básicos
-
-```bash
-# Comando simples
-minishell> ls -la
-
-# Com redirecionamento
-minishell> echo "Hello World" > output.txt
-
-# Com pipe
-minishell> cat file.txt | grep "pattern" | sort
-
-# Operadores lógicos
-minishell> test -f file && echo "Existe" || echo "Não existe"
-
-# Variáveis de ambiente
-minishell> echo $HOME
-minishell> echo $?
-
-# Wildcards
-minishell> ls *.c
-
-# Heredoc
-minishell> cat << EOF
-> Linha 1
-> Linha 2
-> EOF
-```
-
-### Sair da Shell
-
-```bash
-minishell> exit
-minishell> exit 42           # Com código de saída
-minishell> Ctrl+D            # EOF
-```
-
----
-
-## 📝 Exemplos de Uso
-
-### Exemplo 1: Pipeline com Múltiplos Comandos
-```bash
-minishell> echo "apple banana cherry" | tr ' ' '\n' | sort
-apple
-banana
-cherry
-```
-
-### Exemplo 2: Redirecionamento de Arquivo
-```bash
-minishell> cat << EOF > script.sh
-> #!/bin/bash
-> echo "Hello"
-> EOF
-minishell> chmod +x script.sh
-minishell> ./script.sh
-Hello
-```
-
-### Exemplo 3: Usando Variáveis de Ambiente
-```bash
-minishell> export USER_NAME="Alice"
-minishell> echo "Name: $USER_NAME"
-Name: Alice
-minishell> echo $?
-0
-```
-
-### Exemplo 4: Combinação de Operadores
-```bash
-minishell> test -d /tmp && echo "Temp existe" || echo "Não encontrado"
-Temp existe
-
-minishell> ls /nonexistent && echo "OK" || echo "Diretório não encontrado"
-ls: cannot access '/nonexistent': No such file or directory
-Diretório não encontrado
-```
-
-### Exemplo 5: Wildcards
-```bash
-minishell> touch file1.txt file2.txt file3.txt
-minishell> rm file*.txt
-minishell> ls file*.txt
-ls: cannot access 'file*.txt': No such file or directory
-```
-
----
-
-## 🏗️ Estrutura do Projeto
-
-```
-minishell/
-│
-├── src/                      # Código-fonte principal
-│   ├── minishell.c          # Main e inicialização
-│   ├── parser/              # Parser e tokenizer
-│   │   ├── tokenizer.c      # Conversão linha → tokens
-│   │   ├── parser.c         # Tokens → AST
-│   │   ├── expand.c         # Expansão de variáveis
-│   │   ├── expand_wildcards.c
-│   │   └── syntax_check.c   # Verificação de sintaxe
-│   ├── executor/            # Execução da AST
-│   │   ├── executor.c       # Orquestrador de execução
-│   │   ├── exec_tree.c      # Recursão na AST
-│   │   ├── exec_path.c      # Busca de comando no PATH
-│   │   ├── exec_heredoc.c   # Implementação heredoc
-│   │   ├── exec_utils.c     # Utilitários
-│   │   └── subshell.c       # Suporte a subshells
-│   ├── env/                 # Gestão de ambiente
-│   │   ├── env_init.c       # Inicialização
-│   │   ├── env_getset.c     # Get/Set de variáveis
-│   │   ├── env_utils.c      # Utilitários
-│   │   └── env_minimal.c    # Ambiente mínimo
-│   ├── builtins/            # Comandos builtin
-│   │   ├── echo.c
-│   │   ├── cd.c
-│   │   ├── pwd.c
-│   │   ├── export.c
-│   │   ├── unset.c
-│   │   ├── env.c
-│   │   └── exit.c
-│   ├── signals/             # Tratamento de sinais
-│   │   ├── signals.c        # Handlers SIGINT/SIGQUIT
-│   │   └── history.c        # Integração readline
-│   └── utils/               # Funções auxiliares
-│       ├── debug_print.c
-│       ├── errors.c
-│       ├── free_all.c
-│       └── split_quotes.c
-│
-├── includes/                # Headers
-│   ├── minishell.h         # Header principal
-│   ├── parser.h            # Definições de parse
-│   ├── executor.h          # Definições de execução
-│   ├── env.h               # Definições de ambiente
-│   ├── builtins.h          # Protótipos de builtins
-│   ├── signals.h           # Handlers de sinais
-│   └── utils.h             # Funções auxiliares
-│
-├── libft/                   # Biblioteca libft (42)
-│   ├── Makefile
-│   ├── include/
-│   ├── src/
-│   ├── get_next_line/
-│   └── ft_printf/
-│
-├── pipex/                   # Projeto pipex (bonus/referência)
-│   └── (códigos auxiliares)
-│
-├── minishell_tester/        # Tester do projeto
-│   ├── tester             # Script de teste
-│   ├── redirects/         # Testes de redirecionamento
-│   ├── pipes/             # Testes de pipes
-│   └── ...
-│
-├── Makefile               # Build configuration
-├── README.md             # Este arquivo
-└── walkthrough.md        # Documentação técnica
-
-```
-
----
-
-## 🔄 Arquitetura
-
-### Fluxo de Execução
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    readline("minishell> ")               │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ↓
-         ┌───────────────────────┐
-         │  tokenize_line(line)  │  ← Quebra em tokens
-         └────────┬──────────────┘
-                  │
-                  ↓
-         ┌───────────────────────┐
-         │ expand_wildcards()    │  ← Expande padrões *
-         └────────┬──────────────┘
-                  │
-                  ↓
-         ┌───────────────────────┐
-         │process_tokens_before  │  ← Expande variáveis
-         │_parsing()             │    Remove tokens vazios
-         └────────┬──────────────┘
-                  │
-                  ↓
-         ┌───────────────────────┐
-         │  parse_tokens()       │  ← Constrói AST
-         │  (parse_expression)   │    Reconhece operadores
-         └────────┬──────────────┘
-                  │
-                  ↓
-         ┌───────────────────────┐
-         │  execute_tree()       │  ← Percorre AST
-         │  (switch por tipo)    │    Executa comandos
-         └────────┬──────────────┘
-                  │
-              ┌───┴───┐
-              │       │
-              ↓       ↓
-    ┌──────────────┐ ┌──────────────┐
-    │  Builtin?    │ │  Externo?    │
-    │  Executa     │ │  Fork+Execve │
-    │  direto      │ │              │
-    └──────┬───────┘ └──────┬───────┘
-           │                │
-           └────────┬───────┘
-                    │
-                    ↓
-         ┌───────────────────────┐
-         │ free_ast(ast)         │  ← Limpa memória
-         │ free_tokens(tokens)   │
-         └────────┬──────────────┘
-                  │
-                  ↓
-         ┌───────────────────────┐
-         │ shell->exit_status    │  ← Armazena status
-         └────────┬──────────────┘
-                  │
-                  ↓
-         ┌───────────────────────┐
-         │ Loop novamente...     │
-         └───────────────────────┘
-```
-
-### Estrutura de Dados Principal
-
-#### Token
-```c
-typedef struct s_token
-{
-    t_toktype    type;     // TOKEN_WORD, TOKEN_PIPE, etc.
-    char         *value;   // Valor do token
-    struct s_token *next;  // Próximo token (lista encadeada)
-} t_token;
-```
-
-#### AST Node
-```c
-typedef struct s_node
-{
-    t_nodetype type;  // NODE_CMD, NODE_PIPE, NODE_AND, NODE_OR
-    union {
-        struct {
-            char **argv;       // Argumentos do comando
-            t_redir *redirs;   // Redirecionamentos
-        } cmd;
-        struct {
-            struct s_node *left;
-            struct s_node *right;
-        } op;  // Para operadores (pipe, &&, ||)
-    } data;
-} t_node;
-```
-
-#### Ambiente
-```c
-typedef struct s_env
-{
-    char *key;              // Nome da variável
-    char *value;            // Valor
-    struct s_env *next;     // Próximo nó
-} t_env;
-```
-
----
-
-## 📐 Regras
-
-### Norma 42
-- ✅ Máximo 80 colunas por linha
-- ✅ Máximo 25 linhas por função
-- ✅ Sem variáveis globais
-- ✅ Sem funções estáticas (exceto as permitidas)
-- ✅ Sem C99 (compatível com C89)
-
-### Funções Permitidas (com restricções)
-- `malloc`, `free`
-- `write`, `read`
-- `open`, `close`, `opendir`, `readdir`, `closedir`
-- `chdir`, `getcwd`
-- `access`, `execve`, `fork`, `wait`, `waitpid`
-- `pipe`, `dup`, `dup2`
-- `readline`, `add_history` (para histórico)
-- `signal`, `sigaction` (gestão de sinais)
-
-### Funções Proibidas
-- ❌ `system()`
-- ❌ `popen()` / `pclose()`
-- ❌ `strtok()` (use alternativas)
-- ❌ Variáveis globais
-- ❌ Funções C99+ (exceto as explicitamente permitidas)
-
-### Comportamento Esperado
-- ✅ Tratamento correto de Ctrl+C (não sai da shell)
-- ✅ Tratamento correto de Ctrl+D (sai como EOF)
-- ✅ Suporte a histórico com seta para cima/baixo
-- ✅ Expande `$HOME`, `$USER`, etc.
-- ✅ Status de saída retorna corretamente
-
----
-
-## 🔧 Melhorias e Extensões
-
-### Funcionalidades Implementadas
-- ✅ Expansão de variáveis `$VAR` e `$?`
-- ✅ Suporte completo a redirecionamentos
-- ✅ Pipes múltiplos
-- ✅ Operadores `&&` e `||`
-- ✅ Parênteses para agrupamento
-- ✅ Wildcards com `*`
-- ✅ Builtins completos
-
-### Possíveis Extensões (não-obrigatórias)
-- [ ] Suporte a aliases (`alias cmd="command"`)
-- [ ] Histórico persistente em arquivo
-- [ ] Substituição de histórico `!!`
-- [ ] Expansão de tilde `~`
-- [ ] Variáveis locais (sem export)
-- [ ] Funções shell
-- [ ] Background jobs
-- [ ] Ctrl+Z para suspender
-
----
-
-## 🐛 Troubleshooting
-
-### Problema: "readline.h: No such file"
-**Solução:**
-```bash
-# Ubuntu/Debian
-sudo apt-get install libreadline-dev
-
-# macOS
-brew install readline
-
-# Compile com:
-make clean && make
-```
-
-### Problema: Shell não responde após Ctrl+C
-**Causa:** Handlers de sinal não configurados
-**Solução:** Verificar `setup_signals()` em `signals.c`
-
-### Problema: Variáveis de ambiente não expandem
-**Causa:** `expand_variables()` não está sendo chamado
-**Solução:** Verificar `process_tokens_before_parsing()` em `parser.c`
-
-### Problema: Redirecionamento não funciona
-**Causa:** `handle_redirection()` retorna erro
-**Solução:** Verificar permissões de arquivo e espaço em disco
-
-### Problema: Comando não encontrado
-**Causa:** PATH vazio ou comando inválido
-**Solução:** Usar caminho absoluto `/bin/ls` ou exportar `export PATH=/bin:/usr/bin`
-
-### Problema: Compilação falha com avisos
-**Solução:**
-```bash
-make clean
-make
-# Se persistir: gcc -Wall -Wextra -Werror src/*.c ...
-```
-
----
-
-## 📚 Recursos
-
-### Documentação Oficial
-- [POSIX Shell Command Language](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/contents.html)
-- [Bash Manual](https://www.gnu.org/software/bash/manual/)
-- [Linux man pages](https://man7.org/)
-
-### Referências de Implementação
-- Sintaxe de parsing: `parse_tokens()` em `src/parser/parser.c`
-- Execução: `execute_tree()` em `src/executor/exec_tree.c`
-- Builtins: `src/builtins/`
-
-### Ferramentas Úteis
-- `strace ./minishell` - Rastreia chamadas de sistema
-- `valgrind ./minishell` - Detecta memory leaks
-- `gcc -fsanitize=address` - Sanitizador de endereço
-
-### Testes
-```bash
-# Rodar tester incluído
-cd minishell_tester
-./tester redirects
-./tester pipes
-./tester syntax
-
-# Testes manuais
-echo "ls -la" | ./minishell
-echo "echo 'Hello' | cat" | ./minishell
-```
-
----
-
-## 📖 Documentação Técnica
-
-Para documentação técnica detalhada, consulte:
-- [walkthrough.md](walkthrough.md) - Explicação passo-a-passo
-- [DOXYGEN_IMPROVEMENTS.md](DOXYGEN_IMPROVEMENTS.md) - Referência de funções
-
----
-
-## 📄 Licença
-
-Este projeto segue as regras e licenças da **École 42**.
-
-```
-Copyright © 2026 École 42
-Made during 42 Cursus
-```
-
----
-
-## 👤 Autor
-
-**lmelo-do** (Luiz Melo)
-- Escola: 42 São Paulo
-- Projeto: minishell (4º Círculo)
-- Status: ✅ Completo
-
----
-
-## 🙏 Agradecimentos
-
-- **42 Community** pelos testes e feedback
-- **Readline** developers
-- **Linux Kernel** documentação
-- Outros estudantes 42 pelas discussões
-
----
-
-<div align="center">
-
-**Made with ❤️ at 42 São Paulo**
-
-[⬆ Voltar ao topo](#minishell)
-
-</div>
+O `make stress` gera linhas por gramática, por mutação do corpus e por ruído
+binário; roda linhas de 1 MB, 100 pipes, 200 jobs e 10 mil arquivos num glob;
+confere vazamento de descritores e processos zumbis; e envia teclas aleatórias ao
+editor dentro de um terminal simulado.
+
+## 🛣️ Roteiro
+
+Próximos passos, em ordem de impacto para o uso diário: estruturas de controle
+(`if`, `for`, `while`, `case`) e funções; `$$`, `$!`, `{a,b}`, `wait`, `kill %n`,
+`read`, `test`/`[`, `history` e `echo -e`; `Tab` com opções de comandos e
+subcomandos.

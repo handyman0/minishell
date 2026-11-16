@@ -11,7 +11,7 @@
 /* ************************************************************************** */
 
 #include "../../includes/parser.h"
-#include "../../libft/include/libft.h"
+#include "../../mylib/include/mylib.h"
 #include <dirent.h>
 
 #define MAX_MATCHES 4096

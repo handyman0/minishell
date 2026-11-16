@@ -13,7 +13,7 @@
 #ifndef UTILS_H
 # define UTILS_H
 
-# include "../libft/include/libft.h"
+# include "../mylib/include/mylib.h"
 # include "minishell.h"
 
 int		ft_isspace(char c);

@@ -54,6 +54,8 @@ static int	bad_follow(t_token *cur)
 	t_token	*next;
 
 	next = cur->next;
+	if (cur->type == TOKEN_WORD && next && next->type == TOKEN_LPAREN)
+		return (1);
 	if (is_binop(cur) || cur->type == TOKEN_LPAREN)
 		return (!next || is_binop(next) || is_sep(next)
 			|| next->type == TOKEN_RPAREN);
