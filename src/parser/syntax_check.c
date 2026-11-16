@@ -38,7 +38,9 @@ const char	*token_text(t_token *tok)
 		return (">>");
 	if (tok->type == TOKEN_HEREDOC)
 		return ("<<");
-	return (tok->value);
+	if (tok->type == TOKEN_DSEMI)
+		return (";;");
+	return (tok->value ? tok->value : "?");
 }
 
 static int	syntax_error(t_token *tok)
