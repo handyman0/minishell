@@ -14,43 +14,93 @@
 #include "../../includes/minishell.h"
 #include "../../includes/env.h"
 
-static int	var_name_length(char *str)
+static int	is_special(char c)
 {
-	int	i = 0;
+	return (c && ft_strchr("?#@*$!", c));
+}
 
-	if (str[0] == '?')
+static int	name_len(const char *s, int braced)
+{
+	int	i;
+
+	if (is_special(s[0]))
 		return (1);
-	while (str[i] && (ft_isalnum(str[i]) || str[i] == '_'))
+	i = 0;
+	if (ft_isdigit(s[0]))
+	{
+		if (!braced)
+			return (1);
+		while (ft_isdigit(s[i]))
+			i++;
+		return (i);
+	}
+	while (ft_isalnum(s[i]) || s[i] == '_')
 		i++;
 	return (i);
 }
 
 static int	brace_offset(const char *s)
 {
-	int	i;
+	int	n;
 
 	if (s[0] != '{')
 		return (0);
-	i = 1;
-	if (s[i] == '?')
-		i++;
-	else
-		while (ft_isalnum(s[i]) || s[i] == '_')
-			i++;
-	return (i > 1 && s[i] == '}');
+	n = name_len(s + 1, 1);
+	return (n > 0 && s[1 + n] == '}');
 }
 
 static int	is_ref(const char *s)
 {
-	return (brace_offset(s) || ft_isalnum(s[0]) || s[0] == '?'
-		|| s[0] == '_');
+	return (brace_offset(s) || name_len(s, 0) > 0);
 }
 
 static int	ref_length(char *s)
 {
 	if (brace_offset(s))
-		return (var_name_length(s + 1) + 2);
-	return (var_name_length(s));
+		return (name_len(s + 1, 1) + 2);
+	return (name_len(s, 0));
+}
+
+static char	*join_params(t_shell *shell)
+{
+	char	*out;
+	char	*tmp;
+	int		i;
+
+	out = ft_strdup("");
+	i = 0;
+	while (i < shell->nparams)
+	{
+		tmp = ft_strjoin(out, i ? " " : "");
+		free(out);
+		out = ft_strjoin(tmp, shell->params[i++]);
+		free(tmp);
+	}
+	return (out);
+}
+
+static char	*special_value(const char *name, t_shell *shell)
+{
+	int	n;
+
+	if (name[0] == '?')
+		return (ft_itoa(shell->exit_status));
+	if (name[0] == '#')
+		return (ft_itoa(shell->nparams));
+	if (name[0] == '@' || name[0] == '*')
+		return (join_params(shell));
+	if (name[0] == '$')
+		return (ft_itoa((int)getpid()));
+	if (name[0] == '!')
+		return (shell->last_bg ? ft_itoa((int)shell->last_bg) : ft_strdup(""));
+	if (!ft_isdigit(name[0]))
+		return (NULL);
+	n = ft_atoi(name);
+	if (n == 0)
+		return (ft_strdup(shell->argv0));
+	if (n <= shell->nparams)
+		return (ft_strdup(shell->params[n - 1]));
+	return (ft_strdup(""));
 }
 
 static char	*get_var_value(char *var_name, t_shell *shell)
@@ -59,21 +109,17 @@ static char	*get_var_value(char *var_name, t_shell *shell)
 	char	*name;
 	char	*value;
 
-	var_name += brace_offset(var_name);
-	len = var_name_length(var_name);
+	len = brace_offset(var_name);
+	var_name += len;
+	len = name_len(var_name, len);
 	if (len == 0)
 		return (ft_strdup("$"));
 	name = ft_substr(var_name, 0, len);
 	if (!name)
 		return (NULL);
-	if (ft_strcmp(name, "?") == 0)
-		value = ft_itoa(shell->exit_status);
-	else
-	{
-		value = env_get(shell->env, name);
-		if (value)
-			value = ft_strdup(value);
-	}
+	value = special_value(name, shell);
+	if (!value && env_get(shell->env, name))
+		value = ft_strdup(env_get(shell->env, name));
 	free(name);
 	return (value ? value : ft_strdup(""));
 }
@@ -190,6 +236,7 @@ char	*expand_heredoc_line(char *line, t_shell *shell)
 
 # define SPLIT 1
 # define QUOTED 2
+# define SEP 4
 
 typedef struct s_word
 {
@@ -197,6 +244,7 @@ typedef struct s_word
 	char	*mask;
 	int		len;
 	size_t	cap;
+	int		at_empty;
 }	t_word;
 
 static int	word_reserve(t_word *w, size_t extra)
@@ -248,9 +296,33 @@ static void	put_char(t_word *w, char c, int flags)
 	w->mask[w->len++] = flags;
 }
 
+static int	is_at_ref(const char *s)
+{
+	return (s[0] == '@' || (s[0] == '{' && s[1] == '@'));
+}
+
+static void	put_at_words(t_word *w, t_shell *shell)
+{
+	int	i;
+
+	if (shell->nparams == 0)
+		w->at_empty = 1;
+	i = 0;
+	while (i < shell->nparams)
+	{
+		if (i)
+			put_char(w, ' ', SEP | QUOTED);
+		put_value(w, ft_strdup(shell->params[i]), QUOTED);
+		i++;
+	}
+}
+
 static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 {
-	put_value(w, get_var_value(raw + 1, shell), quote == 0 ? SPLIT : QUOTED);
+	if (quote == '"' && is_at_ref(raw + 1))
+		put_at_words(w, shell);
+	else
+		put_value(w, get_var_value(raw + 1, shell), quote ? QUOTED : SPLIT);
 	return (ref_length(raw + 1) + 1);
 }
 
@@ -406,7 +478,7 @@ static int	emit_fields(t_word *w, t_token **tok[2])
 	k = 0;
 	while (k <= w->len)
 	{
-		if (k == w->len || ((w->mask[k] & SPLIT) && ft_isspace(w->str[k])))
+		if (k == w->len || (w->mask[k] & SEP) || ((w->mask[k] & SPLIT) && ft_isspace(w->str[k])))
 		{
 			if (start >= 0 && ++count)
 				emit_one(w, start, k, tok);
@@ -431,6 +503,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	cap = calculate_expanded_size(raw, shell) + (home ? ft_strlen(home) : 0);
 	w.len = 0;
 	w.cap = cap;
+	w.at_empty = 0;
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	tok[0] = head;
@@ -439,7 +512,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	{
 		fill_word(&w, raw, shell);
 		if (!emit_fields(&w, tok)
-			&& (ft_strchr(raw, '\'') || ft_strchr(raw, '"')))
+			&& !w.at_empty && (ft_strchr(raw, '\'') || ft_strchr(raw, '"')))
 			token_add_back(head, cur, TOKEN_WORD, ft_strdup(""));
 	}
 	free(w.str);
@@ -479,6 +552,7 @@ char	*expand_variables(char *token, t_shell *shell)
 	cap = calculate_expanded_size(token, shell) + (home ? ft_strlen(home) : 0);
 	w.len = 0;
 	w.cap = cap;
+	w.at_empty = 0;
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	result = NULL;

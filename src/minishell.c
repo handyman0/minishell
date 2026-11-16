@@ -43,6 +43,10 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->aliases = NULL;
 	shell->subst_status = 0;
 	shell->subst_used = 0;
+	shell->params = NULL;
+	shell->nparams = 0;
+	shell->argv0 = "minishell";
+	shell->last_bg = 0;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else

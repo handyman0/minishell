@@ -56,6 +56,10 @@ struct s_shell
 	int			in_child;
 	int			subst_status;
 	int			subst_used;
+	char		**params;
+	int			nparams;
+	const char	*argv0;
+	pid_t		last_bg;
 	pid_t		pgid;
 	struct termios	tmodes;
 };
