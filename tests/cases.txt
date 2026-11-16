@@ -335,3 +335,7 @@ echo -e '\e[0m' | od -An -c; echo -e '\q'; echo -neE 'z'; echo
 echo {a,b}c x{1..5}y {a..e} {5..1} {01..03} {1..10..3} {a,b{c,d}}e
 echo {} {a} a{b "{a,b}" \{a,b\} {a,"b c"} ${x:-{a,b}} {-2..2} {a,}z
 echo /tmp/{a,b}/{c,d} pre{x,y}{1,2}post; set +B; echo {a,b}
+x=abcdef; echo ${x:2} ${x:1:3} ${x: -2} ${x:0:-1} ${x:10} ${x:1+1:2}
+x=banana; echo ${x/an/XX} ${x//an/XX} ${x/#ba/Z} ${x/%na/Z} ${x//a} ${x//[ab]/-} ${x/n*/Q}
+x=abc; echo ${x^^} ${x^} ${x,,} ${X,,} ${x^^[ab]}; y=x; echo ${!y}
+set -- a b c; echo ${@:2} ${*:1:2} ${#@} "${@:2}" "${@: -1}"; x=aXb; echo ${x@Q} ${x@U} ${x@L} ${x@u}

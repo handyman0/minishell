@@ -498,7 +498,7 @@ static void	put_char(t_word *w, char c, int flags)
 
 static int	is_at_ref(const char *s)
 {
-	return (s[0] == '@' || (s[0] == '{' && s[1] == '@'));
+	return (s[0] == '@' || (s[0] == '{' && s[1] == '@' && s[2] == '}'));
 }
 
 static void	put_at_words(t_word *w, t_shell *shell)
@@ -654,6 +654,202 @@ static int	put_trim(t_word *w, char *inner, int quote, t_shell *shell)
 	return (free(name), free(value), free(pat), 1);
 }
 
+static char	*pattern_of(const char *s, int start, int len, t_shell *shell)
+{
+	char	*raw;
+	char	*pat;
+
+	raw = ft_substr(s, start, len);
+	pat = expand_pattern(raw ? raw : "", shell);
+	return (free(raw), pat);
+}
+
+static long	arith_text(const char *text, t_shell *shell)
+{
+	char	*flat;
+	char	*res;
+	long	v;
+
+	flat = expand_variables((char *)text, shell);
+	res = arith_string(flat ? flat : "", shell);
+	v = res ? ft_atoi(res) : 0;
+	return (free(flat), free(res), v);
+}
+
+static long	arith_part(const char *s, int n, t_shell *shell)
+{
+	char	*part;
+	long	v;
+
+	part = ft_substr(s, 0, n);
+	v = arith_text(part ? part : "", shell);
+	return (free(part), v);
+}
+
+static void	put_slice(t_word *w, int quote, long range[2], char name_has[2],
+				t_shell *shell)
+{
+	long	i;
+	long	total;
+	long	end;
+	long	off;
+	char	*item;
+
+	total = shell->nparams + 1;
+	off = range[0] < 0 ? range[0] + total : range[0];
+	if (off < 0 || off >= total)
+		return ;
+	end = total;
+	if (name_has[1])
+		end = range[1] < 0 ? total + range[1] : off + range[1];
+	i = off;
+	while (i < end && i < total)
+	{
+		if (i > off)
+			put_char(w, ' ', name_has[0] == '@' ? (quote ? SEP | QUOTED | KEEP
+					: SEP) : QUOTED);
+		item = i == 0 ? (char *)shell->argv0 : shell->params[i - 1];
+		put_value(w, ft_strdup(item), quote ? QUOTED : SPLIT);
+		i++;
+	}
+}
+
+static int	put_substring(t_word *w, char *inner, int n, int quote,
+				t_shell *shell)
+{
+	char	*name;
+	char	*value;
+	char	*rest;
+	long	range[2];
+	char	flags[2];
+	int		c;
+
+	rest = inner + n + 1;
+	c = 0;
+	while (rest[c] && rest[c] != ':')
+		c++;
+	range[0] = arith_part(rest, c, shell);
+	range[1] = rest[c] ? arith_text(rest + c + 1, shell) : 0;
+	name = ft_substr(inner, 0, n);
+	flags[0] = name[0];
+	flags[1] = rest[c] == ':';
+	if (n == 1 && (name[0] == '@' || name[0] == '*'))
+		put_slice(w, quote, range, flags, shell);
+	else
+	{
+		value = lookup(name, shell);
+		check_unset(name, value, shell);
+		put_value(w, param_substring(value ? value : "", range[0], range[1],
+				flags[1]), quote ? QUOTED : SPLIT);
+		free(value);
+	}
+	return (free(name), 1);
+}
+
+static int	put_replace(t_word *w, char *inner, int n, int quote,
+				t_shell *shell)
+{
+	char	*name;
+	char	*value;
+	char	*pat;
+	char	*rep;
+	int		mode;
+	int		c;
+
+	name = ft_substr(inner, 0, n);
+	value = lookup(name, shell);
+	check_unset(name, value, shell);
+	mode = 0;
+	c = n + 1;
+	if (inner[c] == '/' || inner[c] == '#' || inner[c] == '%')
+		mode = inner[c] == '/' ? 1 : (inner[c] == '#' ? 2 : 3);
+	c += mode > 0;
+	n = c;
+	while (inner[n] && inner[n] != '/')
+		n += 1 + (inner[n] == '\\' && inner[n + 1]);
+	pat = pattern_of(inner, c, n - c, shell);
+	rep = expand_variables(inner[n] ? inner + n + 1 : "", shell);
+	put_value(w, param_replace(value ? value : "", pat ? pat : "",
+			rep ? rep : "", mode), quote ? QUOTED : SPLIT);
+	return (free(name), free(value), free(pat), free(rep), 1);
+}
+
+static int	put_case(t_word *w, char *inner, int n, int quote, t_shell *shell)
+{
+	char	*name;
+	char	*value;
+	char	*pat;
+	int		all;
+
+	name = ft_substr(inner, 0, n);
+	value = lookup(name, shell);
+	check_unset(name, value, shell);
+	all = inner[n + 1] == inner[n];
+	pat = pattern_of(inner, n + 1 + all, ft_strlen(inner), shell);
+	put_value(w, param_case(value ? value : "", pat ? pat : "",
+			inner[n] == '^', all), quote ? QUOTED : SPLIT);
+	return (free(name), free(value), free(pat), 1);
+}
+
+static int	put_transform(t_word *w, char *inner, int n, int quote,
+				t_shell *shell)
+{
+	char	*name;
+	char	*value;
+	char	*res;
+
+	name = ft_substr(inner, 0, n);
+	value = lookup(name, shell);
+	if (inner[n + 1] == 'Q')
+		res = param_quote(value ? value : "");
+	else if (inner[n + 1] == 'U' || inner[n + 1] == 'L')
+		res = param_case(value ? value : "", "", inner[n + 1] == 'U', 1);
+	else
+		res = param_case(value ? value : "", "", 1, 0);
+	put_value(w, res, quote ? QUOTED : SPLIT);
+	return (free(name), free(value), 1);
+}
+
+static int	put_indirect(t_word *w, char *inner, int quote, t_shell *shell)
+{
+	char	*name;
+	char	*value;
+	char	*target;
+	int		n;
+
+	n = name_len(inner + 1, 1);
+	if (!n || inner[1 + n])
+		return (0);
+	name = ft_substr(inner, 1, n);
+	value = lookup(name, shell);
+	target = value ? lookup(value, shell) : NULL;
+	put_value(w, target, quote ? QUOTED : SPLIT);
+	return (free(name), free(value), 1);
+}
+
+static int	put_extra(t_word *w, char *inner, int quote, t_shell *shell)
+{
+	int	n;
+
+	if (inner[0] == '#' && (inner[1] == '@' || inner[1] == '*') && !inner[2])
+		return (put_value(w, ft_itoa(shell->nparams), quote ? QUOTED : SPLIT), 1);
+	if (inner[0] == '!')
+		return (put_indirect(w, inner, quote, shell));
+	n = name_len(inner, 1);
+	if (!n || inner[0] == '#')
+		return (0);
+	if (inner[n] == ':' && inner[n + 1] && !ft_strchr("-=+?", inner[n + 1]))
+		return (put_substring(w, inner, n, quote, shell));
+	if (inner[n] == '/')
+		return (put_replace(w, inner, n, quote, shell));
+	if (inner[n] == '^' || inner[n] == ',')
+		return (put_case(w, inner, n, quote, shell));
+	if (inner[n] == '@' && ft_strchr("QULu", inner[n + 1]) && inner[n + 1]
+		&& !inner[n + 2])
+		return (put_transform(w, inner, n, quote, shell));
+	return (0);
+}
+
 static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	char	*inner;
@@ -666,6 +862,8 @@ static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
 
 	inner = ft_substr(raw, 1, brace_end(raw) - 1);
 	if (inner[0] != '#' && put_trim(w, inner, quote, shell))
+		return (free(inner), 1);
+	if (put_extra(w, inner, quote, shell))
 		return (free(inner), 1);
 	n = inner[0] == '#' ? hash_name(inner) : name_len(inner, 1);
 	colon = inner[n] == ':';
