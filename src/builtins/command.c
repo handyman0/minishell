@@ -31,6 +31,17 @@ char	*quote_word(const char *word)
 	return (out);
 }
 
+static void	put_absolute(const char *name, t_shell *shell)
+{
+	char	*cwd;
+
+	if (name[0] == '/')
+		return (ml_put_all(STDOUT_FILENO, name, "\n", NULL));
+	cwd = logical_pwd(shell);
+	ml_put_all(STDOUT_FILENO, cwd ? cwd : ".", "/", name, "\n", NULL);
+	free(cwd);
+}
+
 static int	describe(const char *name, t_shell *shell)
 {
 	char	*path;
@@ -46,6 +57,8 @@ static int	describe(const char *name, t_shell *shell)
 				NULL), 0);
 	if (is_builtin(name))
 		return (ml_put_all(STDOUT_FILENO, name, "\n", NULL), 0);
+	if (ft_strchr(name, '/') && access(name, X_OK) == 0)
+		return (put_absolute(name, shell), 0);
 	path = find_executable(name, shell);
 	if (!path)
 		return (1);
@@ -57,6 +70,7 @@ static int	describe(const char *name, t_shell *shell)
 static int	run_words(char **words, t_shell *shell)
 {
 	char	*text;
+	int		was;
 	char	*quoted;
 	char	*tmp;
 	int		i;
@@ -73,10 +87,13 @@ static int	run_words(char **words, t_shell *shell)
 		free(quoted);
 		i++;
 	}
+	was = shell->running;
 	shell->bypass_func = 1;
 	shell->exit_status = 0;
 	run_line(text, shell);
 	shell->bypass_func = 0;
+	if (ft_strcmp(words[0], "exit") != 0)
+		shell->running = was;
 	free(text);
 	return (shell->exit_status);
 }

@@ -49,6 +49,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->line_base = 0;
 	shell->src_depth = 0;
 	shell->start_time = time(NULL);
+	shell->ppid = (int)getppid();
 	shell->pipe_st = NULL;
 	shell->npipe = 0;
 	shell->pipe_cap = 0;

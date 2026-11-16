@@ -34,7 +34,7 @@ char	*dynamic_value(const char *name, t_shell *shell)
 	if (ft_strcmp(name, "SECONDS") == 0)
 		return (ft_itoa((int)(time(NULL) - shell->start_time)));
 	if (ft_strcmp(name, "PPID") == 0)
-		return (ft_itoa((int)getppid()));
+		return (ft_itoa(shell->ppid));
 	if (ft_strcmp(name, "UID") == 0)
 		return (ft_itoa((int)getuid()));
 	if (ft_strcmp(name, "EUID") == 0)

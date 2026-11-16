@@ -38,6 +38,23 @@ static void	put_path(t_ty *o, const char *name, const char *dir)
 		ml_put_all(STDOUT_FILENO, name, " is ", dir, "\n", NULL);
 }
 
+static void	put_absolute_path(t_ty *o, const char *name, t_shell *shell)
+{
+	char	*cwd;
+	char	*tmp;
+	char	*full;
+
+	if (name[0] == '/')
+		return (put_path(o, name, name));
+	cwd = logical_pwd(shell);
+	tmp = ft_strjoin(cwd ? cwd : ".", "/");
+	full = ft_strjoin(tmp, name);
+	put_path(o, name, full);
+	free(cwd);
+	free(tmp);
+	free(full);
+}
+
 static int	each_path(char *name, t_shell *shell, t_ty *o)
 {
 	char	*dirs;
@@ -48,6 +65,12 @@ static int	each_path(char *name, t_shell *shell, t_ty *o)
 
 	dirs = env_get(shell->env, "PATH");
 	found = 0;
+	if (ft_strchr(name, '/'))
+	{
+		if (access(name, X_OK) != 0 || path_is_dir(name))
+			return (0);
+		return (put_absolute_path(o, name, shell), 1);
+	}
 	while (dirs && *dirs && !ft_strchr(name, '/'))
 	{
 		n = 0;

@@ -54,6 +54,7 @@ struct s_shell
 	int			line_base;
 	int			src_depth;
 	long		start_time;
+	int			ppid;
 	int			*pipe_st;
 	int			npipe;
 	int			pipe_cap;

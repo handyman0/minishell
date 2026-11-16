@@ -523,6 +523,8 @@ void	set_pipestatus(t_shell *shell, const int *codes, int n)
 static int	spawn_stages(t_node **stages, int n, t_shell *shell, pid_t *pids)
 {
 	int	fds[2];
+	t_node	*stage;
+	pid_t	pgid;
 	int	prev;
 	int	io[2];
 	int	i;
@@ -541,7 +543,11 @@ static int	spawn_stages(t_node **stages, int n, t_shell *shell, pid_t *pids)
 			io[0] = prev;
 			io[1] = fds[1];
 			stage_fds(io, fds, prev);
-			stage_child(stages[i], shell, i ? pids[0] : 0);
+			pgid = i ? pids[0] : 0;
+			free(pids);
+			stage = stages[i];
+			free(stages);
+			stage_child(stage, shell, pgid);
 		}
 		job_parent_setup(shell, pids[i], i ? pids[0] : 0);
 		if (prev != -1)
@@ -570,7 +576,6 @@ static void	pipefail(t_shell *shell, const int *codes, int n, int *status)
 
 static int	execute_pipe(t_node *node, t_shell *shell)
 {
-	t_node	*local[16];
 	t_node	**stages;
 	pid_t	*pids;
 	int		*codes;
@@ -578,19 +583,20 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	int		status;
 
 	n = collect_stages(node, NULL, 0);
-	stages = n > 16 ? malloc(sizeof(t_node *) * n) : local;
+	stages = malloc(sizeof(t_node *) * n);
 	pids = ft_calloc(n + 1, sizeof(pid_t));
-	codes = ft_calloc(n + 1, sizeof(int));
-	if (!stages || !pids || !codes)
-		return (free(pids), free(codes), 1);
+	if (!stages || !pids)
+		return (free(stages), free(pids), 1);
 	collect_stages(node, stages, n);
 	if (spawn_stages(stages, n, shell, pids) != n)
-		return (free(pids), free(codes), 1);
+		return (free(stages), free(pids), 1);
+	codes = ft_calloc(n + 1, sizeof(int));
+	if (!codes)
+		return (free(stages), free(pids), 1);
 	status = job_wait_codes(shell, node, pids, n, codes);
 	set_pipestatus(shell, codes, n);
 	pipefail(shell, codes, n, &status);
-	if (stages != local)
-		free(stages);
+	free(stages);
 	free(pids);
 	free(codes);
 	errexit_check(shell, status);
