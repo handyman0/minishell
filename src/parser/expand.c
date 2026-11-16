@@ -360,7 +360,7 @@ static int	heredoc_subst(t_buf *buf, char *line, int *i, t_shell *shell)
 	char	*value;
 	int		used;
 
-	value = expand_subst_at(&line[*i], &used, shell);
+	value = expand_subst_at(&line[*i], &used, shell, 1);
 	if (!value)
 		return (-1);
 	*i += used;
@@ -699,7 +699,7 @@ static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 	return (ref_length(raw + 1) + 1);
 }
 
-static char	*unescape_backtick(const char *src, int len)
+static char	*unescape_backtick(const char *src, int len, int dq)
 {
 	char	*out;
 	int		i;
@@ -712,7 +712,7 @@ static char	*unescape_backtick(const char *src, int len)
 	j = 0;
 	while (i < len)
 	{
-		if (src[i] == '\\' && i + 1 < len && ft_strchr("`\\$", src[i + 1]))
+		if (src[i] == '\\' && i + 1 < len && (ft_strchr("`\\$", src[i + 1]) || (dq && src[i + 1] == '"')))
 			i++;
 		out[j++] = src[i++];
 	}
@@ -720,7 +720,7 @@ static char	*unescape_backtick(const char *src, int len)
 	return (out);
 }
 
-char	*expand_subst_at(const char *s, int *consumed, t_shell *shell)
+char	*expand_subst_at(const char *s, int *consumed, t_shell *shell, int dq)
 {
 	char	*text;
 	char	*out;
@@ -737,7 +737,7 @@ char	*expand_subst_at(const char *s, int *consumed, t_shell *shell)
 		return (NULL);
 	*consumed = end;
 	if (s[0] == '`')
-		return (run_substitution(shell, unescape_backtick(s + 1, end - 2)));
+		return (run_substitution(shell, unescape_backtick(s + 1, end - 2, dq)));
 	if (s[2] == '(' && end >= 6 && s[end - 2] == ')')
 	{
 		text = ft_substr(s, 3, end - 5);
@@ -755,7 +755,7 @@ static int	put_subst(t_word *w, const char *s, int quote, t_shell *shell)
 	char	*out;
 	int		used;
 
-	out = expand_subst_at(s, &used, shell);
+	out = expand_subst_at(s, &used, shell, quote == '"');
 	if (!out)
 		return (0);
 	put_value(w, out, quote ? QUOTED : SPLIT);

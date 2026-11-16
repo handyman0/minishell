@@ -243,7 +243,7 @@ int		skip_brace(const char *s, int i);
 int		skip_backtick(const char *s, int i);
 int		skip_quote(const char *s, int i);
 char	*arith_string(const char *text, t_shell *shell);
-char	*expand_subst_at(const char *s, int *consumed, t_shell *shell);
+char	*expand_subst_at(const char *s, int *consumed, t_shell *shell, int dq);
 int		line_incomplete(char *line);
 
 
