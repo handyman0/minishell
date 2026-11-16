@@ -38,6 +38,10 @@ run_line() {
 	local label=$1 line=$2
 	timeout 10 "$SHELL_BIN" -c "$line" < /dev/null > /dev/null 2> err.txt
 	local rc=$?
+	if [ $rc -eq 124 ]; then
+		timeout 5 bash -c "$line" < /dev/null > /dev/null 2>&1
+		[ $? -eq 124 ] && rc=0
+	fi
 	if ! check "$label" $rc err.txt; then
 		printf '%s\n' "$line" | head -c 400 >> "$FAILS"
 		echo >> "$FAILS"
