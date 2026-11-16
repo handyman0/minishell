@@ -7,7 +7,7 @@ Abre em ~2 ms, edita a linha com sugestões e destaque de sintaxe, controla jobs
 e foi testado contra o bash, com fuzz e com Valgrind.
 
 ![C](https://img.shields.io/badge/Language-C-blue.svg)
-![Deps](https://img.shields.io/badge/Deps-libc%20%2B%20libft-success)
+![Deps](https://img.shields.io/badge/Deps-libc%20%2B%20mylib-success)
 ![Binary](https://img.shields.io/badge/Binary-~850%20KB%20est%C3%A1tico-informational)
 ![License](https://img.shields.io/badge/License-42%20School-lightgrey)
 
@@ -21,8 +21,9 @@ e foi testado contra o bash, com fuzz e com Valgrind.
 
 - **Rápido de abrir.** Cerca de 2,3 ms por execução, contra ~2,7 ms do bash e ~40 ms
   do fish (medido nesta máquina com `-c true`, melhor de 5 rodadas de 500).
-- **Leve e sem dependências externas.** Só a libc e a libft do projeto. O editor de
-  linha, o casador de padrões, a saída de mensagens e o leitor de linhas são código
+- **Leve e sem dependências externas.** Só a libc e a **mylib**, a biblioteca própria
+  do projeto (derivada da libft, que continua intacta em outro repositório). O editor
+  de linha, o casador de padrões, a saída de mensagens e o leitor de linhas são código
   próprio, e o binário é estático (~850 KB).
 - **Editor de linha completo, escrito do zero.** Sugestão em cinza a partir do
   histórico, destaque de sintaxe em tempo real, `Tab` para comandos, arquivos e
@@ -102,7 +103,7 @@ src/
   lineedit/     editor: teclas, tela, histórico, Tab, Ctrl+R, destaque
   env/          variáveis (exportadas e só do shell)
   prompt/       montagem do PS1
-libft/          funções de string e memória usadas pelo shell
+mylib/          biblioteca própria: strings, memória, leitor de linhas (ml_*)
 tests/          corpus, fuzz e scripts
 ```
 
