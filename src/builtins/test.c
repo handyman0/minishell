@@ -165,7 +165,8 @@ static int	primary(t_test *t)
 	left = t->n - t->i;
 	if (left <= 0)
 		return (t->err = 1, 0);
-	if (ft_strcmp(t->a[t->i], "(") == 0 && left >= 3)
+	if (ft_strcmp(t->a[t->i], "(") == 0 && left >= 3
+		&& !(left == 3 && is_binary(t->a[t->i + 1])))
 	{
 		t->i++;
 		r = test_or(t);
@@ -190,7 +191,8 @@ static int	primary(t_test *t)
 
 static int	test_not(t_test *t)
 {
-	if (t->i < t->n && ft_strcmp(t->a[t->i], "!") == 0 && t->n - t->i > 1)
+	if (t->i < t->n && ft_strcmp(t->a[t->i], "!") == 0 && t->n - t->i > 1
+		&& !(t->n - t->i == 3 && is_binary(t->a[t->i + 1])))
 	{
 		t->i++;
 		return (!test_not(t));
@@ -248,7 +250,13 @@ int	builtin_test(char **argv, t_shell *shell)
 	t.err = 0;
 	if (t.n == 0)
 		return (1);
-	result = test_or(&t);
+	if (t.n == 4 && ft_strcmp(t.a[0], "!") == 0)
+	{
+		t.i = 1;
+		result = !test_or(&t);
+	}
+	else
+		result = test_or(&t);
 	if (t.err || t.i != t.n)
 		return (ml_put_all(2, "minishell: test: bad expression\n", NULL), 2);
 	return (!result);
