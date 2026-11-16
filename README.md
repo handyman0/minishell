@@ -129,6 +129,6 @@ editor dentro de um terminal simulado.
 
 ## 🛣️ Roteiro
 
-Próximos passos, em ordem de impacto para o uso diário: `ulimit`, `cd -P/-L` e
-`CDPATH`; `{a,b}`, `[[ ... ]]` e arrays; `history` e `echo -e`; `Tab` com
+Próximos passos, em ordem de impacto para o uso diário: `ulimit`, `alias` completo e
+mensagens de erro no formato POSIX; `{a,b}`, `[[ ... ]]` e arrays; `history` e `echo -e`; `Tab` com
 opções de comandos e subcomandos.
