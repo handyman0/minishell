@@ -70,7 +70,7 @@ interativas.
 **Builtins:** `echo` (`-n`), `cd`, `pwd`, `export`, `unset` (`-f`, `-v`), `readonly`,
 `env`, `exit`, `alias`, `unalias`, `source` e `.`, `eval`, `exec`, `command`, `type`,
 `which`, `test` e `[`, `read`, `shift`, `set --`, `umask`, `times`, `true`, `false`,
-`:`, `local`, `return`, `break`, `continue`, `jobs`, `fg`, `bg`.
+`:`, `local`, `return`, `break`, `continue`, `trap`, `wait`, `kill`, `jobs`, `fg`, `bg`.
 
 ## ⌨️ Editor de linha
 
@@ -129,6 +129,6 @@ editor dentro de um terminal simulado.
 
 ## 🛣️ Roteiro
 
-Próximos passos, em ordem de impacto para o uso diário: `trap`, `wait`, `kill %n`,
-`getopts`, `ulimit` e as opções `set -e`/`-u`/`-x`; `{a,b}`, `[[ ... ]]` e arrays;
-`history` e `echo -e`; `Tab` com opções de comandos e subcomandos.
+Próximos passos, em ordem de impacto para o uso diário: `getopts`, `ulimit` e as
+opções `set -e`/`-u`/`-x`; `{a,b}`, `[[ ... ]]` e arrays; `history` e `echo -e`;
+`Tab` com opções de comandos e subcomandos.
