@@ -225,6 +225,7 @@ int		check_syntax(t_token *tokens);
 int		check_quotes(char *line);
 char	open_quote(const char *line);
 int		skip_dollar_paren(const char *s, int i);
+int		skip_brace(const char *s, int i);
 int		skip_backtick(const char *s, int i);
 int		skip_quote(const char *s, int i);
 char	*arith_string(const char *text, t_shell *shell);

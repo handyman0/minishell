@@ -68,6 +68,7 @@ struct s_shell
 	int			bypass_func;
 	unsigned int	opts;
 	int			noerrexit;
+	int			spare;
 	int			optpos;
 	int			optind_last;
 	int			optsilent;
