@@ -81,7 +81,7 @@ static int	expand_one(t_token **link, t_shell *shell, char **seen, int depth)
 	return (1 + blank);
 }
 
-static int	opens_command(t_token *tok)
+int	opens_command(t_token *tok)
 {
 	return (tok->type == TOKEN_PIPE || tok->type == TOKEN_AND
 		|| tok->type == TOKEN_OR || tok->type == TOKEN_SEMI

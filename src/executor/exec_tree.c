@@ -280,6 +280,8 @@ static int	run_command(t_node *node, t_shell *shell)
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
 	shell->subst_used = 0;
+	if (node->data.cmd.argv[0] && ft_strcmp(node->data.cmd.argv[0], "[[") == 0)
+		return (cond_command(node->data.cmd.argv, shell));
 	expand_command(node, shell);
 	if (shell->expand_error)
 	{

@@ -475,6 +475,7 @@ t_token	*tokenize_line(char *line)
 	if (!joined)
 		return (free(map), NULL);
 	tokens = tokenize_joined(joined, map);
+	fold_conds(tokens);
 	free(joined);
 	free(map);
 	return (tokens);

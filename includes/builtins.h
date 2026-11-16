@@ -29,6 +29,7 @@ char	*logical_pwd(t_shell *shell);
  * @return Sempre 0.
  */
 int	builtin_hash(char **argv, t_shell *shell);
+int	cond_command(char **argv, t_shell *shell);
 int	stdout_failed(const char *name);
 int	builtin_echo(char **argv);
 

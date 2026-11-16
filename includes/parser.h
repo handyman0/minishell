@@ -206,6 +206,8 @@ t_node	*parse_pipeline(t_token **tokens);
 char	*expand_variables(char *token, t_shell *shell);
 char	*expand_pattern(char *word, t_shell *shell);
 char	*dynamic_value(const char *name, t_shell *shell);
+int	opens_command(t_token *tok);
+void	fold_conds(t_token *head);
 char	*param_substring(const char *value, long off, long len, int has_len);
 char	*param_replace(const char *value, const char *pat, const char *rep, int mode);
 char	*param_case(const char *value, const char *pat, int upper, int all);
