@@ -41,12 +41,22 @@ static int	file_test(const char *op, const char *path)
 		return (ok && S_ISSOCK(st.st_mode));
 	if (op[1] == 'b')
 		return (ok && S_ISBLK(st.st_mode));
+	if (op[1] == 'g')
+		return (ok && (st.st_mode & S_ISGID) != 0);
+	if (op[1] == 'u')
+		return (ok && (st.st_mode & S_ISUID) != 0);
+	if (op[1] == 'k')
+		return (ok && (st.st_mode & S_ISVTX) != 0);
+	if (op[1] == 'O')
+		return (ok && st.st_uid == geteuid());
+	if (op[1] == 'G')
+		return (ok && st.st_gid == getegid());
 	return (op[1] == 'c' ? ok && S_ISCHR(st.st_mode) : -1);
 }
 
 static int	is_unary(const char *op)
 {
-	return (op[0] == '-' && op[1] && !op[2] && ft_strchr("zneEfdsrwxLhpSbct", op[1]));
+	return (op[0] == '-' && op[1] && !op[2] && ft_strchr("zneEfdsrwxLhpSbctguOGk", op[1]));
 }
 
 static int	unary(t_test *t, const char *op, const char *arg)
@@ -104,15 +114,38 @@ static int	compare_ints(t_test *t, const char *l, const char *op, const char *r)
 	return (ft_strcmp(op, "-gt") == 0 ? a > b : a >= b);
 }
 
+static int	is_file_op(const char *op)
+{
+	return (ft_strcmp(op, "-ef") == 0 || ft_strcmp(op, "-nt") == 0
+		|| ft_strcmp(op, "-ot") == 0);
+}
+
 static int	is_binary(const char *op)
 {
 	return (ft_strcmp(op, "=") == 0 || ft_strcmp(op, "==") == 0
 		|| ft_strcmp(op, "!=") == 0 || ft_strcmp(op, "<") == 0
-		|| ft_strcmp(op, ">") == 0 || is_int_op(op));
+		|| ft_strcmp(op, ">") == 0 || is_int_op(op) || is_file_op(op));
+}
+
+static int	compare_files(const char *l, const char *op, const char *r)
+{
+	struct stat	a;
+	struct stat	b;
+
+	if (stat(l, &a) != 0)
+		return (0);
+	if (ft_strcmp(op, "-ef") == 0)
+		return (stat(r, &b) == 0 && a.st_dev == b.st_dev
+			&& a.st_ino == b.st_ino);
+	if (ft_strcmp(op, "-nt") == 0)
+		return (stat(r, &b) != 0 || a.st_mtime > b.st_mtime);
+	return (stat(r, &b) == 0 && a.st_mtime < b.st_mtime);
 }
 
 static int	binary(t_test *t, char *l, char *op, char *r)
 {
+	if (is_file_op(op))
+		return (compare_files(l, op, r));
 	if (is_int_op(op))
 		return (compare_ints(t, l, op, r));
 	if (op[0] == '=')

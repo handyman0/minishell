@@ -39,6 +39,8 @@ int		builtin_shift(char **argv, t_shell *shell);
 int		builtin_set(char **argv, t_shell *shell);
 int		builtin_test(char **argv, t_shell *shell);
 int		builtin_read(char **argv, t_shell *shell);
+int		builtin_umask(char **argv, t_shell *shell);
+int		builtin_command(char **argv, t_shell *shell);
 void	push_local(t_shell *shell, const char *key);
 int		builtin_true(char **argv, t_shell *shell);
 int		builtin_false(char **argv, t_shell *shell);

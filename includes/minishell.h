@@ -63,6 +63,7 @@ struct s_shell
 	const char	*argv0;
 	pid_t		last_bg;
 	int			brk;
+	int			bypass_func;
 	int			cont;
 	int			ret;
 	int			loop_depth;

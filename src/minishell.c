@@ -48,6 +48,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->argv0 = "minishell";
 	shell->last_bg = 0;
 	shell->brk = 0;
+	shell->bypass_func = 0;
 	shell->cont = 0;
 	shell->ret = 0;
 	shell->loop_depth = 0;
