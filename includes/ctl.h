@@ -1,0 +1,47 @@
+#ifndef CTL_H
+# define CTL_H
+
+# include "minishell.h"
+
+struct s_redir;
+
+struct s_func
+{
+	char			*name;
+	t_node			*body;
+	struct s_func	*next;
+};
+
+struct s_local
+{
+	char			*key;
+	char			*old;
+	int				had;
+	int				was_exported;
+	int				depth;
+	struct s_local	*next;
+};
+
+int		execute_ctl(t_node *node, t_shell *shell);
+t_func	*find_func(t_shell *shell, const char *name);
+int		call_function(t_shell *shell, t_func *func, char **argv);
+void	funcs_free(t_shell *shell);
+char	**expand_words(char **raw, t_shell *shell);
+int		apply_redirections(struct s_redir *redirs);
+void	save_fds(int backup[3]);
+void	restore_fds(int backup[3]);
+int		glob_match(const char *pattern, const char *name);
+int		builtin_break(char **argv, t_shell *shell);
+int		builtin_continue(char **argv, t_shell *shell);
+int		builtin_return(char **argv, t_shell *shell);
+int		builtin_local(char **argv, t_shell *shell);
+int		builtin_shift(char **argv, t_shell *shell);
+int		builtin_set(char **argv, t_shell *shell);
+int		builtin_test(char **argv, t_shell *shell);
+int		builtin_read(char **argv, t_shell *shell);
+void	push_local(t_shell *shell, const char *key);
+int		builtin_true(char **argv, t_shell *shell);
+int		builtin_false(char **argv, t_shell *shell);
+int		builtin_eval(char **argv, t_shell *shell);
+
+#endif

@@ -30,7 +30,7 @@ static int	is_chain(t_node *node)
 
 static int	chain_step(t_node *node, int status, t_shell *shell)
 {
-	if (!shell->running)
+	if (!shell->running || shell->brk || shell->cont || shell->ret)
 		return (status);
 	shell->exit_status = status;
 	if (node->type == NODE_SEQ
@@ -72,6 +72,11 @@ static int	execute_chain(t_node *root, t_shell *shell)
 
 static int	execute_builtin(t_node *node, t_shell *shell)
 {
+	int	(*ext)(char **, t_shell *);
+
+	ext = find_ext_builtin(node->data.cmd.argv[0]);
+	if (ext)
+		return (ext(node->data.cmd.argv, shell));
 	if (ft_strcmp(node->data.cmd.argv[0], "echo") == 0)
 		return (builtin_echo(node->data.cmd.argv));
 	else if (ft_strcmp(node->data.cmd.argv[0], "cd") == 0)
@@ -105,7 +110,14 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 	return (-1);
 }
 
-static void	restore_fds(int backup[3])
+void	save_fds(int backup[3])
+{
+	backup[0] = dup(STDIN_FILENO);
+	backup[1] = dup(STDOUT_FILENO);
+	backup[2] = dup(STDERR_FILENO);
+}
+
+void	restore_fds(int backup[3])
 {
 	int	i;
 
@@ -127,7 +139,7 @@ static int	open_redir(t_redir *redir)
 	return (open(redir->file, O_WRONLY | O_CREAT | O_APPEND, 0644));
 }
 
-static int	apply_redirections(t_redir *redirs)
+int	apply_redirections(t_redir *redirs)
 {
 	int	fd;
 
@@ -173,6 +185,7 @@ static int	run_command(t_node *node, t_shell *shell)
 	int		builtin_status;
 	int		backup[3];
 	t_saved	*saved;
+	t_func	*func;
 	int		nsaved;
 	pid_t	pid;
 
@@ -189,7 +202,8 @@ static int	run_command(t_node *node, t_shell *shell)
 	backup[0] = dup(STDIN_FILENO);
 	backup[1] = dup(STDOUT_FILENO);
 	backup[2] = dup(STDERR_FILENO);
-	if (is_builtin(node->data.cmd.argv[0]))
+	func = find_func(shell, node->data.cmd.argv[0]);
+	if (func || is_builtin(node->data.cmd.argv[0]))
 	{
 		if (!apply_redirections(node->data.cmd.redirs))
 		{
@@ -198,7 +212,8 @@ static int	run_command(t_node *node, t_shell *shell)
 		}
 		saved = node->data.cmd.assigns
 			? overlay_apply(shell, node->data.cmd.assigns, &nsaved) : NULL;
-		builtin_status = execute_builtin(node, shell);
+		builtin_status = func ? call_function(shell, func, node->data.cmd.argv)
+			: execute_builtin(node, shell);
 		if (saved)
 			overlay_restore(shell, saved, nsaved);
 		restore_fds(backup);
@@ -392,6 +407,8 @@ int	execute_tree(t_node *node, t_shell *shell)
 		case NODE_BG:
 			return (execute_background(node, shell));
 		default:
+			if (is_ctl_node(node))
+				return (execute_ctl(node, shell));
 			ml_put_all(STDERR_FILENO, "minishell: unknown node type\n", NULL);
 			return (1);
 	}

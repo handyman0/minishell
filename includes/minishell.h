@@ -25,6 +25,8 @@ typedef struct s_token t_token;
 typedef struct s_node t_node;
 typedef struct s_shell t_shell;
 typedef struct s_job t_job;
+typedef struct s_func t_func;
+typedef struct s_local t_local;
 
 // Incluir outros headers depois das declarações forward
 # include "env.h"
@@ -60,10 +62,19 @@ struct s_shell
 	int			nparams;
 	const char	*argv0;
 	pid_t		last_bg;
+	int			brk;
+	int			cont;
+	int			ret;
+	int			loop_depth;
+	int			func_depth;
+	t_func		*funcs;
+	t_local		*locals;
 	pid_t		pgid;
 	struct termios	tmodes;
 };
 
 void	run_line(char *line, t_shell *shell);
+
+# include "ctl.h"
 
 #endif

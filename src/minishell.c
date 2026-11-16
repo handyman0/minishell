@@ -47,6 +47,13 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->nparams = 0;
 	shell->argv0 = "minishell";
 	shell->last_bg = 0;
+	shell->brk = 0;
+	shell->cont = 0;
+	shell->ret = 0;
+	shell->loop_depth = 0;
+	shell->func_depth = 0;
+	shell->funcs = NULL;
+	shell->locals = NULL;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else
@@ -64,7 +71,16 @@ static void	run_tokens(t_token *tokens, t_shell *shell)
 	saved_tokens = shell->tokens;
 	start = tokens;
 	shell->tokens = start;
+	parse_reset();
 	ast = parse_tokens(&tokens);
+	if (ast && tokens && !parse_failed())
+		parse_fail_at(tokens);
+	if (parse_failed())
+	{
+		parse_report(shell);
+		free_ast(ast);
+		ast = NULL;
+	}
 	if (ast && prepare_heredocs(ast, shell))
 	{
 		shell->exit_status = (g_signal == SIGINT) ? 130 : 1;

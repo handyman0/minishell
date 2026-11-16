@@ -120,11 +120,8 @@ int	heredoc_read(const char *raw, t_shell *shell)
 	return (fd);
 }
 
-static int	command_heredocs(t_node *node, t_shell *shell)
+static int	redirs_heredocs(t_redir *redir, t_shell *shell)
 {
-	t_redir	*redir;
-
-	redir = node->data.cmd.redirs;
 	while (redir)
 	{
 		if (redir->type == REDIR_HEREDOC)
@@ -138,6 +135,38 @@ static int	command_heredocs(t_node *node, t_shell *shell)
 	return (0);
 }
 
+static int	ctl_heredocs(t_node *node, t_shell *shell)
+{
+	t_case	*item;
+
+	if (prepare_heredocs(node->data.ctl.a, shell)
+		|| prepare_heredocs(node->data.ctl.b, shell)
+		|| prepare_heredocs(node->data.ctl.c, shell))
+		return (1);
+	item = node->data.ctl.cases;
+	while (item)
+	{
+		if (prepare_heredocs(item->body, shell))
+			return (1);
+		item = item->next;
+	}
+	return (redirs_heredocs(node->data.ctl.redirs, shell));
+}
+
+static int	leaf_heredocs(t_node *node, t_shell *shell)
+{
+	if (!node)
+		return (0);
+	if (node->type == NODE_CMD)
+		return (redirs_heredocs(node->data.cmd.redirs, shell));
+	return (ctl_heredocs(node, shell));
+}
+
+static int	is_leaf(t_node *node)
+{
+	return (node->type == NODE_CMD || is_ctl_node(node));
+}
+
 int	prepare_heredocs(t_node *root, t_shell *shell)
 {
 	t_node	**stack;
@@ -147,19 +176,19 @@ int	prepare_heredocs(t_node *root, t_shell *shell)
 
 	depth = 0;
 	cur = root;
-	while (cur && cur->type != NODE_CMD && ++depth)
+	while (cur && !is_leaf(cur) && ++depth)
 		cur = cur->data.op.left;
 	stack = malloc(sizeof(t_node *) * (depth + 1));
 	if (!stack)
 		return (1);
 	cur = root;
 	depth = 0;
-	while (cur && cur->type != NODE_CMD)
+	while (cur && !is_leaf(cur))
 	{
 		stack[depth++] = cur;
 		cur = cur->data.op.left;
 	}
-	bad = cur && command_heredocs(cur, shell);
+	bad = leaf_heredocs(cur, shell);
 	while (!bad && depth-- > 0)
 		bad = prepare_heredocs(stack[depth]->data.op.right, shell);
 	free(stack);

@@ -49,6 +49,7 @@ char	*find_executable(const char *name, t_shell *shell);
 
 typedef struct s_saved	t_saved;
 
+
 char	*run_substitution(t_shell *shell, char *cmd);
 t_node	*clone_command(t_node *node);
 void	assign_shell(t_shell *shell, char **assigns);
