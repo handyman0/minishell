@@ -24,6 +24,8 @@
  */
 # define ARR_MARK 30
 # define ARR_SEP 31
+# define ASSOC_MARK 29
+# define ASSOC_KV 28
 
 typedef struct s_env
 {

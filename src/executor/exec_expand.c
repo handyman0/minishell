@@ -103,6 +103,12 @@ static char	*array_literal(const char *base, int plus, const char *raw,
 
 	inner = ft_substr(raw, 1, ft_strlen(raw) - 2);
 	fresh = literal_elements(inner, shell, &nf);
+	if (assoc_is(base) || g_assoc_hint)
+	{
+		old = (char **)assoc_literal(base, plus, fresh, nf);
+		free_str_array(fresh);
+		return (free(inner), (char *)old);
+	}
 	old = plus && base ? arr_split(base, &no) : NULL;
 	no = old ? arr_count(base) : 0;
 	all = ft_calloc(no + nf + 1, sizeof(char *));
@@ -229,6 +235,20 @@ static char	**append_word(char **list, int *n, char *word)
 	return (grown);
 }
 
+static int	decl_has_assoc(char **argv)
+{
+	int	i;
+
+	i = 1;
+	while (argv[i] && argv[i][0] == '-' && argv[i][1])
+	{
+		if (ft_strchr(argv[i], 'A'))
+			return (1);
+		i++;
+	}
+	return (0);
+}
+
 static char	**expand_decl(char **argv, t_shell *shell)
 {
 	char	**out;
@@ -242,6 +262,7 @@ static char	**expand_decl(char **argv, t_shell *shell)
 	n = 0;
 	i = -1;
 	one[1] = NULL;
+	g_assoc_hint = decl_has_assoc(argv);
 	while (argv[++i])
 	{
 		if (i > 0 && assign_eq_index(argv[i]) > 0
@@ -257,6 +278,7 @@ static char	**expand_decl(char **argv, t_shell *shell)
 			free_str_array(part);
 		}
 	}
+	g_assoc_hint = 0;
 	return (out);
 }
 

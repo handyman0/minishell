@@ -30,6 +30,19 @@ static int	is_valid_identifier(char *str)
 	return (1);
 }
 
+static int	unset_assoc(char *key, char *open, t_shell *shell)
+{
+	char	*sub;
+	char	*text;
+	char	*res;
+
+	sub = ft_substr(open + 1, 0, ft_strlen(open) - 2);
+	text = expand_variables(sub ? sub : "", shell);
+	res = assoc_set(env_get(shell->env, key), text ? text : "", "", 1);
+	env_assign(&shell->env, key, res);
+	return (free(sub), free(text), free(res), free(key), 0);
+}
+
 static int	unset_element(char *name, t_shell *shell)
 {
 	char	*open;
@@ -43,6 +56,8 @@ static int	unset_element(char *name, t_shell *shell)
 
 	open = ft_strchr(name, '[');
 	key = ft_substr(name, 0, open - name);
+	if (assoc_is(env_get(shell->env, key)))
+		return (unset_assoc(key, open, shell));
 	sub = ft_substr(open + 1, 0, ft_strlen(open) - 2);
 	num = arith_string(sub ? sub : "0", shell);
 	free(sub);

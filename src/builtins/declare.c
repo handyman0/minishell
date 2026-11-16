@@ -11,6 +11,7 @@ typedef struct s_decl
 	int	global;
 	int	funcs;
 	int	array;
+	int	assoc;
 }	t_decl;
 
 static int	parse_flags(char **argv, t_decl *d, int *i)
@@ -36,9 +37,11 @@ static int	parse_flags(char **argv, t_decl *d, int *i)
 				d->global = 1;
 			else if (argv[*i][k] == 'a')
 				d->array = 1;
+			else if (argv[*i][k] == 'A')
+				d->assoc = 1;
 			else if (argv[*i][k] == 'f' || argv[*i][k] == 'F')
 				d->funcs = 1;
-			else if (!ft_strchr("lutnA", argv[*i][k]))
+			else if (!ft_strchr("lutn", argv[*i][k]))
 				return (ml_put_all(2, "minishell: declare: -",
 						(char []){argv[*i][k], 0}, ": invalid option\n", NULL),
 					0);
@@ -52,7 +55,7 @@ static void	show_array(const char *v)
 {
 	char	*text;
 
-	text = arr_display(v);
+	text = assoc_is(v) ? assoc_display(v) : arr_display(v);
 	ml_put_all(STDOUT_FILENO, "=", text, NULL);
 	free(text);
 }
@@ -66,6 +69,8 @@ static void	print_one(t_env *var, t_decl *d)
 	flags[n++] = '-';
 	if (arr_is(var->value))
 		flags[n++] = 'a';
+	if (assoc_is(var->value))
+		flags[n++] = 'A';
 	if (var->readonly)
 		flags[n++] = 'r';
 	if (var->exported)
@@ -75,7 +80,7 @@ static void	print_one(t_env *var, t_decl *d)
 	flags[n] = '\0';
 	(void)d;
 	ml_put_all(STDOUT_FILENO, "declare ", flags, " ", var->key, NULL);
-	if (arr_is(var->value))
+	if (arr_like(var->value))
 		show_array(var->value);
 	else if (var->value)
 		ml_put_all(STDOUT_FILENO, "=\"", var->value, "\"", NULL);
@@ -112,6 +117,16 @@ static int	print_vars(char **names, t_shell *shell, t_decl *d)
 	return (status);
 }
 
+static char	*new_value(t_decl *d)
+{
+	static char	arr[2] = {ARR_MARK, 0};
+	static char	map[2] = {ASSOC_MARK, 0};
+
+	if (d->assoc)
+		return (map);
+	return (d->array ? arr : "");
+}
+
 static int	declare_one(char *arg, t_decl *d, t_shell *shell)
 {
 	char	*eq;
@@ -134,7 +149,9 @@ static int	declare_one(char *arg, t_decl *d, t_shell *shell)
 	if (val)
 		env_assign(&shell->env, key, val);
 	else if (!env_get(shell->env, key))
-		env_assign(&shell->env, key, d->array ? (char []){ARR_MARK, 0} : "");
+		env_assign(&shell->env, key, new_value(d));
+	else if (d->assoc && !assoc_is(env_get(shell->env, key)) && !val)
+		env_assign(&shell->env, key, new_value(d));
 	else if (d->array && !arr_is(env_get(shell->env, key)))
 		val = NULL;
 	if (d->exp)

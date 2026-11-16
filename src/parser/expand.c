@@ -178,6 +178,8 @@ static char	*lookup(const char *name, t_shell *shell)
 	}
 	if (arr_is(env_get(shell->env, name)))
 		return (arr_first(env_get(shell->env, name)));
+	if (assoc_is(env_get(shell->env, name)))
+		return (assoc_get(env_get(shell->env, name), "0"));
 	if (env_get(shell->env, name))
 		return (ft_strdup(env_get(shell->env, name)));
 	return (NULL);
@@ -951,6 +953,38 @@ static int	array_one(t_word *w, t_aref *r, t_shell *shell)
 	return (1);
 }
 
+static int	assoc_one(t_word *w, t_aref *r, t_shell *shell)
+{
+	char	*key;
+	char	*elem;
+
+	if (r->rest[0])
+		return (0);
+	key = expand_variables(r->sub, shell);
+	elem = assoc_get(r->value, key ? key : "");
+	free(key);
+	if (r->neg)
+	{
+		put_value(w, ft_itoa(elem ? (int)ft_strlen(elem) : 0),
+			r->quote ? QUOTED : SPLIT);
+		return (free(elem), 1);
+	}
+	put_value(w, elem ? elem : ft_strdup(""), r->quote ? QUOTED : SPLIT);
+	return (1);
+}
+
+static void	assoc_as_array(t_aref *r)
+{
+	char	**el;
+	int		n;
+
+	el = assoc_list(r->value, r->bang, &n);
+	r->owned = arr_join(el, n);
+	r->value = r->owned;
+	r->bang = 0;
+	free_str_array(el);
+}
+
 static int	put_array(t_word *w, char *inner, int quote, t_shell *shell)
 {
 	t_aref	r;
@@ -980,6 +1014,10 @@ static int	put_array(t_word *w, char *inner, int quote, t_shell *shell)
 	r.quote = quote;
 	r.neg = inner[0] == '#';
 	r.bang = inner[0] == '!';
+	if (assoc_is(r.value) && (r.sub[0] == '@' || r.sub[0] == '*') && !r.sub[1])
+		assoc_as_array(&r);
+	else if (assoc_is(r.value))
+		return (done = assoc_one(w, &r, shell), free(r.owned), free(name), free(r.sub), done);
 	done = (r.sub[0] == '@' || r.sub[0] == '*') && !r.sub[1]
 		? array_all(w, &r, shell) : array_one(w, &r, shell);
 	free(r.owned);

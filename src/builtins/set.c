@@ -127,6 +127,11 @@ static int	needs_quoting(const char *value)
 	return (0);
 }
 
+static char	*display_value(const char *v)
+{
+	return (assoc_is(v) ? assoc_display(v) : arr_display(v));
+}
+
 static void	print_variables(t_shell *shell)
 {
 	t_env	*var;
@@ -148,9 +153,9 @@ static void	print_variables(t_shell *shell)
 	n = 0;
 	while (keys && n < i)
 	{
-		if (arr_is(env_get(shell->env, keys[n])))
+		if (arr_like(env_get(shell->env, keys[n])))
 		{
-			quoted = arr_display(env_get(shell->env, keys[n]));
+			quoted = display_value(env_get(shell->env, keys[n]));
 			ml_put_all(STDOUT_FILENO, keys[n], "=", quoted, "\n", NULL);
 			free(quoted);
 			n++;

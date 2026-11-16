@@ -214,6 +214,14 @@ char	*assign_with_index(const char *base, const char *sub, int plus, const char 
 char	*arr_display(const char *v);
 char	*pipestatus_value(t_shell *shell);
 int	pattern_has_group(const char *p);
+extern int	g_assoc_hint;
+char	*assoc_literal(const char *base, int plus, char **words, int n);
+int	assoc_is(const char *v);
+int	arr_like(const char *v);
+char	*assoc_get(const char *v, const char *key);
+char	*assoc_set(const char *v, const char *key, const char *val, int drop);
+char	**assoc_list(const char *v, int keys, int *n);
+char	*assoc_display(const char *v);
 int	arr_is(const char *v);
 int	arr_count(const char *v);
 char	**arr_split(const char *v, int *n);
