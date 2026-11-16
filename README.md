@@ -129,6 +129,8 @@ editor dentro de um terminal simulado.
 
 ## 🛣️ Roteiro
 
-Próximos passos, em ordem de impacto para o uso diário: `ulimit`, `alias` completo e
-mensagens de erro no formato POSIX; `{a,b}`, `[[ ... ]]` e arrays; `history` e `echo -e`; `Tab` com
-opções de comandos e subcomandos.
+Já feitos: `ulimit`, `history`, `echo -e`, `printf` embutido, `{a,b}`, `[[ ... ]]`, `declare`, `let`, `pushd`/`popd`/`dirs`, `time`,
+expansão de parâmetros completa (`${x:2:3}`, `${x/a/b}`, `${x^^}`, `${!x}`) e glob em vários níveis.
+
+Próximos passos, em ordem de impacto para o uso diário: arrays (`a=(1 2)`, `${a[@]}`), `shopt`,
+`extglob`, `<(...)`, `alias` exótico (dentro de `for`/`case`) e `Tab` com opções de comandos e subcomandos.
