@@ -309,7 +309,7 @@ static int	capture_bodies(char *line, int pos, t_token **scan, t_token *head)
 	return (pos);
 }
 
-t_token	*tokenize_line(char *line)
+static t_token	*tokenize_joined(char *line)
 {
 	t_token	*head;
 	t_token	*current;
@@ -378,4 +378,64 @@ void	free_tokens(t_token *tokens)
 		free(tokens);
 		tokens = tmp;
 	}
+}
+
+static int	comment_starts(const char *s, int i, char quote, char prev)
+{
+	if (quote || s[i] != '#')
+		return (0);
+	return (!prev || ft_isspace(prev) || ft_strchr(";&|()", prev));
+}
+
+static char	*join_continuations(const char *s)
+{
+	char	*out;
+	char	quote;
+	int		i;
+	int		j;
+
+	out = malloc(ft_strlen(s) + 1);
+	if (!out)
+		return (NULL);
+	quote = 0;
+	i = 0;
+	j = 0;
+	while (s[i])
+	{
+		if (comment_starts(s, i, quote, j ? out[j - 1] : 0))
+			while (s[i] && s[i] != '\n')
+				out[j++] = s[i++];
+		else if (s[i] == '\\' && s[i + 1] == '\n' && quote != '\'')
+			i += 2;
+		else if (s[i] == '\\' && s[i + 1] && quote != '\'')
+		{
+			out[j++] = s[i++];
+			out[j++] = s[i++];
+		}
+		else
+		{
+			if (!quote && (s[i] == '\'' || s[i] == '"'))
+				quote = s[i];
+			else if (quote && s[i] == quote)
+				quote = 0;
+			out[j++] = s[i++];
+		}
+	}
+	out[j] = '\0';
+	return (out);
+}
+
+t_token	*tokenize_line(char *line)
+{
+	t_token	*tokens;
+	char	*joined;
+
+	if (!line)
+		return (NULL);
+	joined = join_continuations(line);
+	if (!joined)
+		return (NULL);
+	tokens = tokenize_joined(joined);
+	free(joined);
+	return (tokens);
 }
