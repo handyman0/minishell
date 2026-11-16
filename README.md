@@ -129,8 +129,11 @@ editor dentro de um terminal simulado.
 
 ## 🛣️ Roteiro
 
-Já feitos: `ulimit`, `history`, `echo -e`, `printf` embutido, `{a,b}`, `[[ ... ]]`, `declare`, `let`, `pushd`/`popd`/`dirs`, `time`,
-expansão de parâmetros completa (`${x:2:3}`, `${x/a/b}`, `${x^^}`, `${!x}`) e glob em vários níveis.
+Já feitos: `ulimit`, `history`, `echo -e`, `printf` embutido, `{a,b}`, `[[ ... ]]`, `(( ... ))`, `for ((;;))`,
+`declare`, `let`, `pushd`/`popd`/`dirs`, `time`, `mapfile`, `shopt`, arrays indexados (`a=(1 2)`, `${a[@]}`, `${#a[@]}`),
+`<<<`, `<(...)`/`>(...)`, `PIPESTATUS`, `pipefail`, `PPID`/`RANDOM`/`SECONDS`, expansão de parâmetros completa
+(`${x:2:3}`, `${x/a/b}`, `${x^^}`, `${!x}`) e glob em vários níveis.
 
-Próximos passos, em ordem de impacto para o uso diário: arrays (`a=(1 2)`, `${a[@]}`), `shopt`,
-`extglob`, `<(...)`, `alias` exótico (dentro de `for`/`case`) e `Tab` com opções de comandos e subcomandos.
+Próximos passos, em ordem de impacto para o uso diário: arrays associativos (`declare -A`), `extglob`
+(`@(a|b)`), `select`, `trap ... ERR`, `alias` exótico (dentro de `for`/`case`) e `Tab` com opções de comandos e
+subcomandos.
