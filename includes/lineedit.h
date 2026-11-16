@@ -88,6 +88,7 @@ int			visible_width(const char *prompt, int *rows);
 void		le_history_load(const char *path);
 void		le_history_save(const char *path);
 void		le_history_add(const char *line);
+void		le_history_clear(void);
 int			le_history_count(void);
 const char	*le_history_get(int index);
 const char	*history_suggestion(const char *buf, size_t len);

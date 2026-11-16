@@ -90,7 +90,7 @@ static int	execute_chain(t_node *root, t_shell *shell)
 	return (status);
 }
 
-static int	execute_builtin(t_node *node, t_shell *shell)
+int	execute_builtin(t_node *node, t_shell *shell)
 {
 	int	(*ext)(char **, t_shell *);
 
@@ -280,6 +280,9 @@ static int	run_command(t_node *node, t_shell *shell)
 	if (!node || node->type != NODE_CMD || !node->data.cmd.argv)
 		return (1);
 	shell->subst_used = 0;
+	if (node->data.cmd.argv[0] && ft_strcmp(node->data.cmd.argv[0], "time") == 0
+		&& !find_func(shell, "time"))
+		return (run_timed(node, shell, run_command));
 	if (node->data.cmd.argv[0] && ft_strcmp(node->data.cmd.argv[0], "[[") == 0)
 		return (cond_command(node->data.cmd.argv, shell));
 	expand_command(node, shell);

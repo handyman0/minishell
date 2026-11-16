@@ -12,12 +12,12 @@ static const t_ext	g_ext[] = {{"true", builtin_true}, {"false", builtin_false},
 {"return", builtin_return}, {"local", builtin_local}, {"shift", builtin_shift},
 {"set", builtin_set}, {"eval", builtin_eval}, {"test", builtin_test},
 {"[", builtin_test}, {"read", builtin_read}, {"umask", builtin_umask},
-{"command", builtin_command}, {"times", builtin_times}, {"readonly", builtin_readonly}, {"trap", builtin_trap}, {"wait", builtin_wait}, {"kill", builtin_kill}, {"getopts", builtin_getopts}, {"printf", builtin_printf}, {"hash", builtin_hash}, {".", builtin_source}, {NULL, NULL}};
+{"command", builtin_command}, {"times", builtin_times}, {"readonly", builtin_readonly}, {"trap", builtin_trap}, {"wait", builtin_wait}, {"kill", builtin_kill}, {"getopts", builtin_getopts}, {"ulimit", builtin_ulimit}, {"dirs", builtin_dirs}, {"pushd", builtin_pushd}, {"popd", builtin_popd}, {"declare", builtin_declare}, {"typeset", builtin_declare}, {"let", builtin_let}, {"builtin", builtin_builtin}, {"history", builtin_history}, {"printf", builtin_printf}, {"hash", builtin_hash}, {".", builtin_source}, {NULL, NULL}};
 
 static const char	*g_builtin_names[] = {"echo", "cd", "pwd", "export",
 	"unset", "env", "exit", "jobs", "fg", "bg", "alias", "unalias", "source",
 	"type", "which", "true", "false", "break", "continue", "return", "local",
-	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", "times", "exec", "readonly", "trap", "wait", "kill", "getopts", "hash", "printf", NULL};
+	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", "times", "exec", "readonly", "trap", "wait", "kill", "getopts", "hash", "printf", "let", "builtin", "history", "declare", "typeset", "dirs", "pushd", "popd", "ulimit", NULL};
 
 const char	**builtin_names(void)
 {

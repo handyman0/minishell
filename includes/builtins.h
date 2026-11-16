@@ -31,6 +31,15 @@ char	*logical_pwd(t_shell *shell);
 int	builtin_hash(char **argv, t_shell *shell);
 int	cond_command(char **argv, t_shell *shell);
 int	builtin_printf(char **argv, t_shell *shell);
+int	builtin_let(char **argv, t_shell *shell);
+int	builtin_builtin(char **argv, t_shell *shell);
+int	builtin_history(char **argv, t_shell *shell);
+int	builtin_declare(char **argv, t_shell *shell);
+int	builtin_dirs(char **argv, t_shell *shell);
+int	builtin_pushd(char **argv, t_shell *shell);
+int	builtin_popd(char **argv, t_shell *shell);
+void	dirs_free(void);
+int	builtin_ulimit(char **argv, t_shell *shell);
 int	stdout_failed(const char *name);
 int	builtin_echo(char **argv);
 

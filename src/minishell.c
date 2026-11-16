@@ -395,6 +395,7 @@ static int	run_noninteractive(t_shell *shell, t_opts *o)
 
 static void	cleanup(t_shell *shell, int hangup)
 {
+	dirs_free();
 	jobs_free(shell, hangup);
 	funcs_free(shell);
 	traps_free(shell);

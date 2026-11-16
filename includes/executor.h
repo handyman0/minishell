@@ -54,6 +54,8 @@ typedef struct s_saved	t_saved;
 char	*run_substitution(t_shell *shell, char *cmd);
 t_node	*clone_command(t_node *node);
 int		assign_shell(t_shell *shell, char **assigns);
+int		execute_builtin(t_node *node, t_shell *shell);
+int		run_timed(t_node *node, t_shell *shell, int (*run)(t_node *, t_shell *));
 int		assigns_ok(t_shell *shell, char **assigns);
 t_saved	*overlay_apply(t_shell *shell, char **assigns, int *count);
 void	overlay_restore(t_shell *shell, t_saved *saved, int count);

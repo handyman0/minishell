@@ -94,3 +94,9 @@ const char	*history_suggestion(const char *buf, size_t len)
 	}
 	return (NULL);
 }
+
+void	le_history_clear(void)
+{
+	while (g_count > 0)
+		free(g_hist[--g_count]);
+}
