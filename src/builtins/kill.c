@@ -53,18 +53,22 @@ static int	parse_signal(char **argv, int *i, int *sig)
 static int	send_signal(char *target, int sig, t_shell *shell)
 {
 	pid_t	pid;
+	t_job	*job;
 	int		i;
 
 	i = target[0] == '-';
 	while (ft_isdigit(target[i]))
 		i++;
 	if (target[0] == '%')
-		pid = job_spec_pid(target, shell);
+	{
+		job = job_find(shell, target);
+		pid = job ? -job->pgid : job_spec_pid(target, shell);
+	}
 	else if (target[i] || !target[(target[0] == '-')])
-		pid = 0;
+		pid = -1;
 	else
 		pid = ft_atoi(target);
-	if (pid == 0 || pid == -1 || kill(pid, sig) != 0)
+	if (pid == -1 || kill(pid, sig) != 0)
 		return (ml_put_all(2, "minishell: kill: ", target,
 				": no such process or job\n", NULL), 1);
 	return (0);

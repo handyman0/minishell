@@ -392,6 +392,13 @@ static int	run_command(t_node *node, t_shell *shell)
 	return (status);
 }
 
+static t_node	*unwrap_subshell(t_node *node)
+{
+	if (node && node->type == NODE_PAREN && !node->data.ctl.redirs)
+		return (node->data.ctl.a);
+	return (node);
+}
+
 static int	pipe_child(t_node *node, t_shell *shell)
 {
 	int	status;
@@ -412,40 +419,48 @@ static int	pipe_child(t_node *node, t_shell *shell)
 	return (status);
 }
 
-static void	pipe_stage(t_node *node, t_shell *shell, int fds[2], int is_left)
+static void	pipe_stage(t_node *node, t_shell *shell, int fds[2], int mode)
 {
-	job_child_setup(shell, is_left ? 0 : getpgrp(), 1);
-	if (is_left)
+	job_child_setup(shell, (mode & 1) ? 0 : getpgrp(), !(mode & 2));
+	if (mode & 1)
 		dup2(fds[1], STDOUT_FILENO);
 	else
 		dup2(fds[0], STDIN_FILENO);
 	close(fds[0]);
 	close(fds[1]);
-	exit(pipe_child(node, shell));
+	exit(pipe_child(unwrap_subshell(node), shell));
 }
 
-static int	execute_pipe(t_node *node, t_shell *shell)
+static int	spawn_pipe(t_node *node, t_shell *shell, pid_t pids[2], int bg)
 {
-	int		fds[2];
-	pid_t	pids[2];
-	int		status;
+	int	fds[2];
 
 	if (pipe(fds) == -1)
-		return (1);
+		return (0);
 	pids[0] = fork();
 	if (pids[0] == 0)
-		pipe_stage(node->data.op.left, shell, fds, 1);
+		pipe_stage(node->data.op.left, shell, fds, 1 | (bg << 1));
 	job_parent_setup(shell, pids[0], 0);
 	pids[1] = fork();
 	if (pids[1] == 0)
 	{
 		if (job_monitor(shell))
 			setpgid(0, pids[0]);
-		pipe_stage(node->data.op.right, shell, fds, 0);
+		pipe_stage(node->data.op.right, shell, fds, 0 | (bg << 1));
 	}
 	job_parent_setup(shell, pids[1], pids[0]);
 	close(fds[0]);
 	close(fds[1]);
+	return (1);
+}
+
+static int	execute_pipe(t_node *node, t_shell *shell)
+{
+	pid_t	pids[2];
+	int		status;
+
+	if (!spawn_pipe(node, shell, pids, 0))
+		return (1);
 	status = job_wait(shell, node, pids, 2);
 	errexit_check(shell, status);
 	return (status);
@@ -470,10 +485,25 @@ int	execute_subshell(t_node *node, t_shell *shell)
 	return (status);
 }
 
+static int	background_pipe(t_node *node, t_shell *shell)
+{
+	pid_t	pids[2];
+
+	if (!spawn_pipe(node->data.op.left, shell, pids, 1))
+		return (1);
+	shell->last_bg = pids[1];
+	bg_add(shell, pids[1]);
+	job_add_background(shell, node->data.op.left, pids[0], pids[1]);
+	return (0);
+}
+
 static int	execute_background(t_node *node, t_shell *shell)
 {
 	pid_t	pid;
 	int		fd;
+
+	if (job_monitor(shell) && node->data.op.left->type == NODE_PIPE)
+		return (background_pipe(node, shell));
 
 	pid = fork();
 	if (pid == -1)
@@ -487,12 +517,12 @@ static int	execute_background(t_node *node, t_shell *shell)
 			dup2(fd, STDIN_FILENO);
 			close(fd);
 		}
-		exit(pipe_child(node->data.op.left, shell));
+		exit(pipe_child(unwrap_subshell(node->data.op.left), shell));
 	}
 	job_parent_setup(shell, pid, 0);
 	shell->last_bg = pid;
 	bg_add(shell, pid);
-	job_add_background(shell, node->data.op.left, pid);
+	job_add_background(shell, node->data.op.left, pid, pid);
 	return (0);
 }
 

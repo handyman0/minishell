@@ -191,7 +191,7 @@ int	job_wait(t_shell *shell, t_node *node, pid_t *pids, int n)
 	return (status);
 }
 
-void	job_add_background(t_shell *shell, t_node *node, pid_t pid)
+void	job_add_background(t_shell *shell, t_node *node, pid_t pgid, pid_t pid)
 {
 	t_job	tmp;
 	t_job	*job;
@@ -200,7 +200,7 @@ void	job_add_background(t_shell *shell, t_node *node, pid_t pid)
 	if (!job_monitor(shell))
 		return ;
 	ft_bzero(&tmp, sizeof(t_job));
-	tmp.pgid = pid;
+	tmp.pgid = pgid;
 	tmp.pids[0] = pid;
 	tmp.npids = 1;
 	job = job_store(shell, &tmp, node_label(node));

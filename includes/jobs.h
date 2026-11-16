@@ -29,7 +29,7 @@ void	job_child_setup(t_shell *shell, pid_t pgid, int foreground);
 void	job_parent_setup(t_shell *shell, pid_t pid, pid_t pgid);
 int		job_monitor(t_shell *shell);
 int		job_wait(t_shell *shell, t_node *node, pid_t *pids, int n);
-void	job_add_background(t_shell *shell, t_node *node, pid_t pid);
+void	job_add_background(t_shell *shell, t_node *node, pid_t pgid, pid_t pid);
 int		job_resume(t_shell *shell, t_job *job, int foreground);
 t_job	*job_find(t_shell *shell, char *spec);
 char	*node_label(t_node *node);
