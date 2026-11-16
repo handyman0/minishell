@@ -326,3 +326,5 @@ readonly a=a; a=b; echo nao
 readonly a=a; (a=b; echo nao); echo $?
 echo $LINENO; echo $LINENO
 f() { echo $LINENO; }; f
+exec 3>&-; <&3; echo $?
+echo >&-; echo $?

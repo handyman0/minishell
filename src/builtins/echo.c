@@ -11,6 +11,8 @@
 /* ************************************************************************** */
 
 #include "../includes/builtins.h"
+#include <fcntl.h>
+#include "../includes/output.h"
 
 static int	is_n_flag(char *arg)
 {
@@ -24,10 +26,22 @@ static int	is_n_flag(char *arg)
 	return (arg[i] == '\0');
 }
 
+int	stdout_failed(const char *name)
+{
+	if (fcntl(STDOUT_FILENO, F_GETFD) != -1)
+		return (0);
+	ml_put_all(2, "minishell: ", name, ": write error: Bad file descriptor\n",
+		NULL);
+	return (1);
+}
+
 int	builtin_echo(char **argv)
 {
 	int	i;
 	int	newline;
+
+	if (stdout_failed("echo"))
+		return (1);
 
 	i = 1;
 	newline = 1;

@@ -132,9 +132,9 @@ static int	execute_builtin(t_node *node, t_shell *shell)
 
 void	save_fds(int backup[3])
 {
-	backup[0] = dup(STDIN_FILENO);
-	backup[1] = dup(STDOUT_FILENO);
-	backup[2] = dup(STDERR_FILENO);
+	backup[0] = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 10);
+	backup[1] = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 10);
+	backup[2] = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 10);
 }
 
 void	restore_fds(int backup[3])
@@ -305,9 +305,9 @@ static int	run_command(t_node *node, t_shell *shell)
 	}
 	if (!assigns_ok(shell, node->data.cmd.assigns))
 		return (1);
-	backup[0] = dup(STDIN_FILENO);
-	backup[1] = dup(STDOUT_FILENO);
-	backup[2] = dup(STDERR_FILENO);
+	backup[0] = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 10);
+	backup[1] = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 10);
+	backup[2] = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 10);
 	if (ft_strcmp(node->data.cmd.argv[0], "exec") == 0)
 		return (run_exec_builtin(node, shell, backup));
 	func = shell->bypass_func ? NULL : find_func(shell, node->data.cmd.argv[0]);

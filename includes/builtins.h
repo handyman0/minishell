@@ -28,6 +28,7 @@ char	*logical_pwd(t_shell *shell);
  * @param argv Argumentos do comando.
  * @return Sempre 0.
  */
+int	stdout_failed(const char *name);
 int	builtin_echo(char **argv);
 
 /**
