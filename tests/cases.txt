@@ -205,3 +205,47 @@ echo "$(echo *.nada)"
 echo $(seq 1 3)
 echo $(seq 1 3 | tr '\n' ',')
 echo $(echo a)>o2; cat o2
+echo ${X:-def}
+X=a; echo ${X:-def}
+echo ${X:=z}; echo $X
+echo ${Y:+alt}; Y=1; echo ${Y:+alt}
+X=abc; echo ${#X}
+X=abcabc; echo ${X#a} ${X##a*c} ${X%c} ${X%%c*}
+echo ${UNSET-padrao}
+E=; echo ${E-x}[${E:-x}]
+echo ${1:-um}
+set -- a b; echo ${1}${2} ${#} ${10:-ten}
+echo "${X:-a b}"
+X=; echo "[${X:-a b}]"
+path=/a/b/c.txt; echo ${path##*/} ${path%.*} ${path%/*}
+echo ${#}
+f() { echo ${1:-sem} $#; }; f; f x
+n=; echo $((${n:-0}+1))
+X=hello; echo ${X#hel} ${X%llo} ${X#*l} ${X##*l} ${X%l*} ${X%%l*}
+X=a.b.c; echo ${X%.*} ${X%%.*} ${X#*.} ${X##*.}
+echo ${HOME:+tem_home}
+A=1; B=${A:-9}${C:-2}; echo $B
+echo ${NAO:-$(echo sub)}
+echo ${NAO:-"$HOME"}
+echo ${X:+"a  b"}
+if true; then echo sim; else echo nao; fi
+if false; then echo a; elif true; then echo b; else echo c; fi
+i=0; while [ $i -lt 3 ]; do echo i=$i; i=$((i+1)); done
+n=0; until [ $n = 2 ]; do n=$((n+1)); echo n=$n; done
+for x in a b c; do echo $x; done
+for x in 1 2 3; do if [ $x = 2 ]; then continue; fi; echo n$x; done
+for x in 1 2 3; do if [ $x = 3 ]; then break; fi; echo n$x; done
+for i in 1 2; do for j in a b; do if [ $j = b ]; then break 2; fi; echo $i$j; done; done
+case abc in a*) echo comecaA;; *) echo outro;; esac
+case x in a|b) echo ab;; x) echo ex;; esac
+f() { echo "f: $1 $2 ($#)"; return 3; }; f um dois; echo st=$?
+g() { local v=interno; echo $v; }; v=externo; g; echo $v
+h() { for i in "$@"; do echo "[$i]"; done; }; h "a b" c
+{ echo grupo1; echo grupo2; } | tr a-z A-Z
+x=$(for i in 1 2 3; do printf "$i,"; done); echo $x
+fat() { if [ $1 -le 1 ]; then echo 1; else echo $(( $1 * $(fat $(($1-1))) )); fi; }; fat 5
+set -- a b c; echo $# $1 $3; shift; echo $# $1
+[ -d /tmp ] && echo dir; [ -f /nada ] || echo nao-arquivo
+test 3 -lt 5 && echo menor; test abc = abc && echo igual
+eval 'echo via eval'
+x=5; eval "y=\$x"; echo $y

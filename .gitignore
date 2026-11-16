@@ -8,3 +8,7 @@ minishell_asan
 obj_dyn/
 minishell_dyn
 .vscode/
+tests/*.tst
+tests/run-test.sh
+tests/signal.sh
+tests/*.trs
