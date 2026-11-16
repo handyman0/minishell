@@ -300,26 +300,29 @@ static t_node	*make_node(t_nodetype type, t_node *left, t_node *right)
 
 t_node	*parse_tokens(t_token **tokens)
 {
-	t_node	*left;
-	t_node	*right;
+	t_node	*list;
+	t_node	*item;
+	int		sep;
 
 	if (!tokens || !*tokens)
 		return (NULL);
-	left = parse_expression(tokens);
-	while (left && *tokens && ((*tokens)->type == TOKEN_SEMI
-			|| (*tokens)->type == TOKEN_BG))
+	list = NULL;
+	item = parse_expression(tokens);
+	while (item)
 	{
-		if ((*tokens)->type == TOKEN_BG)
-			left = make_node(NODE_BG, left, NULL);
-		*tokens = (*tokens)->next;
-		if (!left || !*tokens || (*tokens)->type == TOKEN_RPAREN)
-			break ;
-		right = parse_expression(tokens);
-		if (!right)
-			return (free_ast(left), NULL);
-		left = make_node(NODE_SEQ, left, right);
+		sep = *tokens && ((*tokens)->type == TOKEN_SEMI
+				|| (*tokens)->type == TOKEN_BG);
+		if (sep && (*tokens)->type == TOKEN_BG)
+			item = make_node(NODE_BG, item, NULL);
+		if (sep)
+			*tokens = (*tokens)->next;
+		list = list ? make_node(NODE_SEQ, list, item) : item;
+		if (!item || !list || !sep || !*tokens
+			|| (*tokens)->type == TOKEN_RPAREN)
+			return (list);
+		item = parse_expression(tokens);
 	}
-	return (left);
+	return (free_ast(list), NULL);
 }
 
 static void	free_command(t_node *node)

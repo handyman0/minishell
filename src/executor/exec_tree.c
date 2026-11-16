@@ -352,6 +352,7 @@ static int	execute_background(t_node *node, t_shell *shell)
 		exit(pipe_child(node->data.op.left, shell));
 	}
 	job_parent_setup(shell, pid, 0);
+	shell->last_bg = pid;
 	job_add_background(shell, node->data.op.left, pid);
 	return (0);
 }
