@@ -135,6 +135,8 @@ static int	assign_fields(char **names, t_rline *l, t_shell *shell)
 		if (env_is_readonly(shell->env, names[i]))
 			bad = 1;
 		env_assign(&shell->env, names[i], value ? value : "");
+		if (shell->opts & OPT_A)
+			env_export(shell->env, names[i]);
 		free(value);
 		pos = next_field(l, end, ifs);
 	}
