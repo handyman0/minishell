@@ -157,6 +157,7 @@ void	free_args_list(t_list *args)
 	while (args)
 	{
 		tmp = args->next;
+		free(args->content);
 		free(args);
 		args = tmp;
 	}

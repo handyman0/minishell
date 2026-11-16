@@ -198,7 +198,9 @@ void	run_line(char *line, t_shell *shell)
 		n = next_chunk(line + off, &chunk);
 		if (!chunk)
 			break ;
-		run_chunk(chunk, shell);
+		if (!line[off + n])
+			(free(chunk), chunk = NULL);
+		run_chunk(chunk ? chunk : line + off, shell);
 		free(chunk);
 		while (n-- > 0)
 			shell->line_base += line[off++] == '\n';
