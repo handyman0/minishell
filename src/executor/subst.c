@@ -46,11 +46,14 @@ static char	*finish_output(t_out *out)
 
 	while (out->len > 0 && out->s[out->len - 1] == '\n')
 		out->len--;
-	if (!out->s)
-		return (ft_strdup(""));
-	result = ft_substr(out->s, 0, out->len);
+	result = malloc(out->len + 1);
+	if (result)
+	{
+		ft_memcpy(result, out->s, out->len);
+		result[out->len] = '\0';
+	}
 	free(out->s);
-	return (result);
+	return (result ? result : ft_strdup(""));
 }
 
 static void	collect(t_shell *shell, pid_t pid, int fd, t_out *out)
