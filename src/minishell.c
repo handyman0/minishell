@@ -174,6 +174,8 @@ static int	next_chunk(const char *line, char **chunk)
 	n = 0;
 	while (1)
 	{
+		if (ft_strnstr(line, "<<", ft_strlen(line)))
+			n = ft_strlen(line) - 1;
 		while (line[n] && line[n] != '\n')
 			n++;
 		if (line[n])
