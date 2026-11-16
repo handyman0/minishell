@@ -1191,7 +1191,11 @@ static void	emit_one(t_word *w, int start, int end, t_token **tok[2])
 		plain[p++] = w->str[k];
 	}
 	if (pattern && plain)
-		(pattern[j] = '\0', plain[p] = '\0');
+	{
+		pattern[j] = '\0';
+		plain[p] = '\0';
+		has_glob |= pattern_has_group(pattern);
+	}
 	if (!has_glob || w->noglob || !pattern || !plain
 		|| !expand_glob(pattern, tok[0], tok[1]))
 	{

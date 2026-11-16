@@ -12,6 +12,7 @@
 
 #include "../includes/parser.h"
 #include "../includes/utils.h"
+#include "../includes/ctl.h"
 
 void	token_add_back(t_token **head, t_token **current,
 					t_toktype type, char *value)
@@ -164,6 +165,16 @@ static int	skip_construct(char *line, int pos)
 	return (next);
 }
 
+static int	opens_paren_word(char *line, int start, int p)
+{
+	if (line[p] != '(')
+		return (0);
+	if (is_array_assign_prefix(line + start, p - start))
+		return (1);
+	return ((g_shopts & SHOPT_EXTGLOB) && p > start
+		&& ft_strchr("@?*+!", line[p - 1]) && skip_array_literal(line, p) > 0);
+}
+
 static char	*extract_word(char *line, int *i, int len)
 {
 	char	*word;
@@ -171,12 +182,11 @@ static char	*extract_word(char *line, int *i, int len)
 
 	p = *i + len;
 	while (line[p] && !ft_isspace(line[p]) && (!handle_operator(line, p, NULL,
-				NULL) || (line[p] == '('
-				&& is_array_assign_prefix(line + *i, p - *i))))
+				NULL) || opens_paren_word(line, *i, p)))
 	{
 		if (line[p] == '\\' && line[p + 1])
 			p += 2;
-		else if (line[p] == '(' && is_array_assign_prefix(line + *i, p - *i))
+		else if (opens_paren_word(line, *i, p))
 			p = skip_array_literal(line, p) < 0 ? (int)ft_strlen(line)
 				: skip_array_literal(line, p);
 		else if (line[p] == '\'' || line[p] == '"' || line[p] == '`'

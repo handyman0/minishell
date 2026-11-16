@@ -202,11 +202,162 @@ static int	match_one(const char *p, char c)
 	return (*p == c);
 }
 
+static int	ext_match(const char *p, const char *s);
+
+static int	is_group(const char *p)
+{
+	return (ft_strchr("@?*+!", p[0]) && p[0] && p[1] == '(');
+}
+
+static const char	*group_end(const char *p)
+{
+	int	depth;
+
+	depth = 0;
+	while (*p)
+	{
+		if (*p == '\\' && p[1])
+			p++;
+		else if (*p == '(')
+			depth++;
+		else if (*p == ')' && --depth == 0)
+			return (p);
+		p++;
+	}
+	return (NULL);
+}
+
+static int	has_group(const char *p)
+{
+	if (!(g_shopts & SHOPT_EXTGLOB))
+		return (0);
+	while (*p)
+	{
+		if (*p == '\\' && p[1])
+			p++;
+		else if (is_group(p) && group_end(p + 1))
+			return (1);
+		p++;
+	}
+	return (0);
+}
+
+static int	alt_matches(const char *list, size_t len, const char *s,
+				size_t slen)
+{
+	size_t	start;
+	size_t	i;
+	int		depth;
+	char	*alt;
+	char	*part;
+	int		hit;
+
+	part = ft_substr(s, 0, slen);
+	start = 0;
+	i = 0;
+	depth = 0;
+	hit = 0;
+	while (!hit && i <= len)
+	{
+		if (i < len && list[i] == '(')
+			depth++;
+		else if (i < len && list[i] == ')')
+			depth--;
+		if (i == len || (list[i] == '|' && depth == 0))
+		{
+			alt = ft_substr(list, start, i - start);
+			hit = ext_match(alt, part);
+			free(alt);
+			start = i + 1;
+		}
+		i++;
+	}
+	return (free(part), hit);
+}
+
+static int	repeat_match(const char *p, const char *s, const char *close,
+				size_t len)
+{
+	char	*star;
+	size_t	k;
+	int		hit;
+
+	star = ft_strdup(p);
+	if (!star)
+		return (0);
+	star[0] = '*';
+	hit = 0;
+	k = 1;
+	while (!hit && k <= ft_strlen(s))
+	{
+		hit = alt_matches(p + 2, len, s, k) && (ext_match(close + 1, s + k)
+				|| ext_match(star, s + k));
+		k++;
+	}
+	return (free(star), hit);
+}
+
+static int	group_match(const char *p, const char *s, const char *close)
+{
+	size_t	len;
+	size_t	k;
+	int		hit;
+
+	len = close - (p + 2);
+	if (p[0] == '*' || p[0] == '?')
+		if (ext_match(close + 1, s))
+			return (1);
+	if (p[0] == '*' || p[0] == '+')
+		return (repeat_match(p, s, close, len));
+	hit = 0;
+	k = 0;
+	while (!hit && k <= ft_strlen(s))
+	{
+		if (p[0] == '!')
+			hit = !alt_matches(p + 2, len, s, k) && ext_match(close + 1, s + k);
+		else
+			hit = alt_matches(p + 2, len, s, k) && ext_match(close + 1, s + k);
+		k++;
+	}
+	return (hit);
+}
+
+static int	ext_match(const char *p, const char *s)
+{
+	const char	*close;
+	size_t		k;
+
+	if (!*p)
+		return (!*s);
+	if (is_group(p))
+	{
+		close = group_end(p + 1);
+		if (close)
+			return (group_match(p, s, close));
+	}
+	if (*p == '*')
+	{
+		k = 0;
+		while (1)
+		{
+			if (ext_match(p + 1, s + k))
+				return (1);
+			if (!s[k++])
+				return (0);
+		}
+	}
+	if (*s && (match_one(p, *s)))
+		return (ext_match(next_pattern(p), s + 1));
+	return (0);
+}
+
 static int	match_pattern(const char *p, const char *s)
 {
 	const char	*star;
 	const char	*mark;
 
+	if (has_group(p))
+		return (ext_match(p, s));
 	star = NULL;
 	mark = s;
 	while (*s)
@@ -257,6 +408,8 @@ static int	has_magic(const char *seg)
 {
 	int	i;
 
+	if (has_group(seg))
+		return (1);
 	i = 0;
 	while (seg[i])
 	{
@@ -416,4 +569,9 @@ int	expand_glob(char *pattern, t_token **head, t_token **cur)
 int	glob_match(const char *pattern, const char *name)
 {
 	return (match_pattern(pattern, name));
+}
+
+int	pattern_has_group(const char *p)
+{
+	return (has_group(p));
 }
