@@ -1,11 +1,12 @@
 #include "../../includes/jobs.h"
 #include "../../includes/signals.h"
+#include "../../includes/ctl.h"
 #include <sys/wait.h>
 #include <errno.h>
 
-static int	job_control(t_shell *shell)
+int	job_monitor(t_shell *shell)
 {
-	return (shell->interactive && !shell->in_child);
+	return ((shell->opts & OPT_M) && !shell->in_child);
 }
 
 void	jobs_init(t_shell *shell, int interactive)
@@ -28,14 +29,15 @@ void	jobs_init(t_shell *shell, int interactive)
 	shell->pgid = getpgrp();
 	tcsetpgrp(STDIN_FILENO, shell->pgid);
 	tcgetattr(STDIN_FILENO, &shell->tmodes);
+	shell->opts |= OPT_M;
 }
 
 void	job_child_setup(t_shell *shell, pid_t pgid, int foreground)
 {
-	if (job_control(shell))
+	if (job_monitor(shell))
 	{
 		setpgid(0, pgid);
-		if (foreground)
+		if (foreground && shell->interactive)
 			tcsetpgrp(STDIN_FILENO, getpgrp());
 	}
 	shell->in_child = 1;
@@ -46,7 +48,7 @@ void	job_child_setup(t_shell *shell, pid_t pgid, int foreground)
 
 void	job_parent_setup(t_shell *shell, pid_t pid, pid_t pgid)
 {
-	if (job_control(shell))
+	if (job_monitor(shell))
 		setpgid(pid, pgid ? pgid : pid);
 }
 
@@ -84,6 +86,8 @@ static int	wait_pids(t_job *job, int flags, int *stopped, int *last)
 
 static void	give_terminal(t_shell *shell, pid_t pgid, int restore_modes)
 {
+	if (!shell->interactive)
+		return ;
 	tcsetpgrp(STDIN_FILENO, pgid);
 	if (restore_modes)
 		tcsetattr(STDIN_FILENO, TCSADRAIN, &shell->tmodes);
@@ -95,7 +99,7 @@ static int	wait_job(t_shell *shell, t_job *job, int resume)
 	int	last;
 	int	jc;
 
-	jc = job_control(shell);
+	jc = job_monitor(shell);
 	stopped = 0;
 	last = 0;
 	if (!shell->in_child && shell->interactive)
@@ -112,7 +116,8 @@ static int	wait_job(t_shell *shell, t_job *job, int resume)
 	if (stopped)
 		return (job->state = JOB_STOPPED, 128 + SIGTSTP);
 	if (WIFSIGNALED(last) && WTERMSIG(last) == SIGINT)
-		write(STDERR_FILENO, "\n", 1);
+		if (shell->interactive)
+			write(STDERR_FILENO, "\n", 1);
 	if (WIFSIGNALED(last))
 		return (128 + WTERMSIG(last));
 	return (WEXITSTATUS(last));
@@ -121,6 +126,9 @@ static int	wait_job(t_shell *shell, t_job *job, int resume)
 static void	announce(t_shell *shell, t_job *job, const char *state)
 {
 	char	*line;
+
+	if (!shell->interactive)
+		return ;
 
 	line = job_line(shell, job, state);
 	if (line)
@@ -159,9 +167,11 @@ int	job_wait(t_shell *shell, t_node *node, pid_t *pids, int n)
 	t_job	tmp;
 	t_job	*job;
 	int		status;
+	pid_t	last;
 
 	ft_bzero(&tmp, sizeof(t_job));
 	tmp.pgid = pids[0];
+	last = pids[n - 1];
 	tmp.npids = n;
 	while (n-- > 0)
 		tmp.pids[n] = pids[n];
@@ -171,9 +181,11 @@ int	job_wait(t_shell *shell, t_node *node, pid_t *pids, int n)
 		job = job_store(shell, &tmp, node_label(node));
 		if (job)
 		{
-			write(STDERR_FILENO, "\n", 1);
+			if (shell->interactive)
+				write(STDERR_FILENO, "\n", 1);
 			announce(shell, job, "Stopped");
 			job->status = -1;
+			bg_add(shell, last);
 		}
 	}
 	return (status);
@@ -185,7 +197,7 @@ void	job_add_background(t_shell *shell, t_node *node, pid_t pid)
 	t_job	*job;
 	char	*num;
 
-	if (!job_control(shell))
+	if (!job_monitor(shell))
 		return ;
 	ft_bzero(&tmp, sizeof(t_job));
 	tmp.pgid = pid;
@@ -193,6 +205,8 @@ void	job_add_background(t_shell *shell, t_node *node, pid_t pid)
 	tmp.npids = 1;
 	job = job_store(shell, &tmp, node_label(node));
 	if (!job)
+		return ;
+	if (!shell->interactive)
 		return ;
 	num = ft_itoa(job->id);
 	ft_putstr_fd("[", STDERR_FILENO);
@@ -220,20 +234,26 @@ static void	job_remove(t_shell *shell, t_job *job)
 int	job_resume(t_shell *shell, t_job *job, int foreground)
 {
 	int	status;
+	pid_t	last;
 
 	job->state = JOB_RUNNING;
 	job->status = 0;
 	if (!foreground)
 		return (kill(-job->pgid, SIGCONT), 0);
+	last = job->pids[job->npids - 1];
 	status = wait_job(shell, job, 1);
 	if (job->state == JOB_STOPPED)
 	{
-		write(STDERR_FILENO, "\n", 1);
+		if (shell->interactive)
+			write(STDERR_FILENO, "\n", 1);
 		announce(shell, job, "Stopped");
 		job->status = -1;
 	}
 	else
+	{
+		bg_forget(shell, last);
 		job_remove(shell, job);
+	}
 	return (status);
 }
 

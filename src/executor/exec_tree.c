@@ -439,7 +439,7 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	pids[1] = fork();
 	if (pids[1] == 0)
 	{
-		if (shell->interactive && !shell->in_child)
+		if (job_monitor(shell))
 			setpgid(0, pids[0]);
 		pipe_stage(node->data.op.right, shell, fds, 0);
 	}
@@ -481,7 +481,7 @@ static int	execute_background(t_node *node, t_shell *shell)
 	if (pid == 0)
 	{
 		job_child_setup(shell, 0, 0);
-		if (!shell->interactive)
+		if (!job_monitor(shell))
 		{
 			fd = open("/dev/null", O_RDONLY);
 			dup2(fd, STDIN_FILENO);

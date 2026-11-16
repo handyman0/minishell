@@ -225,3 +225,18 @@ int	builtin_wait(char **argv, t_shell *shell)
 	}
 	return (status);
 }
+
+void	bg_forget(t_shell *shell, pid_t pid)
+{
+	t_bg	**link;
+	t_bg	*gone;
+
+	link = &shell->bgs;
+	while (*link && (*link)->pid != pid)
+		link = &(*link)->next;
+	if (!*link)
+		return ;
+	gone = *link;
+	*link = gone->next;
+	free(gone);
+}

@@ -89,6 +89,7 @@ void	bg_add(t_shell *shell, pid_t pid);
 void	bg_mark(t_shell *shell, pid_t pid, int status);
 void	bg_reap(t_shell *shell);
 void	bgs_free(t_shell *shell);
+void	bg_forget(t_shell *shell, pid_t pid);
 int		builtin_command(char **argv, t_shell *shell);
 void	push_local(t_shell *shell, const char *key);
 int		builtin_true(char **argv, t_shell *shell);
