@@ -48,6 +48,7 @@ fi
 RUN=$(mktemp -d /tmp/minishell_posix.XXXXXX)
 RESULTS="$RUN/results.txt"
 : > "$RESULTS"
+: > "$RUN/detalhes.txt"
 trap 'chmod -R u+rwx "$RUN" 2> /dev/null; rm -rf "$RUN"' EXIT
 
 SETUP=
@@ -94,6 +95,7 @@ testcase() {
 	_t_name=$1
 	shift
 	{ [ -n "$SETUP" ] && printf '%s\n' "$SETUP"; cat <&3; } > "in.$_t_line"
+	chmod u+rw "in.$_t_line" 2> /dev/null
 	: > "expected_out.$_t_line"
 	: > "expected_err.$_t_line"
 	local _t_cmp_out=0 _t_cmp_err=0
@@ -105,13 +107,16 @@ testcase() {
 		cat <&5 > "expected_err.$_t_line"
 		_t_cmp_err=1
 	fi
+	chmod u+rw "expected_out.$_t_line" "expected_err.$_t_line" 2> /dev/null
 	if [ -n "${skip-}" ] || { [ -n "$FILTER" ] && [[ $_t_name != *"$FILTER"* ]]; }; then
 		record SKIP "$_t_line" "$_t_name"
 		return 0
 	fi
-	timeout -k 1 "$TIMEOUT" "$TESTEE" "$@" < "in.$_t_line" \
+	( [ ${#_t_umask[@]} -gt 0 ] && builtin umask "${_t_umask[@]}"
+	  exec timeout -k 1 "$TIMEOUT" "$TESTEE" "$@" ) < "in.$_t_line" \
 		> "out.$_t_line" 2> "err.$_t_line"
 	_t_got=$?
+	chmod u+rw "out.$_t_line" "err.$_t_line" 2> /dev/null
 	[ "$_t_got" -eq 124 ] && _t_reasons="tempo esgotado"
 	check_status "$_t_want" "$_t_got" \
 		|| _t_reasons="$_t_reasons status esperado=$_t_want obtido=$_t_got"
@@ -160,6 +165,8 @@ run_file() {
 		_t_file=$(basename "$file")
 		SETUP=
 		exec < /dev/null 3>&- 4>&- 5>&-
+		_t_umask=()
+		umask() { _t_umask=("$@"); }
 		. "$file"
 	) > /dev/null 2>&1
 }
