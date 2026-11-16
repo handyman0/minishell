@@ -2,7 +2,7 @@
 #include "../../includes/executor.h"
 #include "../../includes/output.h"
 
-static char	*quote_word(const char *word)
+char	*quote_word(const char *word)
 {
 	char	*out;
 	size_t	i;

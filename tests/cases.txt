@@ -254,3 +254,25 @@ echo ;; [a-m]* || ? { ? ;; a b && 2>> ;;
 (echo y) > o3; cat o3
 (echo a; echo b) > o4 2>&1; cat o4
 (echo z) | cat
+trap 'echo saindo' EXIT; echo corpo
+trap 'echo saindo' EXIT; exit 3
+trap 'echo A' EXIT; trap 'echo B' EXIT; echo x
+trap 'echo A' EXIT; trap - EXIT; echo x
+trap 'echo recebi' USR1; kill -USR1 $$; echo depois
+trap 'echo int' INT; kill -INT $$; echo depois
+trap 'echo term' TERM; kill -TERM $$; echo depois
+trap '' USR1; kill -USR1 $$; echo sobrevivi
+trap 'echo st=$?' USR1; false; kill -USR1 $$; echo apos=$?
+(trap 'echo dentro' EXIT; echo corpo-sub); echo fora
+trap 'echo bye' EXIT; (exit 5); echo $?
+trap 'echo t1' USR1; trap 'echo t2' USR2; kill -USR2 $$; kill -USR1 $$; echo fim
+sleep 0.05 & wait $!; echo rc=$?
+sh -c 'exit 7' & wait $!; echo rc=$?
+sleep 0.05 & sleep 0.05 & wait; echo feito
+wait 99999; echo rc=$?
+true & p1=$!; false & p2=$!; wait $p1; echo a=$?; wait $p2; echo b=$?
+kill -l 138
+kill -l 2 15
+sleep 5 & kill %1; wait %1; echo rc=$?
+sleep 5 & kill -9 $!; wait $!; echo rc=$?
+kill -0 $$; echo rc=$?

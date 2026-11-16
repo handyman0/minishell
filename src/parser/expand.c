@@ -118,7 +118,7 @@ static char	*special_value(const char *name, t_shell *shell)
 	if (name[0] == '@' || name[0] == '*')
 		return (join_params(shell));
 	if (name[0] == '$')
-		return (ft_itoa((int)getpid()));
+		return (ft_itoa((int)shell->pid));
 	if (name[0] == '!')
 		return (shell->last_bg ? ft_itoa((int)shell->last_bg) : ft_strdup(""));
 	if (!ft_isdigit(name[0]))

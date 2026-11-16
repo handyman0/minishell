@@ -29,13 +29,17 @@ static void	child_run(t_shell *shell, int fds[2], char *cmd)
 	close(fds[1]);
 	shell->in_child = 1;
 	signals_child();
+	trap_subshell_reset(shell);
 	run_line(cmd, shell);
+	trap_run_exit(shell);
 	status = shell->exit_status;
 	free(cmd);
 	free_ast(shell->ast);
 	free_tokens(shell->tokens);
 	jobs_free(shell, 0);
 	funcs_free(shell);
+	traps_free(shell);
+	bgs_free(shell);
 	free_str_array(shell->params);
 	env_free(shell->aliases);
 	env_free(shell->env);
@@ -62,18 +66,14 @@ static void	collect(t_shell *shell, pid_t pid, int fd, t_out *out)
 {
 	int	status;
 
-	if (!shell->in_child)
+	if (!shell->in_child && shell->interactive)
 		signals_ignore();
 	read_all(fd, out);
 	close(fd);
-	waitpid(pid, &status, 0);
-	if (!shell->in_child)
-	{
-		if (shell->interactive)
-			setup_signals();
-		else
-			setup_signals_noninteractive();
-	}
+	while (waitpid(pid, &status, 0) < 0 && errno == EINTR)
+		;
+	if (!shell->in_child && shell->interactive)
+		setup_signals();
 	shell->subst_used = 1;
 	shell->subst_status = WIFSIGNALED(status) ? 128 + WTERMSIG(status)
 		: WEXITSTATUS(status);

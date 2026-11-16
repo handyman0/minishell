@@ -47,6 +47,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->nparams = 0;
 	shell->argv0 = "minishell";
 	shell->last_bg = 0;
+	shell->pid = getpid();
 	shell->brk = 0;
 	shell->bypass_func = 0;
 	shell->expand_error = 0;
@@ -56,6 +57,10 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->func_depth = 0;
 	shell->funcs = NULL;
 	shell->locals = NULL;
+	ft_bzero(shell->traps, sizeof(shell->traps));
+	ft_bzero(shell->trap_inherited, sizeof(shell->trap_inherited));
+	shell->in_trap = 0;
+	shell->bgs = NULL;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
 	else
@@ -196,6 +201,10 @@ static void	shell_loop(t_shell *shell, int interactive)
 		g_signal = 0;
 		if (interactive)
 			jobs_notify(shell);
+		else
+			bg_reap(shell);
+		trap_run_pending(shell);
+			jobs_notify(shell);
 		line = read_input(shell, interactive);
 		if (g_signal == SIGINT)
 			shell->exit_status = 130;
@@ -217,32 +226,41 @@ typedef struct s_opts
 	int		rest;
 }	t_opts;
 
+static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
+{
+	int	k;
+
+	k = 1;
+	while (arg[k])
+	{
+		if (arg[k] == 'c')
+		{
+			o->bad = (o->rest + 1 >= argc);
+			o->cmd = o->rest + 1 < argc ? argv[o->rest + 1] : NULL;
+			o->rest++;
+		}
+		else if (arg[k] == 's')
+			o->use_stdin = 1;
+		k++;
+	}
+}
+
 static void	parse_args(int argc, char **argv, t_opts *o)
 {
-	int	i;
-
 	ft_bzero(o, sizeof(t_opts));
-	i = 1;
-	while (i < argc && argv[i][0] == '-' && argv[i][1])
+	o->rest = 1;
+	while (o->rest < argc && argv[o->rest][0] == '-' && argv[o->rest][1])
 	{
-		if (ft_strcmp(argv[i], "--") == 0)
+		if (ft_strcmp(argv[o->rest], "--") == 0)
 		{
-			i++;
+			o->rest++;
 			break ;
 		}
-		if (ft_strcmp(argv[i], "-c") == 0)
-		{
-			o->bad = (i + 1 >= argc);
-			o->cmd = i + 1 < argc ? argv[i + 1] : NULL;
-			i++;
-		}
-		else if (ft_strcmp(argv[i], "-s") == 0)
-			o->use_stdin = 1;
-		i++;
+		parse_flags(argv[o->rest], argc, argv, o);
+		o->rest++;
 	}
-	if (!o->cmd && !o->use_stdin && i < argc)
-		o->script = argv[i++];
-	o->rest = i;
+	if (!o->cmd && !o->use_stdin && o->rest < argc)
+		o->script = argv[o->rest++];
 }
 
 static void	set_params(t_shell *shell, char **args, int n)
@@ -270,6 +288,7 @@ static int	run_noninteractive(t_shell *shell, t_opts *o)
 		put_errno(o->script, NULL);
 		shell->exit_status = 127;
 	}
+	trap_run_exit(shell);
 	return (shell->exit_status);
 }
 
@@ -277,6 +296,8 @@ static void	cleanup(t_shell *shell, int hangup)
 {
 	jobs_free(shell, hangup);
 	funcs_free(shell);
+	traps_free(shell);
+	bgs_free(shell);
 	free_str_array(shell->params);
 	env_free(shell->aliases);
 	env_free(shell->env);
@@ -314,6 +335,7 @@ int	main(int argc, char **argv, char **envp)
 		load_rc(&shell);
 	}
 	shell_loop(&shell, interactive);
+	trap_run_exit(&shell);
 	if (interactive)
 		history_save(&shell);
 	cleanup(&shell, 1);

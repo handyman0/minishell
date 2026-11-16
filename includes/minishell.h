@@ -26,6 +26,7 @@ typedef struct s_node t_node;
 typedef struct s_shell t_shell;
 typedef struct s_job t_job;
 typedef struct s_func t_func;
+typedef struct s_bg t_bg;
 typedef struct s_local t_local;
 
 // Incluir outros headers depois das declarações forward
@@ -62,6 +63,7 @@ struct s_shell
 	int			nparams;
 	const char	*argv0;
 	pid_t		last_bg;
+	pid_t		pid;
 	int			brk;
 	int			bypass_func;
 	int			expand_error;
@@ -71,6 +73,10 @@ struct s_shell
 	int			func_depth;
 	t_func		*funcs;
 	t_local		*locals;
+	char		*traps[65];
+	char		trap_inherited[65];
+	int			in_trap;
+	t_bg		*bgs;
 	pid_t		pgid;
 	struct termios	tmodes;
 };

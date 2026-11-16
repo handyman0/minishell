@@ -16,6 +16,10 @@
 # include <signal.h>
 
 extern volatile sig_atomic_t	g_signal;
+extern volatile sig_atomic_t	g_trap_pending[65];
+
+void	trap_handler(int sig);
+void	trap_reapply(void);
 
 void	setup_signals(void);
 void	setup_signals_noninteractive(void);

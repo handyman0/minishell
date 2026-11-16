@@ -1,6 +1,7 @@
 #include "../../includes/jobs.h"
 #include "../../includes/signals.h"
 #include <sys/wait.h>
+#include <errno.h>
 
 static int	job_control(t_shell *shell)
 {
@@ -39,12 +40,24 @@ void	job_child_setup(t_shell *shell, pid_t pgid, int foreground)
 	}
 	shell->in_child = 1;
 	signals_child();
+	trap_subshell_reset(shell);
+	bgs_free(shell);
 }
 
 void	job_parent_setup(t_shell *shell, pid_t pid, pid_t pgid)
 {
 	if (job_control(shell))
 		setpgid(pid, pgid ? pgid : pid);
+}
+
+static pid_t	retry_wait(pid_t pid, int *status, int flags)
+{
+	pid_t	r;
+
+	r = waitpid(pid, status, flags);
+	while (r < 0 && errno == EINTR)
+		r = waitpid(pid, status, flags);
+	return (r);
 }
 
 static int	wait_pids(t_job *job, int flags, int *stopped, int *last)
@@ -55,8 +68,7 @@ static int	wait_pids(t_job *job, int flags, int *stopped, int *last)
 	i = 0;
 	while (i < job->npids)
 	{
-		if (job->pids[i] > 0
-			&& waitpid(job->pids[i], &status, flags) > 0)
+		if (job->pids[i] > 0 && retry_wait(job->pids[i], &status, flags) > 0)
 		{
 			if (WIFSTOPPED(status))
 				*stopped = 1;
@@ -86,7 +98,7 @@ static int	wait_job(t_shell *shell, t_job *job, int resume)
 	jc = job_control(shell);
 	stopped = 0;
 	last = 0;
-	if (!shell->in_child)
+	if (!shell->in_child && shell->interactive)
 		signals_ignore();
 	if (jc)
 		give_terminal(shell, job->pgid, 0);
@@ -95,13 +107,8 @@ static int	wait_job(t_shell *shell, t_job *job, int resume)
 	wait_pids(job, jc ? WUNTRACED : 0, &stopped, &last);
 	if (jc)
 		give_terminal(shell, shell->pgid, 1);
-	if (!shell->in_child)
-	{
-		if (shell->interactive)
-			setup_signals();
-		else
-			setup_signals_noninteractive();
-	}
+	if (!shell->in_child && shell->interactive)
+		setup_signals();
 	if (stopped)
 		return (job->state = JOB_STOPPED, 128 + SIGTSTP);
 	if (WIFSIGNALED(last) && WTERMSIG(last) == SIGINT)
@@ -230,9 +237,16 @@ int	job_resume(t_shell *shell, t_job *job, int foreground)
 	return (status);
 }
 
-static int	poll_job(t_job *job)
+static int	exit_code(int raw)
 {
-	int	status;
+	if (WIFSIGNALED(raw))
+		return (128 + WTERMSIG(raw));
+	return (WEXITSTATUS(raw));
+}
+
+static int	poll_job(t_shell *shell, t_job *job)
+{
+	int	raw;
 	int	i;
 	int	alive;
 
@@ -241,15 +255,17 @@ static int	poll_job(t_job *job)
 	while (i < job->npids)
 	{
 		if (job->pids[i] > 0
-			&& waitpid(job->pids[i], &status, WNOHANG | WUNTRACED) > 0)
+			&& waitpid(job->pids[i], &raw, WNOHANG | WUNTRACED) > 0)
 		{
-			if (WIFSTOPPED(status))
+			if (WIFSTOPPED(raw))
 				job->state = JOB_STOPPED;
 			else
+			{
+				bg_mark(shell, job->pids[i], exit_code(raw));
 				job->pids[i] = 0;
-			if (!WIFSTOPPED(status) && i == job->npids - 1)
-				job->status = WIFSIGNALED(status) ? 128 + WTERMSIG(status)
-					: WEXITSTATUS(status);
+				if (i == job->npids - 1)
+					job->status = exit_code(raw);
+			}
 		}
 		alive += job->pids[i] > 0;
 		i++;
@@ -280,7 +296,7 @@ void	jobs_notify(t_shell *shell)
 	while (job)
 	{
 		next = job->next;
-		if (job->state == JOB_RUNNING && poll_job(job))
+		if (job->state == JOB_RUNNING && poll_job(shell, job))
 		{
 			announce_done(shell, job);
 			job_remove(shell, job);

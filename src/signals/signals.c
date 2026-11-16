@@ -14,6 +14,13 @@
 #include <unistd.h>
 
 volatile sig_atomic_t	g_signal = 0;
+volatile sig_atomic_t	g_trap_pending[65];
+
+void	trap_handler(int sig)
+{
+	if (sig > 0 && sig < 65)
+		g_trap_pending[sig] = 1;
+}
 
 void	setup_signals(void)
 {
@@ -22,18 +29,21 @@ void	setup_signals(void)
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGTTIN, SIG_IGN);
 	signal(SIGTTOU, SIG_IGN);
+	trap_reapply();
 }
 
 void	setup_signals_noninteractive(void)
 {
 	signal(SIGINT, SIG_DFL);
 	signal(SIGQUIT, SIG_DFL);
+	trap_reapply();
 }
 
 void	signals_ignore(void)
 {
 	signal(SIGINT, SIG_IGN);
 	signal(SIGQUIT, SIG_IGN);
+	trap_reapply();
 }
 
 void	signals_child(void)

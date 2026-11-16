@@ -23,7 +23,9 @@ static int	exec_command(t_node *node, t_shell *shell, char **argv)
 		return (exec_fail(shell, argv[0], 127));
 	env = env_to_array(shell->env);
 	signals_child();
+	trap_subshell_reset(shell);
 	execve(path, argv, env);
+	exec_script_fallback(path, argv, env);
 	signals_ignore();
 	free(path);
 	free_str_array(env);
@@ -55,4 +57,31 @@ int	run_exec_builtin(t_node *node, t_shell *shell, int backup[3])
 	status = exec_command(node, shell, argv);
 	restore_fds(backup);
 	return (status);
+}
+
+void	exec_script_fallback(char *path, char **argv, char **env)
+{
+	char	**args;
+	int		n;
+	int		i;
+
+	if (errno != ENOEXEC)
+		return ;
+	n = 0;
+	while (argv[n])
+		n++;
+	args = ft_calloc(n + 2, sizeof(char *));
+	if (!args)
+		return ;
+	args[0] = "minishell";
+	args[1] = path;
+	i = 1;
+	while (i < n)
+	{
+		args[i + 1] = argv[i];
+		i++;
+	}
+	execve("/proc/self/exe", args, env);
+	free(args);
+	errno = ENOEXEC;
 }

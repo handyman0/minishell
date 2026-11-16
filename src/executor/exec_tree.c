@@ -279,6 +279,7 @@ static int	run_command(t_node *node, t_shell *shell)
 			exit(1);
 		}
 		execve(path, node->data.cmd.argv, env_array);
+		exec_script_fallback(path, node->data.cmd.argv, env_array);
 		if (errno == EACCES && is_dir(path))
 			ml_put_all(STDERR_FILENO, "minishell: ", node->data.cmd.argv[0],
 				": Is a directory\n", NULL);
@@ -302,10 +303,15 @@ static int	pipe_child(t_node *node, t_shell *shell)
 	int	status;
 
 	status = execute_tree(node, shell);
+	shell->exit_status = status;
+	trap_run_exit(shell);
+	status = shell->exit_status;
 	free_ast(shell->ast);
 	free_tokens(shell->tokens);
 	jobs_free(shell, 0);
 	funcs_free(shell);
+	traps_free(shell);
+	bgs_free(shell);
 	free_str_array(shell->params);
 	env_free(shell->aliases);
 	env_free(shell->env);
@@ -387,6 +393,7 @@ static int	execute_background(t_node *node, t_shell *shell)
 	}
 	job_parent_setup(shell, pid, 0);
 	shell->last_bg = pid;
+	bg_add(shell, pid);
 	job_add_background(shell, node->data.op.left, pid);
 	return (0);
 }
@@ -402,8 +409,10 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!copy)
 		return (1);
 	status = run_command(copy, shell);
+	shell->exit_status = status;
+	trap_run_pending(shell);
 	free_ast(copy);
-	return (status);
+	return (shell->running ? status : shell->exit_status);
 }
 
 int	execute_tree(t_node *node, t_shell *shell)
