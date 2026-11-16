@@ -197,25 +197,19 @@ static int	trailing_backslash(const char *line)
 int	line_incomplete(char *line)
 {
 	t_token	*tokens;
-	t_token	*cur;
-	t_token	*last;
-	int		depth;
+	t_token	*cursor;
+	t_node	*ast;
 	int		result;
 
 	if (open_quote(line) || trailing_backslash(line))
 		return (1);
 	tokens = tokenize_line(line);
-	depth = 0;
-	last = NULL;
-	cur = tokens;
-	while (cur)
-	{
-		depth += (cur->type == TOKEN_LPAREN) - (cur->type == TOKEN_RPAREN);
-		last = cur;
-		cur = cur->next;
-	}
-	result = depth > 0 || (last && (last->type == TOKEN_PIPE
-				|| last->type == TOKEN_AND || last->type == TOKEN_OR));
+	cursor = tokens;
+	parse_reset();
+	ast = parse_tokens(&cursor);
+	result = parse_failed() && parse_hit_eof();
+	free_ast(ast);
 	free_tokens(tokens);
+	parse_reset();
 	return (result);
 }

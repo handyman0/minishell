@@ -125,6 +125,8 @@ t_node	*parse_and_or(t_token **tokens)
 		node->type = (op_type == TOKEN_AND) ? NODE_AND : NODE_OR;
 		node->data.op.left = left;
 		node->data.op.right = parse_pipeline(tokens);
+		if (!node->data.op.right && !parse_failed())
+			parse_fail_at(*tokens);
 		if (!node->data.op.right)
 		{
 			free(node);
@@ -269,6 +271,8 @@ t_node	*parse_pipeline(t_token **tokens)
 		node->type = NODE_PIPE;
 		node->data.op.left = left;
 		node->data.op.right = parse_primary(tokens);
+		if (!node->data.op.right && !parse_failed())
+			parse_fail_at(*tokens);
 		if (!node->data.op.right)
 		{
 			free(node);
