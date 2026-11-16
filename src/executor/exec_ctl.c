@@ -115,6 +115,67 @@ static int	execute_cfor(t_node *node, t_shell *shell)
 	return (status);
 }
 
+static void	select_menu(char **items)
+{
+	char	*num;
+	int		i;
+
+	i = 0;
+	while (items[i])
+	{
+		num = ft_itoa(i + 1);
+		ml_put_all(STDERR_FILENO, num, ") ", items[i], "\n", NULL);
+		free(num);
+		i++;
+	}
+}
+
+static char	*select_read(t_shell *shell)
+{
+	char	*ps3;
+	char	*line;
+
+	ps3 = env_get(shell->env, "PS3");
+	ml_put_all(STDERR_FILENO, ps3 ? ps3 : "#? ", NULL);
+	line = ml_reader_line(ml_stdin_reader());
+	return (line);
+}
+
+static int	execute_select(t_node *node, t_shell *shell)
+{
+	char	**items;
+	char	*line;
+	int		status;
+	int		pick;
+	int		count;
+
+	items = node->data.ctl.flag & 1 ? expand_words(node->data.ctl.words, shell)
+		: copy_params(shell);
+	count = 0;
+	while (items && items[count])
+		count++;
+	status = 0;
+	shell->loop_depth++;
+	select_menu(items);
+	line = select_read(shell);
+	while (line && items && shell->running)
+	{
+		env_assign(&shell->env, "REPLY", line);
+		pick = ft_isdigit(line[0]) ? ft_atoi(line) : 0;
+		env_assign(&shell->env, node->data.ctl.name,
+			pick >= 1 && pick <= count ? items[pick - 1] : "");
+		free(line);
+		status = execute_tree(node->data.ctl.a, shell);
+		shell->exit_status = status;
+		if (loop_control(shell))
+			return (shell->loop_depth--, free_str_array(items), status);
+		line = select_read(shell);
+	}
+	free(line);
+	shell->loop_depth--;
+	return (free_str_array(items), status);
+}
+
 static int	execute_for(t_node *node, t_shell *shell)
 {
 	char	**items;
@@ -123,6 +184,8 @@ static int	execute_for(t_node *node, t_shell *shell)
 
 	if (node->data.ctl.flag == 2)
 		return (execute_cfor(node, shell));
+	if (node->data.ctl.flag & 4)
+		return (execute_select(node, shell));
 	items = copy_params(shell);
 	if (node->data.ctl.flag)
 	{

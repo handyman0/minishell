@@ -298,8 +298,10 @@ static t_node	*parse_cfor(t_node *node, t_token **tokens)
 static t_node	*parse_for(t_token **tokens)
 {
 	t_node	*node;
+	int		sel;
 
 	node = new_ctl(NODE_FOR);
+	sel = is_word(*tokens, "select");
 	*tokens = (*tokens)->next;
 	if (node && *tokens && (*tokens)->type == TOKEN_WORD && (*tokens)->value
 		&& (*tokens)->value[0] == '(' && (*tokens)->value[1] == '(')
@@ -336,6 +338,7 @@ static t_node	*parse_for(t_token **tokens)
 	node->data.ctl.a = need_list(tokens, stop_done);
 	if (!node->data.ctl.a || !expect(tokens, "done"))
 		return (free_ctl(node), NULL);
+	node->data.ctl.flag |= sel ? 4 : 0;
 	return (node);
 }
 
@@ -473,7 +476,7 @@ static t_node	*dispatch(t_token **tokens)
 		return (parse_if(tokens));
 	if (is_word(tok, "while") || is_word(tok, "until"))
 		return (parse_while(tokens));
-	if (is_word(tok, "for"))
+	if (is_word(tok, "for") || is_word(tok, "select"))
 		return (parse_for(tokens));
 	if (is_word(tok, "case"))
 		return (parse_case(tokens));

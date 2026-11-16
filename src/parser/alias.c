@@ -22,6 +22,7 @@ int	is_reserved_word(const char *word)
 {
 	return (in_list(g_opens, word) || in_list(g_closes, word)
 		|| ft_strcmp(word, "for") == 0 || ft_strcmp(word, "case") == 0
+		|| ft_strcmp(word, "select") == 0 || ft_strcmp(word, "[[") == 0
 		|| ft_strcmp(word, "function") == 0);
 }
 
