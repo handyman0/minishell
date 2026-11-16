@@ -51,6 +51,7 @@ struct s_shell
 	int			exit_status;
 	int			lineno;
 	int			line_base;
+	int			src_depth;
 	int			running;
 	t_node		*ast;
 	t_token		*tokens;

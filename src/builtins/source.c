@@ -12,7 +12,9 @@ int	source_file(const char *path, t_shell *shell)
 	int				fd;
 	int				base;
 	int				lineno;
+	int				ran;
 
+	ran = 0;
 	fd = open(path, O_RDONLY);
 	if (fd == -1)
 		return (-1);
@@ -20,16 +22,22 @@ int	source_file(const char *path, t_shell *shell)
 	base = shell->line_base;
 	lineno = shell->lineno;
 	ml_reader_init(&reader, fd);
+	shell->src_depth++;
 	line = ml_reader_command(&reader, line_incomplete);
-	while (line && shell->running)
+	while (line && shell->running && !shell->ret)
 	{
 		shell->line_base = (int)reader.cmd_first - 1;
 		run_line(line, shell);
+		ran = 1;
 		free(line);
 		line = ml_reader_command(&reader, line_incomplete);
 	}
 	free(line);
 	close(fd);
+	if (!ran)
+		shell->exit_status = 0;
+	shell->src_depth--;
+	shell->ret = 0;
 	reader = saved;
 	shell->line_base = base;
 	shell->lineno = lineno;
@@ -53,6 +61,7 @@ int	builtin_source(char **argv, t_shell *shell)
 		ft_putstr_fd(argv[1], STDERR_FILENO);
 		ft_putstr_fd(": ", STDERR_FILENO);
 		ft_putendl_fd(strerror(errno), STDERR_FILENO);
+		shell->running = shell->spare;
 		return (1);
 	}
 	return (status);

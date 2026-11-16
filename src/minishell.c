@@ -46,6 +46,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	init_env_defaults(shell);
 	shell->lineno = 0;
 	shell->line_base = 0;
+	shell->src_depth = 0;
 	shell->exit_status = 0;
 	shell->running = 1;
 	shell->ast = NULL;
@@ -193,7 +194,7 @@ void	run_line(char *line, t_shell *shell)
 
 	base = shell->line_base;
 	off = 0;
-	while (shell->running && line[off])
+	while (shell->running && !shell->ret && line[off])
 	{
 		n = next_chunk(line + off, &chunk);
 		if (!chunk)

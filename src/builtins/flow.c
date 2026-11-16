@@ -53,7 +53,7 @@ int	builtin_continue(char **argv, t_shell *shell)
 
 int	builtin_return(char **argv, t_shell *shell)
 {
-	if (shell->func_depth == 0)
+	if (shell->func_depth == 0 && shell->src_depth == 0)
 		return (ml_put_all(2, "minishell: return: can only return from a "
 				"function\n", NULL), 1);
 	shell->ret = 1;
@@ -95,7 +95,12 @@ int	builtin_shift(char **argv, t_shell *shell)
 
 	n = argv[1] ? ft_atoi(argv[1]) : 1;
 	if (n < 0 || n > shell->nparams)
+	{
+		ml_put_all(2, "minishell: shift: ", argv[1] ? argv[1] : "1",
+			": shift count out of range\n", NULL);
+		shell->running = shell->spare;
 		return (1);
+	}
 	i = 0;
 	while (i < n)
 		free(shell->params[i++]);
