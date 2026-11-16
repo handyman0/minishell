@@ -69,6 +69,8 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->optsilent = 0;
 	env_set(&shell->env, "OPTIND", "1");
 	unexport(shell->env, "OPTIND");
+	env_set(&shell->env, "IFS", " \t\n");
+	unexport(shell->env, "IFS");
 	shell->expand_error = 0;
 	shell->cont = 0;
 	shell->ret = 0;

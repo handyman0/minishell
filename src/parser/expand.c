@@ -429,6 +429,7 @@ char	*expand_heredoc_line(char *line, t_shell *shell)
 # define QUOTED 2
 # define SEP 4
 # define KEEP 8
+# define EMPTYQ 16
 
 typedef struct s_word
 {
@@ -442,6 +443,7 @@ typedef struct s_word
 	int		nat;
 	int		lit;
 	int		emitted;
+	int		marks;
 	const char	*ifs;
 }	t_word;
 
@@ -785,8 +787,10 @@ static void	fill_chars(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	int	i;
 	int	n;
+	int	opened;
 
 	i = 0;
+	opened = quote ? -1 : 0;
 	while (raw[i])
 	{
 		n = put_special(w, raw + i, quote, shell);
@@ -796,6 +800,10 @@ static void	fill_chars(t_word *w, char *raw, int quote, t_shell *shell)
 			&& (!quote || quote == raw[i]))
 		{
 			w->nquote += (quote == 0);
+			if (quote == 0)
+				opened = i;
+			else if (opened >= 0 && opened + 1 == i && w->marks)
+				put_char(w, 1, QUOTED | EMPTYQ);
 			quote = (quote == 0) * raw[i++];
 		}
 		else if (raw[i] == '$' && quote != '\'' && is_ref(&raw[i + 1]))
@@ -823,28 +831,36 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 static void	emit_one(t_word *w, int start, int end, t_token **tok[2])
 {
 	char	*pattern;
+	char	*plain;
 	int		k;
 	int		j;
+	int		p;
 	int		has_glob;
 
 	pattern = malloc((end - start) * 2 + 1);
+	plain = malloc(end - start + 1);
 	j = 0;
+	p = 0;
 	has_glob = 0;
-	k = start;
-	while (pattern && k < end)
+	k = start - 1;
+	while (pattern && plain && ++k < end)
 	{
+		if (w->mask[k] & EMPTYQ)
+			continue ;
 		if (w->mask[k] & QUOTED && ft_strchr("*?[\\", w->str[k]))
 			pattern[j++] = '\\';
 		else if (ft_strchr("*?[", w->str[k]))
 			has_glob = 1;
-		pattern[j++] = w->str[k++];
+		pattern[j++] = w->str[k];
+		plain[p++] = w->str[k];
 	}
-	if (pattern)
-		pattern[j] = '\0';
-	if (!has_glob || w->noglob || !pattern
+	if (pattern && plain)
+		(pattern[j] = '\0', plain[p] = '\0');
+	if (!has_glob || w->noglob || !pattern || !plain
 		|| !expand_glob(pattern, tok[0], tok[1]))
-		token_add_back(tok[0], tok[1], TOKEN_WORD,
-			ft_substr(w->str, start, end - start));
+		token_add_back(tok[0], tok[1], TOKEN_WORD, plain);
+	else
+		free(plain);
 	free(pattern);
 }
 
@@ -929,6 +945,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	w.nquote = 0;
 	w.nat = 0;
 	w.lit = 0;
+	w.marks = 1;
 	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
@@ -983,6 +1000,7 @@ char	*expand_variables(char *token, t_shell *shell)
 	w.nquote = 0;
 	w.nat = 0;
 	w.lit = 0;
+	w.marks = 0;
 	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);

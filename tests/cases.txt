@@ -328,3 +328,5 @@ echo $LINENO; echo $LINENO
 f() { echo $LINENO; }; f
 exec 3>&-; <&3; echo $?
 echo >&-; echo $?
+b=' '; c=' - '; f() { echo "$#"; for x; do printf '[%s]' "$x"; done; echo; }; f ''$b'' ""$b""; f ''$c''
+export z=1; export -p | grep -c ' z='
