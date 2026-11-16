@@ -61,11 +61,16 @@ interativas.
 | Variáveis | `$VAR`, `${VAR}`, `$?`, `~`, `A=1`, `A=1 cmd`, `export` |
 | Substituição | `$(cmd)`, `` `cmd` ``, `$((1+2*3))` |
 | Curingas | `*`, `?`, `[a-z]`, `[!x]`, `[[:alpha:]]`, `src/*.c` |
+| Controle de fluxo | `if/elif/else`, `while`, `until`, `for`, `case`, `{ ...; }`, `!` |
+| Funções | `nome() { ...; }`, `local`, `return`, `$1`..`$9`, `$#`, `$@`, `$*` |
+| Expansão de parâmetros | `${x:-d}`, `${x:=v}`, `${x:+a}`, `${x:?m}`, `${#x}`, `${x#p}`, `${x##p}`, `${x%s}`, `${x%%s}` |
 | Várias linhas | o Enter continua se falta fechar aspas, parênteses, ou há `\`, `\|`, `&&`, `\|\|` no fim |
 | Comentários | `# até o fim da linha` |
 
-**Builtins:** `echo` (`-n`), `cd`, `pwd`, `export`, `unset`, `env`, `exit`,
-`alias`, `unalias`, `source`, `type`, `which`, `jobs`, `fg`, `bg`.
+**Builtins:** `echo` (`-n`), `cd`, `pwd`, `export`, `unset` (`-f`, `-v`), `readonly`,
+`env`, `exit`, `alias`, `unalias`, `source` e `.`, `eval`, `exec`, `command`, `type`,
+`which`, `test` e `[`, `read`, `shift`, `set --`, `umask`, `times`, `true`, `false`,
+`:`, `local`, `return`, `break`, `continue`, `jobs`, `fg`, `bg`.
 
 ## ⌨️ Editor de linha
 
@@ -113,6 +118,8 @@ tests/          corpus, fuzz e scripts
 make compare    # compara saída e status com o bash (tests/cases.txt)
 make stress     # fuzz, entradas gigantes e teclas aleatórias, com ASan e UBSan
 make leaks      # vazamentos de memória com Valgrind
+
+tests/posix.sh   # testador interno de conformidade POSIX (usa casos .tst locais, fora do Git)
 ```
 
 O `make stress` gera linhas por gramática, por mutação do corpus e por ruído
@@ -122,7 +129,6 @@ editor dentro de um terminal simulado.
 
 ## 🛣️ Roteiro
 
-Próximos passos, em ordem de impacto para o uso diário: estruturas de controle
-(`if`, `for`, `while`, `case`) e funções; `$$`, `$!`, `{a,b}`, `wait`, `kill %n`,
-`read`, `test`/`[`, `history` e `echo -e`; `Tab` com opções de comandos e
-subcomandos.
+Próximos passos, em ordem de impacto para o uso diário: `trap`, `wait`, `kill %n`,
+`getopts`, `ulimit` e as opções `set -e`/`-u`/`-x`; `{a,b}`, `[[ ... ]]` e arrays;
+`history` e `echo -e`; `Tab` com opções de comandos e subcomandos.
