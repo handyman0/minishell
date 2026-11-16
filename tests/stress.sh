@@ -133,8 +133,9 @@ done
 echo "echo heredoc <<EOF > /dev/null" >&3
 echo "x" >&3
 echo "EOF" >&3
-for _ in $(seq 1 60); do
-	[ "$(ps --ppid $SPID -o stat= | grep -vc "^Z")" -eq 0 ] && break
+echo "echo pronto > $WORK/fd_pronto" >&3
+for _ in $(seq 1 180); do
+	[ -e "$WORK/fd_pronto" ] && break
 	sleep 1
 done
 sleep 1
