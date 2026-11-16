@@ -425,6 +425,7 @@ static int	pipe_child(t_node *node, t_shell *shell)
 	funcs_free(shell);
 	traps_free(shell);
 	bgs_free(shell);
+	free(shell->pipe_st);
 	free_str_array(shell->params);
 	env_free(shell->aliases);
 	env_free(shell->env);

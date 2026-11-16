@@ -49,6 +49,7 @@ static void	child_run(t_shell *shell, int fds[2], char *cmd, int reads)
 	funcs_free(shell);
 	traps_free(shell);
 	bgs_free(shell);
+	free(shell->pipe_st);
 	free_str_array(shell->params);
 	env_free(shell->aliases);
 	env_free(shell->env);
