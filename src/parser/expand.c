@@ -71,13 +71,26 @@ static int	brace_end(const char *s)
 	return (-1);
 }
 
+static int	hash_name(const char *inner)
+{
+	int	c;
+
+	c = inner[1] == ':';
+	if (inner[1] && ft_strchr("-=+?", inner[1 + c]) && (c || (inner[2]
+					&& inner[2] != '}')))
+		return (1);
+	return (0);
+}
+
 static int	is_ref(const char *s)
 {
 	int	n;
 
 	if (s[0] != '{')
 		return (name_len(s, 0) > 0);
-	if (s[1] == '#' && s[2] && s[2] != '}')
+	if (s[1] == '#' && hash_name(s + 1))
+		n = 1;
+	else if (s[1] == '#' && s[2] && s[2] != '}')
 		n = name_len(s + 2, 1);
 	else
 		n = name_len(s + 1, 1);
@@ -399,6 +412,8 @@ typedef struct s_word
 	size_t	cap;
 	int		at_empty;
 	int		noglob;
+	int		nquote;
+	int		nat;
 	int		lit;
 	int		emitted;
 	const char	*ifs;
@@ -463,7 +478,7 @@ static void	put_at_words(t_word *w, t_shell *shell)
 	int	i;
 
 	if (shell->nparams == 0)
-		w->at_empty = 1;
+		w->nat++;
 	i = 0;
 	while (i < shell->nparams)
 	{
@@ -511,22 +526,35 @@ static int	assign_default(char *name, char *text, t_shell *shell)
 	return (1);
 }
 
+static char	*tilde_word(char *word, t_shell *shell)
+{
+	char	*home;
+
+	home = env_get(shell->env, "HOME");
+	if (word[0] != '~' || (word[1] && word[1] != '/') || !home)
+		return (ft_strdup(word));
+	return (ft_strjoin(home, word + 1));
+}
+
 static void	use_word(t_word *w, char *name, char op, char *word_ctx[3])
 {
 	t_shell	*shell;
+	char	*word;
 	char	*flat;
 	int		quote;
 
 	shell = (t_shell *)word_ctx[2];
 	quote = word_ctx[1][0];
+	word = quote ? ft_strdup(word_ctx[0]) : tilde_word(word_ctx[0], shell);
 	if (op == '-' || op == '+')
 	{
 		w->lit = SPLIT;
-		fill_chars(w, word_ctx[0], quote, shell);
+		fill_chars(w, word, quote, shell);
 		w->lit = 0;
-		return ;
+		return (free(word));
 	}
-	flat = expand_variables(word_ctx[0], shell);
+	flat = expand_variables(word, shell);
+	free(word);
 	if (op == '=' && flat && assign_default(name, flat, shell))
 		put_value(w, ft_strdup(flat), quote ? QUOTED : SPLIT);
 	else if (op == '?')
@@ -536,6 +564,66 @@ static void	use_word(t_word *w, char *name, char op, char *word_ctx[3])
 		shell->expand_error = 1;
 	}
 	free(flat);
+}
+
+
+static char	*expand_pattern(char *word, t_shell *shell)
+{
+	t_word	t;
+	char	*pat;
+	int		i;
+	int		j;
+
+	ft_bzero(&t, sizeof(t));
+	t.ifs = "";
+	t.cap = ft_strlen(word);
+	t.str = ft_calloc(t.cap + 1, 1);
+	t.mask = ft_calloc(t.cap + 1, 1);
+	word = tilde_word(word, shell);
+	t.cap = ft_strlen(word);
+	free(t.str);
+	free(t.mask);
+	t.str = ft_calloc(t.cap + 1, 1);
+	t.mask = ft_calloc(t.cap + 1, 1);
+	fill_chars(&t, word, 0, shell);
+	free(word);
+	pat = ft_calloc(t.len * 2 + 1, 1);
+	i = 0;
+	j = 0;
+	while (pat && t.str && i < t.len)
+	{
+		if ((t.mask[i] & QUOTED) && ft_strchr("*?[]\\", t.str[i]))
+			pat[j++] = '\\';
+		pat[j++] = t.str[i++];
+	}
+	free(t.str);
+	free(t.mask);
+	return (pat);
+}
+
+static int	put_trim(t_word *w, char *inner, int quote, t_shell *shell)
+{
+	char	*name;
+	char	*value;
+	char	*pat;
+	char	*res;
+	int		n;
+	int		longest;
+
+	n = name_len(inner, 1);
+	if (!n || (inner[n] != '#' && inner[n] != '%'))
+		return (0);
+	longest = inner[n + 1] == inner[n];
+	name = ft_substr(inner, 0, n);
+	value = lookup(name, shell);
+	check_unset(name, value, shell);
+	pat = expand_pattern(inner + n + 1 + longest, shell);
+	if (inner[n] == '#')
+		res = trim_prefix(value ? value : "", pat ? pat : "", longest);
+	else
+		res = trim_suffix(value ? value : "", pat ? pat : "", longest);
+	put_value(w, res, quote ? QUOTED : SPLIT);
+	return (free(name), free(value), free(pat), 1);
 }
 
 static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
@@ -549,7 +637,9 @@ static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
 	int		colon;
 
 	inner = ft_substr(raw, 1, brace_end(raw) - 1);
-	n = inner[0] == '#' ? 0 : name_len(inner, 1);
+	if (inner[0] != '#' && put_trim(w, inner, quote, shell))
+		return (free(inner), 1);
+	n = inner[0] == '#' ? hash_name(inner) : name_len(inner, 1);
 	colon = inner[n] == ':';
 	if (!inner[0] || !n || !inner[n] || !ft_strchr("-=+?", inner[n + colon]))
 		return (free(inner), 0);
@@ -678,7 +768,10 @@ static void	fill_chars(t_word *w, char *raw, int quote, t_shell *shell)
 			i += n;
 		else if ((raw[i] == '\'' || raw[i] == '"')
 			&& (!quote || quote == raw[i]))
+		{
+			w->nquote += (quote == 0);
 			quote = (quote == 0) * raw[i++];
+		}
 		else if (raw[i] == '$' && quote != '\'' && is_ref(&raw[i + 1]))
 			i += put_dollar(w, &raw[i], quote, shell);
 		else
@@ -807,6 +900,8 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	w.cap = cap;
 	w.at_empty = 0;
 	w.noglob = (shell->opts & OPT_F) != 0;
+	w.nquote = 0;
+	w.nat = 0;
 	w.lit = 0;
 	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
@@ -817,7 +912,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	{
 		fill_word(&w, raw, shell);
 		if (!emit_fields(&w, tok)
-			&& !w.at_empty && (ft_strchr(raw, '\'') || ft_strchr(raw, '"')))
+			&& w.nquote > w.nat)
 			token_add_back(head, cur, TOKEN_WORD, ft_strdup(""));
 	}
 	free(w.str);
@@ -859,6 +954,8 @@ char	*expand_variables(char *token, t_shell *shell)
 	w.cap = cap;
 	w.at_empty = 0;
 	w.noglob = (shell->opts & OPT_F) != 0;
+	w.nquote = 0;
+	w.nat = 0;
 	w.lit = 0;
 	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
