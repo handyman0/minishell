@@ -310,7 +310,8 @@ static int	run_command(t_node *node, t_shell *shell)
 	backup[2] = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 10);
 	if (ft_strcmp(node->data.cmd.argv[0], "exec") == 0)
 		return (run_exec_builtin(node, shell, backup));
-	func = shell->bypass_func ? NULL : find_func(shell, node->data.cmd.argv[0]);
+	func = shell->bypass_func || is_special_builtin(node->data.cmd.argv[0])
+		? NULL : find_func(shell, node->data.cmd.argv[0]);
 	shell->bypass_func = 0;
 	if (func || is_builtin(node->data.cmd.argv[0]))
 	{
@@ -321,8 +322,11 @@ static int	run_command(t_node *node, t_shell *shell)
 				shell->running = shell->spare;
 			return (1);
 		}
-		saved = node->data.cmd.assigns
-			? overlay_apply(shell, node->data.cmd.assigns, &nsaved) : NULL;
+		saved = NULL;
+		if (node->data.cmd.assigns && is_special_builtin(node->data.cmd.argv[0]))
+			assign_shell(shell, node->data.cmd.assigns);
+		else if (node->data.cmd.assigns)
+			saved = overlay_apply(shell, node->data.cmd.assigns, &nsaved);
 		builtin_status = func ? call_function(shell, func, node->data.cmd.argv)
 			: execute_builtin(node, shell);
 		if (saved)

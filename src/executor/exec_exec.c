@@ -49,6 +49,7 @@ int	run_exec_builtin(t_node *node, t_shell *shell, int backup[3])
 	}
 	if (!*argv)
 	{
+		assign_shell(shell, node->data.cmd.assigns);
 		close(backup[0]);
 		close(backup[1]);
 		close(backup[2]);

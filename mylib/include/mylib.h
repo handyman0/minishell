@@ -85,6 +85,7 @@ typedef struct s_reader
 }	t_reader;
 
 void		ml_reader_init(t_reader *reader, int fd);
+void		ml_reader_sync(t_reader *reader);
 char		*ml_reader_line(t_reader *reader);
 t_reader	*ml_stdin_reader(void);
 char		*ml_reader_command(t_reader *reader, int (*incomplete)(char *));

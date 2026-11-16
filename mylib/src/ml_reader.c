@@ -110,3 +110,14 @@ char	*ml_reader_command(t_reader *reader, int (*incomplete)(char *))
 	}
 	return (line);
 }
+
+void	ml_reader_sync(t_reader *reader)
+{
+	if (reader->pos >= reader->len)
+		return ;
+	if (lseek(reader->fd, -(off_t)(reader->len - reader->pos), SEEK_CUR) != -1)
+	{
+		reader->pos = 0;
+		reader->len = 0;
+	}
+}

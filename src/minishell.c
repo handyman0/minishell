@@ -136,7 +136,7 @@ static void	shift_lines(t_token *tok, int base)
 	}
 }
 
-void	run_line(char *line, t_shell *shell)
+static void	run_chunk(char *line, t_shell *shell)
 {
 	t_token	*tokens;
 
@@ -161,6 +161,49 @@ void	run_line(char *line, t_shell *shell)
 		return ;
 	}
 	run_tokens(tokens, shell);
+}
+
+static int	next_chunk(const char *line, char **chunk)
+{
+	size_t	n;
+	char	*part;
+
+	n = 0;
+	while (1)
+	{
+		while (line[n] && line[n] != '\n')
+			n++;
+		if (line[n])
+			n++;
+		part = ft_substr(line, 0, n - (line[n - 1] == '\n' && line[n]));
+		if (!part || !line[n] || !line_incomplete(part))
+			break ;
+		free(part);
+	}
+	*chunk = part;
+	return ((int)n);
+}
+
+void	run_line(char *line, t_shell *shell)
+{
+	char	*chunk;
+	int		base;
+	int		n;
+	int		off;
+
+	base = shell->line_base;
+	off = 0;
+	while (shell->running && line[off])
+	{
+		n = next_chunk(line + off, &chunk);
+		if (!chunk)
+			break ;
+		run_chunk(chunk, shell);
+		free(chunk);
+		while (n-- > 0)
+			shell->line_base += line[off++] == '\n';
+	}
+	shell->line_base = base;
 }
 
 static char	*read_input(t_shell *shell, int interactive)
@@ -245,6 +288,8 @@ static void	shell_loop(t_shell *shell, int interactive)
 		if (interactive && *line)
 			le_history_add(line);
 		shell->line_base = (int)ml_stdin_reader()->cmd_first - 1;
+		if (!interactive)
+			ml_reader_sync(ml_stdin_reader());
 		run_line(line, shell);
 		free(line);
 	}
