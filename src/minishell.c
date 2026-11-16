@@ -30,6 +30,14 @@ static void	init_env_defaults(t_shell *shell)
 	free(value);
 }
 
+static void	unexport(t_env *env, const char *key)
+{
+	while (env && ft_strcmp(env->key, key) != 0)
+		env = env->next;
+	if (env)
+		env->exported = 0;
+}
+
 static void	init_shell(t_shell *shell, char **envp)
 {
 	char	cwd[1024];
@@ -52,6 +60,11 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->bypass_func = 0;
 	shell->opts = 0;
 	shell->noerrexit = 0;
+	shell->optpos = 0;
+	shell->optind_last = 1;
+	shell->optsilent = 0;
+	env_set(&shell->env, "OPTIND", "1");
+	unexport(shell->env, "OPTIND");
 	shell->expand_error = 0;
 	shell->cont = 0;
 	shell->ret = 0;

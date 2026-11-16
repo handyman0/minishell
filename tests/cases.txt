@@ -292,3 +292,11 @@ set -a; X=1; sh -c 'echo $X'
 set -- "" a ""; printf "[%s]" "$@"; echo
 echo $((x=42)) $((x+=3)) $x
 (set -u; echo $((zz+1)); echo nao); test $? -ne 0 && echo falhou
+while getopts ":ab:c" o -a -b val -c rest; do echo "o=$o arg=$OPTARG idx=$OPTIND"; done; echo fim $OPTIND
+while getopts "ab:" o -a -x -b v; do echo "o=$o"; done 2>/dev/null; echo $OPTIND
+while getopts ":ab:" o -a -x -b; do echo "o=$o arg=$OPTARG"; done
+set -- -abc -d x; while getopts abcd o; do echo $o; done; echo $OPTIND
+set -- -a -- -b; while getopts ab o; do echo $o; done; echo $OPTIND
+f() { OPTIND=1; while getopts a:b o "$@"; do echo "$o:$OPTARG"; done; }; f -a1 -b -a 2
+getopts a o -a; echo $? $o $OPTIND; getopts a o -a; echo $? $o
+getopts a: o -a ''; echo "[$OPTARG]"
