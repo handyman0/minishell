@@ -347,6 +347,7 @@ static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
 static void	parse_args(int argc, char **argv, t_opts *o)
 {
 	ft_bzero(o, sizeof(t_opts));
+	o->opts = OPT_BRACE;
 	o->rest = 1;
 	while (o->rest < argc && (argv[o->rest][0] == '-' || argv[o->rest][0] == '+')
 		&& argv[o->rest][1])

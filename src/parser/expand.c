@@ -962,6 +962,20 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	free(w.mask);
 }
 
+static void	expand_braced(char *raw, t_shell *shell, t_token **head, t_token **cur)
+{
+	char	**words;
+	int		i;
+
+	words = (shell->opts & OPT_BRACE) ? brace_expand(raw) : NULL;
+	if (!words)
+		return (expand_word(raw, shell, head, cur));
+	i = 0;
+	while (words[i])
+		expand_word(words[i++], shell, head, cur);
+	free_str_array(words);
+}
+
 void	expand_tokens(t_token **tokens, t_shell *shell)
 {
 	t_token	*head;
@@ -976,7 +990,7 @@ void	expand_tokens(t_token **tokens, t_shell *shell)
 	{
 		next = old->next;
 		if (old->type == TOKEN_WORD && old->value)
-			expand_word(old->value, shell, &head, &cur);
+			expand_braced(old->value, shell, &head, &cur);
 		free(old->value);
 		free(old);
 		old = next;

@@ -332,3 +332,6 @@ b=' '; c=' - '; f() { echo "$#"; for x; do printf '[%s]' "$x"; done; echo; }; f 
 export z=1; export -p | grep -c ' z='
 echo -e 'a\tb\x41\0101\\ c'; echo -n -e 'x\n'; echo -E 'a\tb'; echo -ne 'q\n'; echo -x; echo -e 'a\cb'; echo
 echo -e '\e[0m' | od -An -c; echo -e '\q'; echo -neE 'z'; echo
+echo {a,b}c x{1..5}y {a..e} {5..1} {01..03} {1..10..3} {a,b{c,d}}e
+echo {} {a} a{b "{a,b}" \{a,b\} {a,"b c"} ${x:-{a,b}} {-2..2} {a,}z
+echo /tmp/{a,b}/{c,d} pre{x,y}{1,2}post; set +B; echo {a,b}

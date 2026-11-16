@@ -206,6 +206,7 @@ t_node	*parse_pipeline(t_token **tokens);
 char	*expand_variables(char *token, t_shell *shell);
 char	*expand_pattern(char *word, t_shell *shell);
 char	*dynamic_value(const char *name, t_shell *shell);
+char	**brace_expand(const char *word);
 
 char	*expand_heredoc_line(char *line, t_shell *shell);
 char	*heredoc_delimiter(const char *raw);

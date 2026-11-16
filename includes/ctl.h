@@ -17,6 +17,7 @@ struct s_redir;
 # define OPT_H 512
 # define OPT_B 1024
 # define OPT_I 2048
+# define OPT_BRACE 4096
 
 struct s_func
 {
