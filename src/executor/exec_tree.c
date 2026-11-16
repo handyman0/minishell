@@ -175,37 +175,84 @@ static int	open_redir(t_redir *redir)
 {
 	if (redir->type == REDIR_IN)
 		return (open(redir->file, O_RDONLY));
+	if (redir->type == REDIR_RDWR)
+		return (open(redir->file, O_RDWR | O_CREAT, 0666));
 	if (redir->type == REDIR_OUT || redir->type == REDIR_CLOBBER)
 		return (open_out(redir));
-	return (open(redir->file, O_WRONLY | O_CREAT | O_APPEND, 0644));
+	return (open(redir->file, O_WRONLY | O_CREAT | O_APPEND, 0666));
+}
+
+static int	redir_fail(const char *what, const char *msg)
+{
+	ft_putstr_fd("minishell: ", 2);
+	ft_putstr_fd((char *)what, 2);
+	ft_putstr_fd(": ", 2);
+	ft_putendl_fd((char *)msg, 2);
+	return (0);
+}
+
+static int	apply_dup(t_redir *redir)
+{
+	int	src;
+	int	mode;
+	int	i;
+
+	if (ft_strcmp(redir->file, "-") == 0)
+		return (close(redir->fd), 1);
+	i = 0;
+	while (ft_isdigit(redir->file[i]))
+		i++;
+	if (i == 0 || redir->file[i])
+		return (redir_fail(redir->file, "bad file descriptor"));
+	src = ft_atoi(redir->file);
+	mode = fcntl(src, F_GETFL);
+	if (mode == -1)
+		return (redir_fail(redir->file, "bad file descriptor"));
+	mode &= O_ACCMODE;
+	if ((redir->type == REDIR_DUP_IN && mode == O_WRONLY)
+		|| (redir->type == REDIR_DUP && mode == O_RDONLY))
+		return (redir_fail(redir->file, "bad file descriptor"));
+	if (src != redir->fd && dup2(src, redir->fd) == -1)
+		return (redir_fail(redir->file, "bad file descriptor"));
+	return (1);
+}
+
+static int	apply_one(t_redir *redir)
+{
+	int	fd;
+
+	if (redir->type == REDIR_HEREDOC)
+	{
+		lseek(redir->hd_fd, 0, SEEK_SET);
+		if (redir->hd_fd != redir->fd)
+			dup2(redir->hd_fd, redir->fd);
+		if (redir->hd_fd != redir->fd)
+			close(redir->hd_fd);
+		redir->hd_fd = -1;
+		return (1);
+	}
+	if (redir->type == REDIR_DUP || redir->type == REDIR_DUP_IN)
+		return (apply_dup(redir));
+	fd = open_redir(redir);
+	if (fd == -1)
+	{
+		put_errno(redir->file, NULL);
+		return (0);
+	}
+	if (fd != redir->fd)
+	{
+		dup2(fd, redir->fd);
+		close(fd);
+	}
+	return (1);
 }
 
 int	apply_redirections(t_redir *redirs)
 {
-	int	fd;
-
 	while (redirs)
 	{
-		if (redirs->type == REDIR_HEREDOC)
-		{
-			lseek(redirs->hd_fd, 0, SEEK_SET);
-			dup2(redirs->hd_fd, STDIN_FILENO);
-			close(redirs->hd_fd);
-			redirs->hd_fd = -1;
-		}
-		else if (redirs->type == REDIR_DUP)
-			dup2(ft_atoi(redirs->file + 1), redirs->fd);
-		else
-		{
-			fd = open_redir(redirs);
-			if (fd == -1)
-			{
-				put_errno(redirs->file, NULL);
-				return (0);
-			}
-			dup2(fd, redirs->fd);
-			close(fd);
-		}
+		if (!apply_one(redirs))
+			return (0);
 		redirs = redirs->next;
 	}
 	return (1);
@@ -244,6 +291,14 @@ static int	run_command(t_node *node, t_shell *shell)
 		xtrace_print(shell, node->data.cmd.argv, node->data.cmd.assigns);
 	if (!node->data.cmd.argv || !node->data.cmd.argv[0])
 	{
+		if (node->data.cmd.redirs)
+		{
+			save_fds(backup);
+			status = apply_redirections(node->data.cmd.redirs);
+			restore_fds(backup);
+			if (!status)
+				return (1);
+		}
 		if (assign_shell(shell, node->data.cmd.assigns))
 			return (1);
 		return (shell->subst_used ? shell->subst_status : 0);

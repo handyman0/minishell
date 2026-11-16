@@ -350,28 +350,52 @@ static int	buf_put(t_buf *buf, const char *src, size_t n)
 }
 static int	heredoc_escape(const char *s)
 {
-	return (s[0] == '\\' && s[1] && ft_strchr("$\\`", s[1]));
+	return (s[0] == '\\' && s[1] && ft_strchr("$\\`\n", s[1]));
 }
 
+static int	heredoc_subst(t_buf *buf, char *line, int *i, t_shell *shell)
+{
+	char	*value;
+	int		used;
+
+	value = expand_subst_at(&line[*i], &used, shell);
+	if (!value)
+		return (-1);
+	*i += used;
+	if (!buf_put(buf, value, ft_strlen(value)))
+		return (free(value), 0);
+	return (free(value), 1);
+}
 
 static int	heredoc_chunk(t_buf *buf, char *line, int *i, t_shell *shell)
 {
 	char	*value;
 	int		start;
+	int		done;
 
 	start = *i;
 	while (line[*i] && !(line[*i] == '$' && is_ref(&line[*i + 1]))
-		&& !heredoc_escape(&line[*i]))
+		&& !heredoc_escape(&line[*i]) && line[*i] != '`'
+		&& !(line[*i] == '$' && line[*i + 1] == '('))
 		(*i)++;
 	if (*i > start && !buf_put(buf, line + start, *i - start))
 		return (0);
 	if (heredoc_escape(&line[*i]))
 	{
 		*i += 2;
+		if (line[*i - 1] == '\n')
+			return (1);
 		return (buf_put(buf, line + *i - 1, 1));
 	}
 	if (!line[*i])
 		return (1);
+	if (line[*i] == '`' || line[*i + 1] == '(')
+	{
+		done = heredoc_subst(buf, line, i, shell);
+		if (done >= 0)
+			return (done);
+		return ((*i)++, buf_put(buf, line + *i - 1, 1));
+	}
 	value = get_var_value(&line[*i + 1], shell);
 	*i += ref_length(&line[*i + 1]) + 1;
 	if (!value || !buf_put(buf, value, ft_strlen(value)))

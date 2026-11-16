@@ -21,7 +21,9 @@ int	is_redirection_token(t_token *token)
 	return (token->type == TOKEN_REDIR_IN || token->type == TOKEN_REDIR_OUT
 		|| token->type == TOKEN_REDIR_APPEND
 		|| token->type == TOKEN_REDIR_CLOBBER
-		|| token->type == TOKEN_HEREDOC);
+		|| token->type == TOKEN_HEREDOC || token->type == TOKEN_HEREDOC_DASH
+		|| token->type == TOKEN_DUP_IN || token->type == TOKEN_DUP_OUT
+		|| token->type == TOKEN_RDWR);
 }
 
 int	handle_redirection(t_token **tokens, t_redir **redirs)
@@ -42,18 +44,25 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 		case TOKEN_REDIR_APPEND: new_redir->type = REDIR_APPEND; break ;
 		case TOKEN_REDIR_CLOBBER: new_redir->type = REDIR_CLOBBER; break ;
 		case TOKEN_HEREDOC: new_redir->type = REDIR_HEREDOC; break ;
+		case TOKEN_HEREDOC_DASH: new_redir->type = REDIR_HEREDOC; break ;
+		case TOKEN_DUP_IN: new_redir->type = REDIR_DUP_IN; break ;
+		case TOKEN_DUP_OUT: new_redir->type = REDIR_DUP; break ;
+		case TOKEN_RDWR: new_redir->type = REDIR_RDWR; break ;
 		default :
 			free(new_redir);
 			return (0);
 	}
 	new_redir->fd = (current->type == TOKEN_REDIR_OUT
 			|| current->type == TOKEN_REDIR_APPEND
-			|| current->type == TOKEN_REDIR_CLOBBER);
+			|| current->type == TOKEN_REDIR_CLOBBER
+			|| current->type == TOKEN_DUP_OUT);
 	if (current->value)
 		new_redir->fd = ft_atoi(current->value);
 	new_redir->file = NULL;
 	new_redir->next = NULL;
 	new_redir->hd_fd = -1;
+	new_redir->strip = (current->type == TOKEN_HEREDOC_DASH);
+	new_redir->body = NULL;
 	current = current->next;
 	if (!current || current->type != TOKEN_WORD)
 	{
@@ -61,9 +70,8 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 		return (0);
 	}
 	new_redir->file = ft_strdup(current->value);
-	if (new_redir->file && new_redir->type == REDIR_OUT
-		&& new_redir->file[0] == '&' && ft_isdigit(new_redir->file[1]))
-		new_redir->type = REDIR_DUP;
+	if (current->body)
+		new_redir->body = ft_strdup(current->body);
 	if (!new_redir->file)
 	{
 		free(new_redir);
@@ -91,6 +99,7 @@ void	free_redirs(t_redir *redirs)
 		tmp = redirs->next;
 		if (redirs->file)
 			free(redirs->file);
+		free(redirs->body);
 		if (redirs->hd_fd >= 0)
 			close(redirs->hd_fd);
 		free(redirs);
@@ -211,6 +220,13 @@ t_node	*parse_command(t_token **tokens)
 	{
 		parse_fail_at(*tokens);
 		return (free(node), NULL);
+	}
+	if (count == 0)
+	{
+		node->data.cmd.argv = malloc(sizeof(char *));
+		if (!node->data.cmd.argv)
+			return (free_redirs(node->data.cmd.redirs), free(node), NULL);
+		node->data.cmd.argv[0] = NULL;
 	}
 	if (count > 0)
 	{

@@ -30,7 +30,8 @@ void	free_str_array(char **arr);
  * @brief Le o corpo de um heredoc para um arquivo temporario anonimo.
  * @param raw Limitador como digitado, com aspas se houver.
  */
-int	heredoc_read(const char *raw, t_shell *shell);
+struct s_redir;
+int	heredoc_read(const struct s_redir *redir, t_shell *shell);
 int	prepare_heredocs(t_node *node, t_shell *shell);
 
 /**

@@ -40,6 +40,14 @@ const char	*token_text(t_token *tok)
 		return (">>");
 	if (tok->type == TOKEN_HEREDOC)
 		return ("<<");
+	if (tok->type == TOKEN_HEREDOC_DASH)
+		return ("<<-");
+	if (tok->type == TOKEN_DUP_IN)
+		return ("<&");
+	if (tok->type == TOKEN_DUP_OUT)
+		return (">&");
+	if (tok->type == TOKEN_RDWR)
+		return ("<>");
 	if (tok->type == TOKEN_DSEMI)
 		return (";;");
 	return (tok->value ? tok->value : "?");

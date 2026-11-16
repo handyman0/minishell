@@ -29,6 +29,10 @@ typedef enum e_toktype
 	TOKEN_REDIR_APPEND, // >>
 	TOKEN_REDIR_CLOBBER, // >|
 	TOKEN_HEREDOC, // <<
+	TOKEN_HEREDOC_DASH, // <<-
+	TOKEN_DUP_IN, // <&
+	TOKEN_DUP_OUT, // >&
+	TOKEN_RDWR, // <>
 	TOKEN_AND, // &&
 	TOKEN_OR, // ||
 	TOKEN_LPAREN, // (
@@ -46,6 +50,7 @@ typedef struct s_token
 {
 	t_toktype		type; /**< Tipo do token. */
 	char			*value; /**< Texto do token (apenas TOKEN_WORD). */
+	char			*body; /**< Corpo capturado do heredoc (palavra apos <<). */
 	struct s_token	*next; /**< Próximo token na lista. */
 } t_token;
 
@@ -61,6 +66,8 @@ typedef enum e_redir_type
 	REDIR_CLOBBER, // >|
 	REDIR_HEREDOC, // <<
 	REDIR_DUP, // >&N
+	REDIR_DUP_IN, // <&N
+	REDIR_RDWR, // <>
 } t_redir_type;
 
 typedef struct s_redir
@@ -68,6 +75,8 @@ typedef struct s_redir
 	t_redir_type	type;
 	int				fd;
 	int				hd_fd;
+	int				strip;
+	char			*body;
 	char			*file;
 	struct s_redir	*next;
 } t_redir;
@@ -195,6 +204,7 @@ t_node	*parse_pipeline(t_token **tokens);
 char	*expand_variables(char *token, t_shell *shell);
 
 char	*expand_heredoc_line(char *line, t_shell *shell);
+char	*heredoc_delimiter(const char *raw);
 void	expand_tokens(t_token **tokens, t_shell *shell);
 
 // expand_wildcards.c

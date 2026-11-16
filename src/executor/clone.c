@@ -30,6 +30,7 @@ static t_redir	*copy_redir(t_redir *src)
 		return (NULL);
 	*out = *src;
 	out->file = ft_strdup(src->file);
+	out->body = src->body ? ft_strdup(src->body) : NULL;
 	out->next = NULL;
 	out->hd_fd = -1;
 	if (src->hd_fd >= 0)

@@ -22,52 +22,6 @@ static char	*read_heredoc_line(void)
 	return (ml_reader_line(ml_stdin_reader()));
 }
 
-static char	*strip_quotes(const char *raw)
-{
-	char	*out;
-	char	quote;
-	int		i;
-	int		j;
-
-	out = malloc(ft_strlen(raw) + 1);
-	if (!out)
-		return (NULL);
-	quote = 0;
-	i = 0;
-	j = 0;
-	while (raw[i])
-	{
-		if (raw[i] == '\\' && raw[i + 1] && quote != '\'')
-			out[j++] = raw[++i];
-		else if (!quote && (raw[i] == '\'' || raw[i] == '"'))
-			quote = raw[i];
-		else if (quote && raw[i] == quote)
-			quote = 0;
-		else
-			out[j++] = raw[i];
-		i++;
-	}
-	out[j] = '\0';
-	return (out);
-}
-
-static void	write_line(int fd, char *line, int expand, t_shell *shell)
-{
-	char	*expanded;
-
-	if (expand)
-	{
-		expanded = expand_heredoc_line(line, shell);
-		if (expanded)
-		{
-			ft_putendl_fd(expanded, fd);
-			free(expanded);
-			return ;
-		}
-	}
-	ft_putendl_fd(line, fd);
-}
-
 static int	heredoc_tmpfile(void)
 {
 	char	path[] = "/tmp/.minishell_hd_XXXXXX";
@@ -81,41 +35,90 @@ static int	heredoc_tmpfile(void)
 	return (fd);
 }
 
-static int	heredoc_fill(int fd, char *limiter, int expand, t_shell *shell)
+static char	*append_line(char *text, size_t *len, const char *line)
 {
-	char	*line;
+	size_t	n;
+	char	*out;
 
-	while (1)
+	n = ft_strlen(line);
+	out = malloc(*len + n + 2);
+	if (!out)
+		return (free(text), NULL);
+	if (text)
+		ft_memcpy(out, text, *len);
+	ft_memcpy(out + *len, line, n);
+	out[*len + n] = '\n';
+	out[*len + n + 1] = '\0';
+	*len += n + 1;
+	free(text);
+	return (out);
+}
+
+static char	*collect_body(const char *limiter, int strip, int *ok)
+{
+	char	*text;
+	char	*line;
+	size_t	len;
+	char	*cmp;
+
+	text = ft_strdup("");
+	len = 0;
+	*ok = 1;
+	while (text)
 	{
 		line = read_heredoc_line();
 		if (g_signal == SIGINT)
-			return (free(line), 0);
-		if (!line || ft_strcmp(line, limiter) == 0)
-		{
-			free(line);
-			return (1);
-		}
-		write_line(fd, line, expand, shell);
+			return (*ok = 0, free(line), free(text), NULL);
+		cmp = line;
+		while (cmp && strip && *cmp == '\t')
+			cmp++;
+		if (!line || ft_strcmp(cmp, limiter) == 0)
+			return (free(line), text);
+		text = append_line(text, &len, cmp);
 		free(line);
 	}
+	return (*ok = 0, NULL);
 }
 
-int	heredoc_read(const char *raw, t_shell *shell)
+static int	write_body(int fd, char *text, int expand, t_shell *shell)
+{
+	char	*out;
+
+	out = text;
+	if (expand)
+		out = expand_heredoc_line(text, shell);
+	if (!out)
+		return (0);
+	write(fd, out, ft_strlen(out));
+	if (out != text)
+		free(out);
+	return (1);
+}
+
+int	heredoc_read(const t_redir *redir, t_shell *shell)
 {
 	char	*limiter;
+	char	*text;
 	int		fd;
-	int		done;
+	int		ok;
+	int		expand;
 
 	fd = heredoc_tmpfile();
-	limiter = strip_quotes(raw);
+	limiter = heredoc_delimiter(redir->file);
 	if (fd == -1 || !limiter)
 		return (free(limiter), fd == -1 ? -1 : (close(fd), -1));
 	g_signal = 0;
-	done = heredoc_fill(fd, limiter, !ft_strchr(raw, '\\') && !ft_strchr(raw, '\'')
-			&& !ft_strchr(raw, '"'), shell);
+	expand = !ft_strchr(redir->file, '\\') && !ft_strchr(redir->file, '\'')
+		&& !ft_strchr(redir->file, '"');
+	ok = 1;
+	if (redir->body)
+		text = ft_strdup(redir->body);
+	else
+		text = collect_body(limiter, redir->strip, &ok);
 	free(limiter);
-	if (!done)
-		return (close(fd), -1);
+	if (!ok || !text || !write_body(fd, text, expand, shell))
+		return (free(text), close(fd), -1);
+	free(text);
 	lseek(fd, 0, SEEK_SET);
 	return (fd);
 }
@@ -126,7 +129,7 @@ static int	redirs_heredocs(t_redir *redir, t_shell *shell)
 	{
 		if (redir->type == REDIR_HEREDOC)
 		{
-			redir->hd_fd = heredoc_read(redir->file, shell);
+			redir->hd_fd = heredoc_read(redir, shell);
 			if (redir->hd_fd == -1)
 				return (1);
 		}

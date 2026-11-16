@@ -23,6 +23,7 @@ void	token_add_back(t_token **head, t_token **current,
 		return ;
 	new_token->type = type;
 	new_token->value = value;
+	new_token->body = NULL;
 	new_token->next = NULL;
 	if (*head == NULL)
 		*head = new_token;
@@ -52,16 +53,34 @@ static int	handle_operator(char *line, int i,
 			token_add_back(head, current, TOKEN_AND, NULL);
 		return (2);
 	}
-	else if (line[i] == '&' && (i == 0 || line[i - 1] != '>'))
+	else if (line[i] == '&')
 	{
 		if (head && current)
 			token_add_back(head, current, TOKEN_BG, NULL);
 		return (1);
 	}
+	else if (line[i] == '<' && line[i + 1] == '<' && line[i + 2] == '-')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_HEREDOC_DASH, NULL);
+		return (3);
+	}
 	else if (line[i] == '<' && line[i + 1] == '<')
 	{
 		if (head && current)
 			token_add_back(head, current, TOKEN_HEREDOC, NULL);
+		return (2);
+	}
+	else if (line[i] == '<' && line[i + 1] == '&')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_DUP_IN, NULL);
+		return (2);
+	}
+	else if (line[i] == '<' && line[i + 1] == '>')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_RDWR, NULL);
 		return (2);
 	}
 	else if (line[i] == '<')
@@ -74,6 +93,12 @@ static int	handle_operator(char *line, int i,
 	{
 		if (head && current)
 			token_add_back(head, current, TOKEN_REDIR_CLOBBER, NULL);
+		return (2);
+	}
+	else if (line[i] == '>' && line[i + 1] == '&')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_DUP_OUT, NULL);
 		return (2);
 	}
 	else if (line[i] == '>' && line[i + 1] == '>')
@@ -198,6 +223,92 @@ static int	continues_command(t_token *tok)
 		|| tok->type == TOKEN_DSEMI);
 }
 
+char	*heredoc_delimiter(const char *raw)
+{
+	char	*out;
+	char	quote;
+	int		i;
+	int		j;
+
+	out = malloc(ft_strlen(raw) + 1);
+	if (!out)
+		return (NULL);
+	quote = 0;
+	i = 0;
+	j = 0;
+	while (raw[i])
+	{
+		if (raw[i] == '\\' && raw[i + 1] && quote != '\'')
+			out[j++] = raw[++i];
+		else if (!quote && (raw[i] == '\'' || raw[i] == '"'))
+			quote = raw[i];
+		else if (quote && raw[i] == quote)
+			quote = 0;
+		else
+			out[j++] = raw[i];
+		i++;
+	}
+	out[j] = '\0';
+	return (out);
+}
+
+static int	is_heredoc_op(t_token *tok)
+{
+	return (tok->type == TOKEN_HEREDOC || tok->type == TOKEN_HEREDOC_DASH);
+}
+
+static int	read_body(char *line, int pos, int dash, t_token *word)
+{
+	char	*delim;
+	char	*body;
+	int		len;
+	int		eol;
+	int		start;
+
+	delim = heredoc_delimiter(word->value);
+	body = malloc(ft_strlen(line + pos) + 1);
+	if (!delim || !body)
+		return (free(delim), free(body), pos);
+	len = 0;
+	while (line[pos])
+	{
+		start = pos;
+		while (dash && line[start] == '\t')
+			start++;
+		eol = start;
+		while (line[eol] && line[eol] != '\n')
+			eol++;
+		pos = eol + (line[eol] == '\n');
+		if ((int)ft_strlen(delim) == eol - start
+			&& ft_strncmp(line + start, delim, eol - start) == 0)
+			break ;
+		ft_memcpy(body + len, line + start, pos - start);
+		len += pos - start;
+	}
+	body[len] = '\0';
+	word->body = body;
+	return (free(delim), pos);
+}
+
+static int	capture_bodies(char *line, int pos, t_token **scan, t_token *head)
+{
+	t_token	*tok;
+
+	tok = head;
+	if (*scan)
+		tok = (*scan)->next;
+	while (tok)
+	{
+		if (is_heredoc_op(tok) && tok->next && tok->next->type == TOKEN_WORD
+			&& !tok->next->body)
+			pos = read_body(line, pos, tok->type == TOKEN_HEREDOC_DASH,
+					tok->next);
+		*scan = tok;
+		tok = tok->next;
+	}
+	return (pos);
+}
+
 t_token	*tokenize_line(char *line)
 {
 	t_token	*head;
@@ -205,9 +316,11 @@ t_token	*tokenize_line(char *line)
 	int		i;
 	char	*word;
 	int		op_len;
+	t_token	*scan;
 
 	if (!line)
 		return (NULL);
+	scan = NULL;
 	head = NULL;
 	current = NULL;
 	i = 0;
@@ -217,7 +330,7 @@ t_token	*tokenize_line(char *line)
 		{
 			if (current && !continues_command(current))
 				token_add_back(&head, &current, TOKEN_SEMI, NULL);
-			i++;
+			i = capture_bodies(line, i + 1, &scan, head);
 			continue ;
 		}
 		if (ft_isspace(line[i]))
@@ -261,6 +374,7 @@ void	free_tokens(t_token *tokens)
 			free(tokens->value);
 			tokens->value = NULL;
 		}
+		free(tokens->body);
 		free(tokens);
 		tokens = tmp;
 	}
