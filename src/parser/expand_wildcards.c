@@ -95,12 +95,33 @@ static int	posix_match(const char *p, const char *end, char c)
 			|| (c >= 'A' && c <= 'F'));
 	if (len == 5 && ft_strncmp(p, "punct", 5) == 0)
 		return (ft_isprint(c) && !ft_isalnum(c) && c != ' ');
+	if (len == 5 && ft_strncmp(p, "graph", 5) == 0)
+		return (ft_isprint(c) && c != ' ');
+	if (len == 5 && ft_strncmp(p, "print", 5) == 0)
+		return (ft_isprint(c));
+	if (len == 5 && ft_strncmp(p, "blank", 5) == 0)
+		return (c == ' ' || c == '\t');
+	if (len == 5 && ft_strncmp(p, "cntrl", 5) == 0)
+		return (c < 32 || c == 127);
 	return (0);
+}
+
+static int	elem(const char *p, int *len)
+{
+	if (p[0] == '[' && (p[1] == '.' || p[1] == '=') && p[2] && p[3] == p[1]
+		&& p[4] == ']')
+	{
+		*len = 5;
+		return ((unsigned char)p[2]);
+	}
+	*len = 1;
+	return ((unsigned char)p[0]);
 }
 
 static const char	*class_close(const char *p)
 {
 	const char	*q;
+	int			len;
 
 	q = p + 1;
 	if (*q == '!' || *q == '^')
@@ -108,7 +129,12 @@ static const char	*class_close(const char *p)
 	if (*q == ']')
 		q++;
 	while (*q && *q != ']')
-		q = posix_end(q) ? posix_end(q) : q + 1;
+	{
+		if (*q == '\\' && q[1])
+			q++;
+		elem(q, &len);
+		q = posix_end(q) ? posix_end(q) : q + len;
+	}
 	return (*q == ']' ? q : NULL);
 }
 
@@ -117,6 +143,9 @@ static int	in_class(const char *p, char c)
 	int			negate;
 	int			hit;
 	const char	*end;
+	int			lo;
+	int			l1;
+	int			l2 = 1;
 
 	p++;
 	negate = (*p == '!' || *p == '^');
@@ -126,18 +155,26 @@ static int	in_class(const char *p, char c)
 		hit = (c == *p++);
 	while (*p && *p != ']')
 	{
+		if (*p == '\\' && p[1])
+			p++;
 		end = posix_end(p);
+		lo = elem(p, &l1);
 		if (end)
 			hit |= posix_match(p, end, c);
 		if (end)
 			p = end;
-		else if (p[1] == '-' && p[2] && p[2] != ']')
+		else if (p[l1] == '-' && p[l1 + 1] && p[l1 + 1] != ']')
 		{
-			hit |= (c >= p[0] && c <= p[2]);
-			p += 3;
+			l2 = 1;
+			hit |= ((unsigned char)c >= lo
+				&& (unsigned char)c <= elem(p + l1 + 1, &l2));
+			p += l1 + 1 + l2;
 		}
 		else
-			hit |= (c == *p++);
+		{
+			hit |= ((unsigned char)c == lo);
+			p += l1;
+		}
 	}
 	return (hit != negate);
 }
