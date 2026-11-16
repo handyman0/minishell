@@ -22,6 +22,16 @@
 #include "../../includes/signals.h"
 #include "../../includes/jobs.h"
 
+static void	errexit_check(t_shell *shell, int status)
+{
+	if (status != 0 && (shell->opts & OPT_E) && shell->noerrexit == 0
+		&& !shell->interactive)
+	{
+		shell->exit_status = status;
+		shell->running = 0;
+	}
+}
+
 static int	is_chain(t_node *node)
 {
 	return (node->type == NODE_SEQ || node->type == NODE_AND
@@ -66,9 +76,15 @@ static int	execute_chain(t_node *root, t_shell *shell)
 		stack[depth++] = cur;
 		cur = cur->data.op.left;
 	}
+	shell->noerrexit += depth > 0 && stack[depth - 1]->type != NODE_SEQ;
 	status = execute_tree(cur, shell);
+	shell->noerrexit -= depth > 0 && stack[depth - 1]->type != NODE_SEQ;
 	while (depth-- > 0)
+	{
+		shell->noerrexit += depth > 0 && stack[depth - 1]->type != NODE_SEQ;
 		status = chain_step(stack[depth], status, shell);
+		shell->noerrexit -= depth > 0 && stack[depth - 1]->type != NODE_SEQ;
+	}
 	if (stack != local)
 		free(stack);
 	return (status);
@@ -353,12 +369,14 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	close(fds[0]);
 	close(fds[1]);
 	status = job_wait(shell, node, pids, 2);
+	errexit_check(shell, status);
 	return (status);
 }
 
 int	execute_subshell(t_node *node, t_shell *shell)
 {
 	pid_t	pid;
+	int		status;
 
 	pid = fork();
 	if (pid == -1)
@@ -366,10 +384,12 @@ int	execute_subshell(t_node *node, t_shell *shell)
 	if (pid == 0)
 	{
 		job_child_setup(shell, 0, 1);
-		exit(pipe_child(node->data.op.left, shell));
+		exit(pipe_child(node->data.ctl.a, shell));
 	}
 	job_parent_setup(shell, pid, 0);
-	return (job_wait(shell, node, &pid, 1));
+	status = job_wait(shell, node, &pid, 1);
+	errexit_check(shell, status);
+	return (status);
 }
 
 static int	execute_background(t_node *node, t_shell *shell)
@@ -410,6 +430,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 		return (1);
 	status = run_command(copy, shell);
 	shell->exit_status = status;
+	errexit_check(shell, status);
 	trap_run_pending(shell);
 	free_ast(copy);
 	return (shell->running ? status : shell->exit_status);
@@ -417,6 +438,8 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 int	execute_tree(t_node *node, t_shell *shell)
 {
+	int	status;
+
 	if (!node)
 		return (1);
 
@@ -431,7 +454,10 @@ int	execute_tree(t_node *node, t_shell *shell)
 		case NODE_SEQ:
 			return (execute_chain(node, shell));
 		case NODE_NOT:
-			return (execute_tree(node->data.op.left, shell) == 0);
+			shell->noerrexit++;
+			status = execute_tree(node->data.op.left, shell);
+			shell->noerrexit--;
+			return (status == 0);
 		case NODE_BG:
 			return (execute_background(node, shell));
 		default:

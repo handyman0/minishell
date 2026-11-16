@@ -70,6 +70,8 @@ int		builtin_wait(char **argv, t_shell *shell);
 int		builtin_kill(char **argv, t_shell *shell);
 int		builtin_getopts(char **argv, t_shell *shell);
 char	*option_string(t_shell *shell);
+unsigned int	option_bit_letter(char letter);
+unsigned int	option_bit_name(const char *name);
 int		signal_number(const char *s);
 const char	*signal_name(int num);
 pid_t	job_spec_pid(char *arg, t_shell *shell);

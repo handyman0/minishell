@@ -226,6 +226,7 @@ typedef struct s_opts
 	int		use_stdin;
 	int		bad;
 	int		rest;
+	unsigned int	opts;
 }	t_opts;
 
 static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
@@ -243,6 +244,10 @@ static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
 		}
 		else if (arg[k] == 's')
 			o->use_stdin = 1;
+		else if (arg[k] == 'o' && o->rest + 1 < argc)
+			o->opts |= option_bit_name(argv[++o->rest]);
+		else
+			o->opts |= option_bit_letter(arg[k]);
 		k++;
 	}
 }
@@ -316,6 +321,7 @@ int	main(int argc, char **argv, char **envp)
 		return (ml_put_all(2, "minishell: -c: option requires an argument\n",
 				NULL), 2);
 	init_shell(&shell, envp);
+	shell.opts = o.opts;
 	jobs_init(&shell, !o.cmd && !o.script);
 	if (o.cmd || o.script)
 	{

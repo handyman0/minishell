@@ -29,7 +29,9 @@ static int	execute_if(t_node *node, t_shell *shell)
 {
 	int	status;
 
+	shell->noerrexit++;
 	status = execute_tree(node->data.ctl.a, shell);
+	shell->noerrexit--;
 	shell->exit_status = status;
 	if (pending(shell))
 		return (status);
@@ -49,7 +51,9 @@ static int	execute_while(t_node *node, t_shell *shell)
 	shell->loop_depth++;
 	while (1)
 	{
+		shell->noerrexit++;
 		cond = execute_tree(node->data.ctl.a, shell);
+		shell->noerrexit--;
 		if (pending(shell) || (cond == 0) == (node->data.ctl.flag != 0))
 			break ;
 		status = execute_tree(node->data.ctl.b, shell);

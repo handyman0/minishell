@@ -216,3 +216,19 @@ int	builtin_set(char **argv, t_shell *shell)
 		set_params(shell, argv + i);
 	return (0);
 }
+
+unsigned int	option_bit_letter(char letter)
+{
+	const t_option	*opt;
+
+	opt = by_letter(letter);
+	return (opt ? opt->bit : 0);
+}
+
+unsigned int	option_bit_name(const char *name)
+{
+	const t_option	*opt;
+
+	opt = by_name(name);
+	return (opt ? opt->bit : 0);
+}
