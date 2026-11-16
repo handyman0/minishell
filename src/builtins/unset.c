@@ -37,8 +37,12 @@ static int	unset_one(char *name, int functions, t_shell *shell)
 		return (ml_put_all(2, "minishell: unset: '", name,
 				"': not a valid identifier\n", NULL), 1);
 	if (env_is_readonly(shell->env, name))
-		return (ml_put_all(2, "minishell: unset: ", name,
-				": cannot unset: readonly variable\n", NULL), 1);
+	{
+		ml_put_all(2, "minishell: unset: ", name,
+			": cannot unset: readonly variable\n", NULL);
+		shell->running = shell->spare;
+		return (1);
+	}
 	env_unset(&shell->env, name);
 	return (0);
 }
