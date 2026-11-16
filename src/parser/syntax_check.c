@@ -133,6 +133,11 @@ static int	skip_open(const char *line, int i, char *unclosed)
 		next = skip_backtick(line, i);
 		*unclosed = '`';
 	}
+	else if (line[i] == '$' && line[i + 1] == '{')
+	{
+		next = skip_brace(line, i);
+		*unclosed = '}';
+	}
 	else if (line[i] == '$')
 	{
 		next = skip_dollar_paren(line, i);
@@ -158,7 +163,7 @@ char	open_quote(const char *line)
 		if (line[i] == '\\' && line[i + 1])
 			i += 2;
 		else if (line[i] == '\'' || line[i] == '"' || line[i] == '`'
-			|| (line[i] == '$' && line[i + 1] == '('))
+			|| (line[i] == '$' && (line[i + 1] == '(' || line[i + 1] == '{')))
 		{
 			next = skip_open(line, i, &unclosed);
 			if (next == -1)

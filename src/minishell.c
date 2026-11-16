@@ -44,6 +44,8 @@ static void	init_shell(t_shell *shell, char **envp)
 
 	shell->env = env_init(envp);
 	init_env_defaults(shell);
+	shell->lineno = 0;
+	shell->line_base = 0;
 	shell->exit_status = 0;
 	shell->running = 1;
 	shell->ast = NULL;
@@ -125,6 +127,15 @@ static void	run_tokens(t_token *tokens, t_shell *shell)
 	shell->tokens = saved_tokens;
 }
 
+static void	shift_lines(t_token *tok, int base)
+{
+	while (tok)
+	{
+		tok->line += base;
+		tok = tok->next;
+	}
+}
+
 void	run_line(char *line, t_shell *shell)
 {
 	t_token	*tokens;
@@ -140,6 +151,7 @@ void	run_line(char *line, t_shell *shell)
 	tokens = tokenize_line(line);
 	if (!tokens)
 		return ;
+	shift_lines(tokens, shell->line_base);
 	expand_aliases(&tokens, shell);
 	if (check_syntax(tokens))
 	{
@@ -232,6 +244,7 @@ static void	shell_loop(t_shell *shell, int interactive)
 			break ;
 		if (interactive && *line)
 			le_history_add(line);
+		shell->line_base = (int)ml_stdin_reader()->cmd_first - 1;
 		run_line(line, shell);
 		free(line);
 	}

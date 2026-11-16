@@ -317,6 +317,7 @@ static int	with_redirs(t_node *node, t_shell *shell,
 		return (fn(node, shell));
 	ft_bzero(&fake, sizeof(fake));
 	fake.type = NODE_CMD;
+	fake.data.cmd.line = shell->lineno;
 	fake.data.cmd.redirs = node->data.ctl.redirs;
 	copy = clone_command(&fake);
 	if (!copy)

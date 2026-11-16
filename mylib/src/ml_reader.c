@@ -8,11 +8,13 @@ void	ml_reader_init(t_reader *reader, int fd)
 	reader->fd = fd;
 	reader->pos = 0;
 	reader->len = 0;
+	reader->lines = 0;
+	reader->cmd_first = 1;
 }
 
 t_reader	*ml_stdin_reader(void)
 {
-	static t_reader	reader = {STDIN_FILENO, 0, 0, {0}};
+	static t_reader	reader = {STDIN_FILENO, 0, 0, {0}, 0, 1};
 
 	return (&reader);
 }
@@ -77,6 +79,7 @@ char	*ml_reader_line(t_reader *reader)
 		line = grow(line, 0, &cap);
 	if (line)
 		line[len] = '\0';
+	reader->lines++;
 	return (line);
 }
 
@@ -87,6 +90,7 @@ char	*ml_reader_command(t_reader *reader, int (*incomplete)(char *))
 	char	*joined;
 	size_t	len;
 
+	reader->cmd_first = reader->lines + 1;
 	line = ml_reader_line(reader);
 	while (line && incomplete(line))
 	{

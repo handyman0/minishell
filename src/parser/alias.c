@@ -66,8 +66,12 @@ static int	expand_one(t_token **link, t_shell *shell, char **seen, int depth)
 	blank = ends_blank(value);
 	seen[depth] = tok->value;
 	tail = fresh;
+	tail->line = tok->line;
 	while (tail->next)
+	{
 		tail = tail->next;
+		tail->line = tok->line;
+	}
 	tail->next = tok->next;
 	*link = fresh;
 	if (expand_one(link, shell, seen, depth + 1) == 2)

@@ -179,6 +179,7 @@ t_node	*parse_command(t_token **tokens)
 	node->data.cmd.argv = NULL;
 	node->data.cmd.redirs = NULL;
 	node->data.cmd.assigns = NULL;
+	node->data.cmd.line = (*tokens)->line;
 	args = NULL;
 	tail = NULL;
 	count = 0;

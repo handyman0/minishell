@@ -535,6 +535,8 @@ static int	execute_command(t_node *node, t_shell *shell)
 		return (1);
 	if ((shell->opts & OPT_N) && !shell->spare)
 		return (0);
+	if (node->data.cmd.line > 0)
+		shell->lineno = node->data.cmd.line;
 	copy = clone_command(node);
 	if (!copy)
 		return (1);

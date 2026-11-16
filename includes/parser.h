@@ -51,6 +51,7 @@ typedef struct s_token
 	t_toktype		type; /**< Tipo do token. */
 	char			*value; /**< Texto do token (apenas TOKEN_WORD). */
 	char			*body; /**< Corpo capturado do heredoc (palavra apos <<). */
+	int				line;
 	struct s_token	*next; /**< Próximo token na lista. */
 } t_token;
 
@@ -115,6 +116,7 @@ typedef struct s_node
 			char **argv;
 			char **assigns;
 			t_redir *redirs;
+			int line;
 		} cmd;
 		// para operadores binarios
 		struct {

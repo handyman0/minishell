@@ -75,5 +75,6 @@ t_node	*clone_command(t_node *node)
 	copy->data.cmd.argv = copy_strings(node->data.cmd.argv);
 	copy->data.cmd.assigns = NULL;
 	copy->data.cmd.redirs = copy_redirs(node->data.cmd.redirs);
+	copy->data.cmd.line = node->data.cmd.line;
 	return (copy);
 }

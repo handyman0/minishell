@@ -10,15 +10,20 @@ int	source_file(const char *path, t_shell *shell)
 	t_reader		saved;
 	char			*line;
 	int				fd;
+	int				base;
+	int				lineno;
 
 	fd = open(path, O_RDONLY);
 	if (fd == -1)
 		return (-1);
 	saved = reader;
+	base = shell->line_base;
+	lineno = shell->lineno;
 	ml_reader_init(&reader, fd);
 	line = ml_reader_command(&reader, line_incomplete);
 	while (line && shell->running)
 	{
+		shell->line_base = (int)reader.cmd_first - 1;
 		run_line(line, shell);
 		free(line);
 		line = ml_reader_command(&reader, line_incomplete);
@@ -26,6 +31,8 @@ int	source_file(const char *path, t_shell *shell)
 	free(line);
 	close(fd);
 	reader = saved;
+	shell->line_base = base;
+	shell->lineno = lineno;
 	return (shell->exit_status);
 }
 

@@ -24,6 +24,7 @@ void	token_add_back(t_token **head, t_token **current,
 	new_token->type = type;
 	new_token->value = value;
 	new_token->body = NULL;
+	new_token->line = 0;
 	new_token->next = NULL;
 	if (*head == NULL)
 		*head = new_token;
@@ -309,7 +310,19 @@ static int	capture_bodies(char *line, int pos, t_token **scan, t_token *head)
 	return (pos);
 }
 
-static t_token	*tokenize_joined(char *line)
+static void	stamp(t_token *from, t_token *head, const int *map, int pos)
+{
+	t_token	*tok;
+
+	tok = from ? from->next : head;
+	while (tok)
+	{
+		tok->line = map[pos];
+		tok = tok->next;
+	}
+}
+
+static t_token	*tokenize_joined(char *line, const int *map)
 {
 	t_token	*head;
 	t_token	*current;
@@ -317,15 +330,22 @@ static t_token	*tokenize_joined(char *line)
 	char	*word;
 	int		op_len;
 	t_token	*scan;
+	t_token	*mark;
+	int		mpos;
 
 	if (!line)
 		return (NULL);
 	scan = NULL;
+	mark = NULL;
+	mpos = 0;
 	head = NULL;
 	current = NULL;
 	i = 0;
 	while (line[i])
 	{
+		stamp(mark, head, map, mpos);
+		mark = current;
+		mpos = i;
 		if (line[i] == '\n')
 		{
 			if (current && !continues_command(current))
@@ -359,6 +379,7 @@ static t_token	*tokenize_joined(char *line)
 		else
 			i++;
 	}
+	stamp(mark, head, map, mpos);
 	return (head);
 }
 
@@ -387,12 +408,20 @@ static int	comment_starts(const char *s, int i, char quote, char prev)
 	return (!prev || ft_isspace(prev) || ft_strchr(";&|()", prev));
 }
 
-static char	*join_continuations(const char *s)
+static void	put_char(char *out, int *map, int *j, char c, int line)
+{
+	out[*j] = c;
+	map[*j] = line;
+	(*j)++;
+}
+
+static char	*join_continuations(const char *s, int *map)
 {
 	char	*out;
 	char	quote;
 	int		i;
 	int		j;
+	int		line;
 
 	out = malloc(ft_strlen(s) + 1);
 	if (!out)
@@ -400,17 +429,21 @@ static char	*join_continuations(const char *s)
 	quote = 0;
 	i = 0;
 	j = 0;
+	line = 1;
 	while (s[i])
 	{
 		if (comment_starts(s, i, quote, j ? out[j - 1] : 0))
 			while (s[i] && s[i] != '\n')
-				out[j++] = s[i++];
+				put_char(out, map, &j, s[i++], line);
 		else if (s[i] == '\\' && s[i + 1] == '\n' && quote != '\'')
+		{
 			i += 2;
+			line++;
+		}
 		else if (s[i] == '\\' && s[i + 1] && quote != '\'')
 		{
-			out[j++] = s[i++];
-			out[j++] = s[i++];
+			put_char(out, map, &j, s[i++], line);
+			put_char(out, map, &j, s[i++], line);
 		}
 		else
 		{
@@ -418,10 +451,12 @@ static char	*join_continuations(const char *s)
 				quote = s[i];
 			else if (quote && s[i] == quote)
 				quote = 0;
-			out[j++] = s[i++];
+			put_char(out, map, &j, s[i], line);
+			line += s[i++] == '\n';
 		}
 	}
 	out[j] = '\0';
+	map[j] = line;
 	return (out);
 }
 
@@ -429,13 +464,18 @@ t_token	*tokenize_line(char *line)
 {
 	t_token	*tokens;
 	char	*joined;
+	int		*map;
 
 	if (!line)
 		return (NULL);
-	joined = join_continuations(line);
-	if (!joined)
+	map = malloc(sizeof(int) * (ft_strlen(line) + 1));
+	if (!map)
 		return (NULL);
-	tokens = tokenize_joined(joined);
+	joined = join_continuations(line, map);
+	if (!joined)
+		return (free(map), NULL);
+	tokens = tokenize_joined(joined, map);
 	free(joined);
+	free(map);
 	return (tokens);
 }

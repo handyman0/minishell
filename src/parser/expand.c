@@ -149,6 +149,8 @@ static char	*special_value(const char *name, t_shell *shell)
 		return (ft_itoa((int)shell->pid));
 	if (name[0] == '!')
 		return (shell->last_bg ? ft_itoa((int)shell->last_bg) : ft_strdup(""));
+	if (ft_strcmp(name, "LINENO") == 0)
+		return (ft_itoa(shell->lineno));
 	if (!ft_isdigit(name[0]))
 		return (NULL);
 	n = ft_atoi(name);

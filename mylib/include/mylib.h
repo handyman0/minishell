@@ -80,6 +80,8 @@ typedef struct s_reader
 	size_t	pos;
 	size_t	len;
 	char	buf[ML_READER_BUF];
+	size_t	lines;
+	size_t	cmd_first;
 }	t_reader;
 
 void		ml_reader_init(t_reader *reader, int fd);
