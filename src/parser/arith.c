@@ -40,14 +40,44 @@ static long	fail(t_arith *a, const char *msg)
 	return (0);
 }
 
+static int	digit_of(char c, int base)
+{
+	int	d;
+
+	if (ft_isdigit(c))
+		d = c - '0';
+	else if (c >= 'a' && c <= 'z')
+		d = c - 'a' + 10;
+	else if (c >= 'A' && c <= 'Z')
+		d = c - 'A' + (base <= 36 ? 10 : 36);
+	else if (c == '@')
+		d = 62;
+	else if (c == '_')
+		d = 63;
+	else
+		return (-1);
+	return (d < base ? d : -1);
+}
+
 static long	number(t_arith *a)
 {
 	unsigned long	value;
 	int				base;
 	int				digit;
+	const char		*end;
 
 	base = 10;
-	if (a->p[0] == '0' && (a->p[1] == 'x' || a->p[1] == 'X'))
+	end = a->p;
+	while (ft_isdigit(*end))
+		end++;
+	if (*end == '#' && end > a->p && end - a->p <= 2)
+	{
+		base = ft_atoi(a->p);
+		a->p = end + 1;
+		if (base < 2 || base > 64)
+			return (fail(a, "invalid arithmetic base"));
+	}
+	else if (a->p[0] == '0' && (a->p[1] == 'x' || a->p[1] == 'X'))
 	{
 		base = 16;
 		a->p += 2;
@@ -55,10 +85,10 @@ static long	number(t_arith *a)
 	else if (a->p[0] == '0' && ft_isdigit(a->p[1]))
 		base = 8;
 	value = 0;
-	while (ft_isalnum(*a->p))
+	while (digit_of(*a->p, base) >= 0 || ft_isalnum(*a->p))
 	{
-		digit = ft_isdigit(*a->p) ? *a->p - '0' : (*a->p | 32) - 'a' + 10;
-		if (digit >= base)
+		digit = digit_of(*a->p, base);
+		if (digit < 0)
 			return (fail(a, "invalid number in arithmetic expression"));
 		value = value * base + digit;
 		a->p++;

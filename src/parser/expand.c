@@ -1194,7 +1194,12 @@ static void	emit_one(t_word *w, int start, int end, t_token **tok[2])
 		(pattern[j] = '\0', plain[p] = '\0');
 	if (!has_glob || w->noglob || !pattern || !plain
 		|| !expand_glob(pattern, tok[0], tok[1]))
-		token_add_back(tok[0], tok[1], TOKEN_WORD, plain);
+	{
+		if (has_glob && !w->noglob && (g_shopts & SHOPT_NULLGLOB))
+			free(plain);
+		else
+			token_add_back(tok[0], tok[1], TOKEN_WORD, plain);
+	}
 	else
 		free(plain);
 	free(pattern);

@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "../../includes/parser.h"
+#include "../../includes/ctl.h"
 #include "../../mylib/include/mylib.h"
 #include <dirent.h>
 #include <sys/stat.h>
@@ -238,7 +239,8 @@ static int	is_match(const char *base, struct dirent *entry)
 	if (ft_strcmp(entry->d_name, ".") == 0
 		|| ft_strcmp(entry->d_name, "..") == 0)
 		return (0);
-	if (entry->d_name[0] == '.' && base[0] != '.')
+	if (entry->d_name[0] == '.' && base[0] != '.'
+		&& !(g_shopts & SHOPT_DOTGLOB))
 		return (0);
 	return (match_pattern(base, entry->d_name));
 }

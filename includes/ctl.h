@@ -19,6 +19,16 @@ struct s_redir;
 # define OPT_I 2048
 # define OPT_BRACE 4096
 # define OPT_PIPEFAIL 8192
+# define SHOPT_NULLGLOB 1
+# define SHOPT_DOTGLOB 2
+# define SHOPT_EXTGLOB 4
+# define SHOPT_GLOBSTAR 8
+# define SHOPT_NOCASEGLOB 16
+# define SHOPT_NOCASEMATCH 32
+# define SHOPT_ALIASES 64
+# define SHOPT_FAILGLOB 128
+
+extern unsigned int	g_shopts;
 
 struct s_func
 {
