@@ -202,6 +202,11 @@ t_node	*parse_command(t_token **tokens)
 		else
 			break;
 	}
+	if (count == 0 && !node->data.cmd.redirs)
+	{
+		parse_fail_at(*tokens);
+		return (free(node), NULL);
+	}
 	if (count > 0)
 	{
 		node->data.cmd.argv = malloc(sizeof(char *) * (count + 1));
@@ -235,23 +240,13 @@ t_node	*parse_command(t_token **tokens)
 static t_node	*parse_primary(t_token **tokens)
 {
 	t_node	*node;
-	t_node	*inner;
 
-	if (!*tokens || (*tokens)->type != TOKEN_LPAREN)
-		return (parse_command(tokens));
-	*tokens = (*tokens)->next;
-	inner = parse_tokens(tokens);
-	if (!inner)
+	if (!tokens || !*tokens)
 		return (NULL);
-	if (*tokens && (*tokens)->type == TOKEN_RPAREN)
-		*tokens = (*tokens)->next;
-	node = malloc(sizeof(t_node));
-	if (!node)
-		return (free_ast(inner), NULL);
-	node->type = NODE_PAREN;
-	node->data.op.left = inner;
-	node->data.op.right = NULL;
-	return (node);
+	node = parse_compound(tokens);
+	if (node || parse_failed())
+		return (node);
+	return (parse_command(tokens));
 }
 
 t_node	*parse_pipeline(t_token **tokens)
@@ -285,7 +280,7 @@ t_node	*parse_pipeline(t_token **tokens)
 	return (left);
 }
 
-static t_node	*make_node(t_nodetype type, t_node *left, t_node *right)
+t_node	*make_node(t_nodetype type, t_node *left, t_node *right)
 {
 	t_node	*node;
 
@@ -298,32 +293,6 @@ static t_node	*make_node(t_nodetype type, t_node *left, t_node *right)
 	return (node);
 }
 
-t_node	*parse_tokens(t_token **tokens)
-{
-	t_node	*list;
-	t_node	*item;
-	int		sep;
-
-	if (!tokens || !*tokens)
-		return (NULL);
-	list = NULL;
-	item = parse_expression(tokens);
-	while (item)
-	{
-		sep = *tokens && ((*tokens)->type == TOKEN_SEMI
-				|| (*tokens)->type == TOKEN_BG);
-		if (sep && (*tokens)->type == TOKEN_BG)
-			item = make_node(NODE_BG, item, NULL);
-		if (sep)
-			*tokens = (*tokens)->next;
-		list = list ? make_node(NODE_SEQ, list, item) : item;
-		if (!item || !list || !sep || !*tokens
-			|| (*tokens)->type == TOKEN_RPAREN)
-			return (list);
-		item = parse_expression(tokens);
-	}
-	return (free_ast(list), NULL);
-}
 
 static void	free_command(t_node *node)
 {
@@ -342,6 +311,38 @@ static void	free_command(t_node *node)
 	free_redirs(node->data.cmd.redirs);
 }
 
+int	is_ctl_node(t_node *node)
+{
+	return (node->type == NODE_IF || node->type == NODE_WHILE
+		|| node->type == NODE_FOR || node->type == NODE_CASE
+		|| node->type == NODE_GROUP || node->type == NODE_FUNC);
+}
+
+void	free_ctl(t_node *node)
+{
+	t_case	*item;
+	t_case	*next;
+
+	if (!node)
+		return ;
+	free_ast(node->data.ctl.a);
+	free_ast(node->data.ctl.b);
+	free_ast(node->data.ctl.c);
+	free(node->data.ctl.name);
+	free_str_array(node->data.ctl.words);
+	free_redirs(node->data.ctl.redirs);
+	item = node->data.ctl.cases;
+	while (item)
+	{
+		next = item->next;
+		free_str_array(item->patterns);
+		free_ast(item->body);
+		free(item);
+		item = next;
+	}
+	free(node);
+}
+
 void	free_ast(t_node *node)
 {
 	t_node	*next;
@@ -349,6 +350,8 @@ void	free_ast(t_node *node)
 	while (node)
 	{
 		next = NULL;
+		if (is_ctl_node(node))
+			return (free_ctl(node));
 		if (node->type == NODE_CMD)
 			free_command(node);
 		else

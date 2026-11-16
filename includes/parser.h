@@ -34,6 +34,7 @@ typedef enum e_toktype
 	TOKEN_RPAREN, // )
 	TOKEN_SEMI, // ;
 	TOKEN_BG, // &
+	TOKEN_DSEMI, // ;;
 } t_toktype;
 
 /**
@@ -78,7 +79,20 @@ typedef enum e_nodetype
 	NODE_PAREN, // ( ... )
 	NODE_SEQ, // ;
 	NODE_BG, // &
+	NODE_IF,
+	NODE_WHILE,
+	NODE_FOR,
+	NODE_CASE,
+	NODE_GROUP,
+	NODE_FUNC,
 } t_nodetype;
+
+typedef struct s_case
+{
+	char			**patterns;
+	struct s_node	*body;
+	struct s_case	*next;
+}	t_case;
 
 typedef struct s_node
 {
@@ -95,7 +109,17 @@ typedef struct s_node
 			struct s_node *left;
 			struct s_node *right;
 		} op;
-		// para subshell -  usamos op.left para o conteudo
+		// comandos compostos: if, while/until, for, case, { }, funcao
+		struct {
+			struct s_node *a;
+			struct s_node *b;
+			struct s_node *c;
+			char *name;
+			char **words;
+			t_case *cases;
+			t_redir *redirs;
+			int flag;
+		} ctl;
 	} data;
 } t_node;
 
@@ -174,6 +198,18 @@ void	expand_tokens(t_token **tokens, t_shell *shell);
 int		expand_glob(char *pattern, t_token **head, t_token **cur);
 
 void	expand_aliases(t_token **tokens, t_shell *shell);
+
+int		is_ctl_node(t_node *node);
+void	free_ctl(t_node *node);
+t_node	*parse_list(t_token **tokens, int (*stop)(t_token *));
+t_node	*parse_compound(t_token **tokens);
+int		parse_failed(void);
+int		parse_hit_eof(void);
+void	parse_reset(void);
+void	parse_report(t_shell *shell);
+t_node	*make_node(t_nodetype type, t_node *left, t_node *right);
+const char	*token_text(t_token *tok);
+void	*parse_fail_at(t_token *tok);
 
 // syntax_check.c
 /**

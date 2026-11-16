@@ -12,7 +12,7 @@ static int	is_sep(t_token *tok)
 	return (tok->type == TOKEN_SEMI || tok->type == TOKEN_BG);
 }
 
-static const char	*token_text(t_token *tok)
+const char	*token_text(t_token *tok)
 {
 	if (!tok)
 		return ("newline");
@@ -69,11 +69,29 @@ static int	bad_follow(t_token *cur)
 	return (0);
 }
 
+static int	has_compound_syntax(t_token *tok)
+{
+	while (tok)
+	{
+		if (tok->type == TOKEN_WORD && (ft_strcmp(tok->value, "case") == 0
+				|| ft_strcmp(tok->value, "function") == 0))
+			return (1);
+		if (tok->type == TOKEN_WORD && tok->next
+			&& tok->next->type == TOKEN_LPAREN && tok->next->next
+			&& tok->next->next->type == TOKEN_RPAREN)
+			return (1);
+		tok = tok->next;
+	}
+	return (0);
+}
+
 int	check_syntax(t_token *tokens)
 {
 	t_token	*cur;
 	int		depth;
 
+	if (has_compound_syntax(tokens))
+		return (0);
 	if (tokens && (is_binop(tokens) || is_sep(tokens)
 			|| tokens->type == TOKEN_RPAREN))
 		return (syntax_error(tokens));

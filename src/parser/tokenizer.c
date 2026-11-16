@@ -94,6 +94,12 @@ static int	handle_operator(char *line, int i,
 			token_add_back(head, current, TOKEN_RPAREN, NULL);
 		return (1);
 	}
+	else if (line[i] == ';' && line[i + 1] == ';')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_DSEMI, NULL);
+		return (2);
+	}
 	else if (line[i] == ';')
 	{
 		if (head && current)
@@ -180,7 +186,8 @@ static int	continues_command(t_token *tok)
 {
 	return (tok->type == TOKEN_PIPE || tok->type == TOKEN_AND
 		|| tok->type == TOKEN_OR || tok->type == TOKEN_SEMI
-		|| tok->type == TOKEN_BG || tok->type == TOKEN_LPAREN);
+		|| tok->type == TOKEN_BG || tok->type == TOKEN_LPAREN
+		|| tok->type == TOKEN_DSEMI);
 }
 
 t_token	*tokenize_line(char *line)
