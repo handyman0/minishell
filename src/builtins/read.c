@@ -3,89 +3,171 @@
 #include "../../includes/output.h"
 #include <errno.h>
 
-static int	grow(char **line, size_t *cap)
+typedef struct s_rline
+{
+	char	*buf;
+	char	*quoted;
+	size_t	len;
+	size_t	cap;
+}	t_rline;
+
+static int	push(t_rline *l, char c, char q)
 {
 	char	*bigger;
 
-	bigger = ft_calloc(*cap * 2, 1);
-	if (!bigger)
-		return (0);
-	ft_memcpy(bigger, *line, *cap);
-	free(*line);
-	*line = bigger;
-	*cap *= 2;
+	if (l->len + 1 > l->cap)
+	{
+		l->cap = l->cap ? l->cap * 2 : 64;
+		bigger = realloc(l->buf, l->cap);
+		if (!bigger)
+			return (0);
+		l->buf = bigger;
+		bigger = realloc(l->quoted, l->cap);
+		if (!bigger)
+			return (0);
+		l->quoted = bigger;
+	}
+	l->buf[l->len] = c;
+	l->quoted[l->len] = q;
+	l->len++;
 	return (1);
 }
 
-static int	read_line(char **line)
+static int	read_line(t_rline *l, int raw)
 {
 	char	c;
-	size_t	len;
-	size_t	cap;
-	ssize_t	n;
+	char	next;
 
-	len = 0;
-	cap = 64;
-	*line = ft_calloc(cap, 1);
-	n = read(STDIN_FILENO, &c, 1);
-	while (*line && n > 0 && c != '\n')
+	while (read(STDIN_FILENO, &c, 1) > 0)
 	{
-		if (len + 2 > cap && !grow(line, &cap))
+		if (c == '\n')
+			return (1);
+		if (c == '\\' && !raw)
+		{
+			if (read(STDIN_FILENO, &next, 1) <= 0)
+				return (0);
+			if (next == '\n')
+				continue ;
+			if (!push(l, next, 1))
+				return (0);
+			continue ;
+		}
+		if (!push(l, c, 0))
 			return (0);
-		(*line)[len++] = c;
-		n = read(STDIN_FILENO, &c, 1);
 	}
-	return (n > 0 || len > 0);
+	return (0);
 }
 
-static void	assign_fields(char **names, const char *line, t_shell *shell)
+static int	is_delim(t_rline *l, size_t p, const char *ifs)
 {
-	int		i;
-	size_t	len;
-	char	*value;
+	return (p < l->len && !l->quoted[p] && l->buf[p]
+		&& ft_strchr(ifs, l->buf[p]));
+}
 
-	i = 0;
-	while (names[i])
+static int	is_blank(t_rline *l, size_t p, const char *ifs)
+{
+	return (is_delim(l, p, ifs)
+		&& (l->buf[p] == ' ' || l->buf[p] == '\t' || l->buf[p] == '\n'));
+}
+
+static size_t	skip_blanks(t_rline *l, size_t p, const char *ifs)
+{
+	while (is_blank(l, p, ifs))
+		p++;
+	return (p);
+}
+
+static size_t	next_field(t_rline *l, size_t p, const char *ifs)
+{
+	p = skip_blanks(l, p, ifs);
+	if (is_delim(l, p, ifs))
+		p = skip_blanks(l, p + 1, ifs);
+	return (p);
+}
+
+static size_t	last_end(t_rline *l, size_t pos, const char *ifs)
+{
+	size_t	end;
+	size_t	core;
+	size_t	k;
+
+	end = l->len;
+	while (end > pos && is_blank(l, end - 1, ifs))
+		end--;
+	if (end <= pos || !is_delim(l, end - 1, ifs))
+		return (end);
+	core = end - 1;
+	while (core > pos && is_blank(l, core - 1, ifs))
+		core--;
+	k = core;
+	while (k > pos && !is_delim(l, k - 1, ifs))
+		k--;
+	if (k > pos)
+		return (end);
+	return (core);
+}
+
+static int	assign_fields(char **names, t_rline *l, t_shell *shell)
+{
+	const char	*ifs;
+	size_t		pos;
+	size_t		end;
+	char		*value;
+	int			i;
+	int			bad;
+
+	ifs = env_get(shell->env, "IFS");
+	if (!ifs)
+		ifs = " \t\n";
+	pos = 0;
+	bad = 0;
+	i = -1;
+	while (names[++i])
 	{
-		while (*line == ' ' || *line == '\t')
-			line++;
-		if (!names[i + 1])
-			len = ft_strlen(line);
+		pos = skip_blanks(l, pos, ifs);
+		end = pos;
+		if (names[i + 1])
+			while (end < l->len && !is_delim(l, end, ifs))
+				end++;
 		else
-		{
-			len = 0;
-			while (line[len] && line[len] != ' ' && line[len] != '\t')
-				len++;
-		}
-		while (!names[i + 1] && len > 0 && (line[len - 1] == ' '
-				|| line[len - 1] == '\t'))
-			len--;
-		value = ft_substr(line, 0, len);
-		env_assign(&shell->env, names[i], value);
+			end = last_end(l, pos, ifs);
+		value = ft_substr(l->buf, pos, end - pos);
+		if (env_is_readonly(shell->env, names[i]))
+			bad = 1;
+		env_assign(&shell->env, names[i], value ? value : "");
 		free(value);
-		line += len;
-		i++;
+		pos = next_field(l, end, ifs);
 	}
+	return (bad);
 }
 
 int	builtin_read(char **argv, t_shell *shell)
 {
-	char	*line;
+	t_rline	l;
 	char	*def[2];
 	char	**names;
-	int		got;
+	int		raw;
 	int		i;
+	int		got;
 
+	raw = 0;
 	i = 1;
 	while (argv[i] && argv[i][0] == '-' && argv[i][1])
-		i++;
+		raw |= ft_strchr(argv[i++], 'r') != NULL;
 	def[0] = "REPLY";
 	def[1] = NULL;
 	names = argv[i] ? argv + i : def;
-	got = read_line(&line);
-	if (!line)
-		return (1);
-	assign_fields(names, line, shell);
-	free(line);
-	return (got > 0 ? 0 : 1);
+	l.buf = NULL;
+	l.quoted = NULL;
+	l.len = 0;
+	l.cap = 0;
+	got = read_line(&l, raw);
+	push(&l, 0, 0);
+	l.len--;
+	i = assign_fields(names, &l, shell);
+	free(l.buf);
+	free(l.quoted);
+	if (i)
+		return (2);
+	return (got ? 0 : 1);
 }
