@@ -35,6 +35,8 @@ static void	child_run(t_shell *shell, int fds[2], char *cmd)
 	free_ast(shell->ast);
 	free_tokens(shell->tokens);
 	jobs_free(shell, 0);
+	funcs_free(shell);
+	free_str_array(shell->params);
 	env_free(shell->aliases);
 	env_free(shell->env);
 	exit(status);

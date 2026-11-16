@@ -41,6 +41,7 @@ static int	chain_step(t_node *node, int status, t_shell *shell)
 
 static int	execute_chain(t_node *root, t_shell *shell)
 {
+	t_node	*local[64];
 	t_node	**stack;
 	t_node	*cur;
 	int		depth;
@@ -53,7 +54,9 @@ static int	execute_chain(t_node *root, t_shell *shell)
 		depth++;
 		cur = cur->data.op.left;
 	}
-	stack = malloc(sizeof(t_node *) * (depth + 1));
+	stack = local;
+	if (depth > 64)
+		stack = malloc(sizeof(t_node *) * depth);
 	if (!stack)
 		return (1);
 	cur = root;
@@ -66,7 +69,8 @@ static int	execute_chain(t_node *root, t_shell *shell)
 	status = execute_tree(cur, shell);
 	while (depth-- > 0)
 		status = chain_step(stack[depth], status, shell);
-	free(stack);
+	if (stack != local)
+		free(stack);
 	return (status);
 }
 
@@ -297,6 +301,8 @@ static int	pipe_child(t_node *node, t_shell *shell)
 	free_ast(shell->ast);
 	free_tokens(shell->tokens);
 	jobs_free(shell, 0);
+	funcs_free(shell);
+	free_str_array(shell->params);
 	env_free(shell->aliases);
 	env_free(shell->env);
 	return (status);
