@@ -135,6 +135,7 @@ static int	apply_redirections(t_redir *redirs)
 	{
 		if (redirs->type == REDIR_HEREDOC)
 		{
+			lseek(redirs->hd_fd, 0, SEEK_SET);
 			dup2(redirs->hd_fd, STDIN_FILENO);
 			close(redirs->hd_fd);
 			redirs->hd_fd = -1;
@@ -164,7 +165,7 @@ static int	is_dir(char *path)
 	return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
 }
 
-static int	execute_command(t_node *node, t_shell *shell)
+static int	run_command(t_node *node, t_shell *shell)
 {
 	char	*path;
 	char	**env_array;
@@ -353,6 +354,21 @@ static int	execute_background(t_node *node, t_shell *shell)
 	job_parent_setup(shell, pid, 0);
 	job_add_background(shell, node->data.op.left, pid);
 	return (0);
+}
+
+static int	execute_command(t_node *node, t_shell *shell)
+{
+	t_node	*copy;
+	int		status;
+
+	if (!node || node->type != NODE_CMD)
+		return (1);
+	copy = clone_command(node);
+	if (!copy)
+		return (1);
+	status = run_command(copy, shell);
+	free_ast(copy);
+	return (status);
 }
 
 int	execute_tree(t_node *node, t_shell *shell)
