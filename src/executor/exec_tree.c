@@ -215,6 +215,8 @@ static int	run_command(t_node *node, t_shell *shell)
 		if (!apply_redirections(node->data.cmd.redirs))
 		{
 			restore_fds(backup);
+			if (!func && is_special_builtin(node->data.cmd.argv[0]))
+				shell->running = shell->interactive;
 			return (1);
 		}
 		saved = node->data.cmd.assigns

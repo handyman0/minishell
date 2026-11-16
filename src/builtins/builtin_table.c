@@ -12,12 +12,12 @@ static const t_ext	g_ext[] = {{"true", builtin_true}, {"false", builtin_false},
 {"return", builtin_return}, {"local", builtin_local}, {"shift", builtin_shift},
 {"set", builtin_set}, {"eval", builtin_eval}, {"test", builtin_test},
 {"[", builtin_test}, {"read", builtin_read}, {"umask", builtin_umask},
-{"command", builtin_command}, {".", builtin_source}, {NULL, NULL}};
+{"command", builtin_command}, {"times", builtin_times}, {".", builtin_source}, {NULL, NULL}};
 
 static const char	*g_builtin_names[] = {"echo", "cd", "pwd", "export",
 	"unset", "env", "exit", "jobs", "fg", "bg", "alias", "unalias", "source",
 	"type", "which", "true", "false", "break", "continue", "return", "local",
-	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", NULL};
+	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", "times", NULL};
 
 const char	**builtin_names(void)
 {
@@ -48,6 +48,22 @@ int	is_builtin(const char *name)
 		if (ft_strcmp(name, g_builtin_names[i]) == 0)
 			return (1);
 		i++;
+	}
+	return (0);
+}
+
+int	is_special_builtin(const char *name)
+{
+	static const char	*special[] = {"break", ":", ".", "continue", "eval",
+		"exec", "exit", "export", "readonly", "return", "set", "shift",
+		"times", "trap", "unset", NULL};
+	int					i;
+
+	i = 0;
+	while (name && special[i])
+	{
+		if (ft_strcmp(name, special[i++]) == 0)
+			return (1);
 	}
 	return (0);
 }

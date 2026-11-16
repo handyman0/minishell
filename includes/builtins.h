@@ -76,6 +76,7 @@ int			builtin_which(char **argv, t_shell *shell);
 int			source_file(const char *path, t_shell *shell);
 const char	**builtin_names(void);
 int			is_builtin(const char *name);
+int			is_special_builtin(const char *name);
 int			(*find_ext_builtin(const char *name))(char **, t_shell *);
 
 #endif
