@@ -3,28 +3,16 @@
 
 static void	print_alias(t_env *alias)
 {
-	ft_putstr_fd("alias ", STDOUT_FILENO);
-	ft_putstr_fd(alias->key, STDOUT_FILENO);
-	ft_putstr_fd("='", STDOUT_FILENO);
-	ft_putstr_fd(alias->value, STDOUT_FILENO);
-	ft_putendl_fd("'", STDOUT_FILENO);
-}
+	char	*quoted;
 
-static t_env	*find_alias(t_env *list, const char *name)
-{
-	while (list && ft_strcmp(list->key, name) != 0)
-		list = list->next;
-	return (list);
+	quoted = quote_word(alias->value);
+	ml_put_all(STDOUT_FILENO, alias->key, "=", quoted, "\n", NULL);
+	free(quoted);
 }
 
 static int	alias_error(char *cmd, char *name, char *msg)
 {
-	ft_putstr_fd("minishell: ", STDERR_FILENO);
-	ft_putstr_fd(cmd, STDERR_FILENO);
-	ft_putstr_fd(": ", STDERR_FILENO);
-	ft_putstr_fd(name, STDERR_FILENO);
-	ft_putstr_fd(": ", STDERR_FILENO);
-	ft_putendl_fd(msg, STDERR_FILENO);
+	ml_put_all(2, "minishell: ", cmd, ": ", name, ": ", msg, "\n", NULL);
 	return (1);
 }
 
@@ -34,14 +22,40 @@ static int	define_alias(char *arg, t_shell *shell)
 	char	*name;
 
 	equal = ft_strchr(arg, '=');
-	if (equal == arg || ft_strchr(arg, '/'))
-		return (alias_error("alias", arg, "nome invalido"));
 	name = ft_substr(arg, 0, equal - arg);
-	if (!name)
-		return (1);
+	if (!name || !*name || ft_strchr(name, '/'))
+		return (free(name), alias_error("alias", arg, "invalid alias name"));
 	env_set(&shell->aliases, name, equal + 1);
 	free(name);
 	return (0);
+}
+
+static void	print_all(t_shell *shell)
+{
+	t_env	*cur;
+	char	**keys;
+	int		n;
+
+	n = env_size(shell->aliases);
+	keys = ft_calloc(n + 1, sizeof(char *));
+	cur = shell->aliases;
+	n = 0;
+	while (keys && cur)
+	{
+		keys[n++] = cur->key;
+		cur = cur->next;
+	}
+	ml_sort_strings(keys, n);
+	n = 0;
+	while (keys && keys[n])
+	{
+		cur = shell->aliases;
+		while (cur && ft_strcmp(cur->key, keys[n]) != 0)
+			cur = cur->next;
+		print_alias(cur);
+		n++;
+	}
+	free(keys);
 }
 
 int	builtin_alias(char **argv, t_shell *shell)
@@ -50,25 +64,23 @@ int	builtin_alias(char **argv, t_shell *shell)
 	int		status;
 	int		i;
 
-	status = 0;
-	if (!argv[1])
-	{
-		cur = shell->aliases;
-		while (cur)
-		{
-			print_alias(cur);
-			cur = cur->next;
-		}
-	}
 	i = 1;
+	if (argv[i] && ft_strcmp(argv[i], "--") == 0)
+		i++;
+	if (!argv[i])
+		print_all(shell);
+	status = 0;
 	while (argv[i])
 	{
+		cur = shell->aliases;
+		while (cur && ft_strcmp(cur->key, argv[i]) != 0)
+			cur = cur->next;
 		if (ft_strchr(argv[i], '='))
 			status |= define_alias(argv[i], shell);
-		else if (find_alias(shell->aliases, argv[i]))
-			print_alias(find_alias(shell->aliases, argv[i]));
+		else if (cur)
+			print_alias(cur);
 		else
-			status |= alias_error("alias", argv[i], "nao encontrado");
+			status |= alias_error("alias", argv[i], "not found");
 		i++;
 	}
 	return (status);
@@ -79,18 +91,20 @@ int	builtin_unalias(char **argv, t_shell *shell)
 	int	status;
 	int	i;
 
-	if (argv[1] && ft_strcmp(argv[1], "-a") == 0)
+	i = 1;
+	if (argv[i] && ft_strcmp(argv[i], "-a") == 0)
 	{
 		env_free(shell->aliases);
 		shell->aliases = NULL;
 		return (0);
 	}
+	if (argv[i] && ft_strcmp(argv[i], "--") == 0)
+		i++;
 	status = 0;
-	i = 1;
 	while (argv[i])
 	{
 		if (!env_get(shell->aliases, argv[i]))
-			status |= alias_error("unalias", argv[i], "nao encontrado");
+			status |= alias_error("unalias", argv[i], "not found");
 		else
 			env_unset(&shell->aliases, argv[i]);
 		i++;
