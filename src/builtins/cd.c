@@ -73,7 +73,7 @@ static char	*canonicalize(const char *path)
 		i += n;
 	}
 	if (out && !out[0])
-		out[0] = '/';
+		ft_memcpy(out, "/", 2);
 	return (out);
 }
 

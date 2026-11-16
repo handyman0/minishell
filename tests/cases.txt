@@ -300,3 +300,11 @@ set -- -a -- -b; while getopts ab o; do echo $o; done; echo $OPTIND
 f() { OPTIND=1; while getopts a:b o "$@"; do echo "$o:$OPTARG"; done; }; f -a1 -b -a 2
 getopts a o -a; echo $? $o $OPTIND; getopts a o -a; echo $? $o
 getopts a: o -a ''; echo "[$OPTARG]"
+cd /tmp; cd ..; echo $PWD
+cd /usr/lib/../..; pwd
+cd /tmp/.; cd ./.; pwd
+cd -P /tmp; pwd -P; pwd -L
+cd /nonexistent 2>/dev/null; echo $?
+cd /tmp; cd /usr; cd -; pwd
+CDPATH=/usr cd lib 2>/dev/null; pwd
+cd -L -P /tmp; pwd
