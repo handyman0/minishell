@@ -91,17 +91,28 @@ static int	ref_length(char *s)
 	return (name_len(s, 0));
 }
 
-static char	*join_params(t_shell *shell)
+static const char	*ifs_value(t_shell *shell)
 {
+	char	*ifs;
+
+	ifs = env_get(shell->env, "IFS");
+	return (ifs ? ifs : " \t\n");
+}
+
+static char	*join_params(t_shell *shell, int star)
+{
+	char	sep[2];
 	char	*out;
 	char	*tmp;
 	int		i;
 
+	sep[0] = star ? ifs_value(shell)[0] : ' ';
+	sep[1] = '\0';
 	out = ft_strdup("");
 	i = 0;
 	while (i < shell->nparams)
 	{
-		tmp = ft_strjoin(out, i ? " " : "");
+		tmp = ft_strjoin(out, i ? sep : "");
 		free(out);
 		out = ft_strjoin(tmp, shell->params[i++]);
 		free(tmp);
@@ -120,7 +131,7 @@ static char	*special_value(const char *name, t_shell *shell)
 	if (name[0] == '#')
 		return (ft_itoa(shell->nparams));
 	if (name[0] == '@' || name[0] == '*')
-		return (join_params(shell));
+		return (join_params(shell, name[0] == '*'));
 	if (name[0] == '$')
 		return (ft_itoa((int)shell->pid));
 	if (name[0] == '!')
@@ -378,6 +389,7 @@ char	*expand_heredoc_line(char *line, t_shell *shell)
 # define SPLIT 1
 # define QUOTED 2
 # define SEP 4
+# define KEEP 8
 
 typedef struct s_word
 {
@@ -387,6 +399,8 @@ typedef struct s_word
 	size_t	cap;
 	int		at_empty;
 	int		noglob;
+	int		emitted;
+	const char	*ifs;
 }	t_word;
 
 static int	word_reserve(t_word *w, size_t extra)
@@ -453,8 +467,29 @@ static void	put_at_words(t_word *w, t_shell *shell)
 	while (i < shell->nparams)
 	{
 		if (i)
-			put_char(w, ' ', SEP | QUOTED);
+			put_char(w, ' ', SEP | QUOTED | KEEP);
 		put_value(w, ft_strdup(shell->params[i]), QUOTED);
+		i++;
+	}
+}
+
+static int	is_plain_params(const char *s)
+{
+	if (s[0] == '@' || s[0] == '*')
+		return (1);
+	return (s[0] == '{' && (s[1] == '@' || s[1] == '*') && s[2] == '}');
+}
+
+static void	put_split_params(t_word *w, t_shell *shell)
+{
+	int	i;
+
+	i = 0;
+	while (i < shell->nparams)
+	{
+		if (i)
+			put_char(w, ' ', SEP);
+		put_value(w, ft_strdup(shell->params[i]), SPLIT);
 		i++;
 	}
 }
@@ -463,6 +498,8 @@ static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	if (quote == '"' && is_at_ref(raw + 1))
 		put_at_words(w, shell);
+	else if (!quote && is_plain_params(raw + 1))
+		put_split_params(w, shell);
 	else
 		put_value(w, get_var_value(raw + 1, shell), quote ? QUOTED : SPLIT);
 	return (ref_length(raw + 1) + 1);
@@ -615,35 +652,63 @@ static void	emit_empty(t_token **tok[2])
 	token_add_back(tok[0], tok[1], TOKEN_WORD, ft_strdup(""));
 }
 
+static int	is_ifs(t_word *w, int k)
+{
+	return ((w->mask[k] & SPLIT) && w->ifs[0] && ft_strchr(w->ifs, w->str[k]));
+}
+
+static int	is_ifs_space(t_word *w, int k)
+{
+	return (is_ifs(w, k) && ft_strchr(" \t\n", w->str[k]));
+}
+
+static void	close_field(t_word *w, t_token **tok[2], int *start, int k)
+{
+	if (*start >= 0)
+		emit_one(w, *start, k, tok);
+	*start = -1;
+}
+
 static int	emit_fields(t_word *w, t_token **tok[2])
 {
 	int	start;
 	int	k;
-	int	count;
-	int	hard;
+	int	after_delim;
+	int	before;
 
 	start = -1;
-	count = 0;
-	hard = 0;
-	k = 0;
-	while (k <= w->len)
+	after_delim = 1;
+	k = -1;
+	before = tok[1] && *tok[1] ? 1 : 0;
+	(void)before;
+	w->emitted = 0;
+	while (++k <= w->len)
 	{
-		hard = k < w->len && (w->mask[k] & SEP);
-		if (k == w->len || hard || ((w->mask[k] & SPLIT)
-				&& ft_isspace(w->str[k])))
+		if (k < w->len && (w->mask[k] & SEP))
 		{
-			if (start >= 0 && ++count)
-				emit_one(w, start, k, tok);
-			else if ((hard || (k == w->len && k > 0 && (w->mask[k - 1] & SEP)))
-				&& ++count)
-				emit_empty(tok);
-			start = -1;
+			if (start < 0 && (w->mask[k] & KEEP))
+				w->emitted += (emit_empty(tok), 1);
+			w->emitted += start >= 0;
+			close_field(w, tok, &start, k);
+			after_delim = 1;
 		}
-		else if (start < 0)
-			start = k;
-		k++;
+		else if (k == w->len || is_ifs(w, k))
+		{
+			w->emitted += start >= 0;
+			close_field(w, tok, &start, k);
+			if (k < w->len && !is_ifs_space(w, k))
+				w->emitted += after_delim && (emit_empty(tok), 1);
+			after_delim = k < w->len && !is_ifs_space(w, k) ? 1 : after_delim;
+		}
+		else
+		{
+			start += (start < 0) * (k + 1);
+			after_delim = 0;
+		}
 	}
-	return (count);
+	if (w->len > 0 && (w->mask[w->len - 1] & SEP) && (w->mask[w->len - 1] & KEEP))
+		w->emitted += (emit_empty(tok), 1);
+	return (w->emitted);
 }
 
 static void	expand_word(char *raw, t_shell *shell, t_token **head,
@@ -660,6 +725,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	w.cap = cap;
 	w.at_empty = 0;
 	w.noglob = (shell->opts & OPT_F) != 0;
+	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	tok[0] = head;
@@ -710,6 +776,7 @@ char	*expand_variables(char *token, t_shell *shell)
 	w.cap = cap;
 	w.at_empty = 0;
 	w.noglob = (shell->opts & OPT_F) != 0;
+	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	result = NULL;
