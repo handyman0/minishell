@@ -196,5 +196,6 @@ if [ "$BAD" -gt 0 ]; then
 	cat "$FAILS" | head -80
 	exit 1
 fi
-echo "limpo. Trabalho em $WORK"
+cd / && rm -rf "$WORK"
+echo "limpo."
 exit 0
