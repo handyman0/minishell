@@ -64,6 +64,7 @@ struct s_shell
 	pid_t		last_bg;
 	int			brk;
 	int			bypass_func;
+	int			expand_error;
 	int			cont;
 	int			ret;
 	int			loop_depth;

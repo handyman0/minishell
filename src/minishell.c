@@ -49,6 +49,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->last_bg = 0;
 	shell->brk = 0;
 	shell->bypass_func = 0;
+	shell->expand_error = 0;
 	shell->cont = 0;
 	shell->ret = 0;
 	shell->loop_depth = 0;
@@ -79,6 +80,7 @@ static void	run_tokens(t_token *tokens, t_shell *shell)
 	if (parse_failed())
 	{
 		parse_report(shell);
+		shell->running = shell->interactive;
 		free_ast(ast);
 		ast = NULL;
 	}
@@ -107,6 +109,7 @@ void	run_line(char *line, t_shell *shell)
 	if (check_quotes(line))
 	{
 		shell->exit_status = 2;
+		shell->running = shell->interactive;
 		return ;
 	}
 	tokens = tokenize_line(line);
@@ -116,6 +119,7 @@ void	run_line(char *line, t_shell *shell)
 	if (check_syntax(tokens))
 	{
 		shell->exit_status = 2;
+		shell->running = shell->interactive;
 		free_tokens(tokens);
 		return ;
 	}

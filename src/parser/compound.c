@@ -457,3 +457,11 @@ t_node	*parse_tokens(t_token **tokens)
 		return (NULL);
 	return (parse_list(tokens, stop_top));
 }
+
+int	is_closer_word(t_token *tok)
+{
+	return (is_word(tok, "then") || is_word(tok, "else")
+		|| is_word(tok, "elif") || is_word(tok, "fi") || is_word(tok, "do")
+		|| is_word(tok, "done") || is_word(tok, "esac")
+		|| is_word(tok, "}"));
+}

@@ -193,6 +193,12 @@ static int	run_command(t_node *node, t_shell *shell)
 		return (1);
 	shell->subst_used = 0;
 	expand_command(node, shell);
+	if (shell->expand_error)
+	{
+		shell->expand_error = 0;
+		shell->running = shell->interactive;
+		return (1);
+	}
 	if (!node->data.cmd.argv || !node->data.cmd.argv[0])
 	{
 		assign_shell(shell, node->data.cmd.assigns);
@@ -403,6 +409,8 @@ int	execute_tree(t_node *node, t_shell *shell)
 		case NODE_OR:
 		case NODE_SEQ:
 			return (execute_chain(node, shell));
+		case NODE_NOT:
+			return (execute_tree(node->data.op.left, shell) == 0);
 		case NODE_PAREN:
 			return (execute_subshell(node, shell));
 		case NODE_BG:

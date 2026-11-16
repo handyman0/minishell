@@ -218,7 +218,10 @@ static char	*apply_op(char *name, char *value, const char *rest, t_shell *shell)
 				ml_put_all(2, "minishell: ", name, ": ",
 					*word ? word : "parameter null or not set", "\n", NULL);
 			if (op == '?')
+			{
 				res[0] = '\0';
+				shell->expand_error = 1;
+			}
 		}
 		else if (op == '+')
 			res[0] = '\0';
@@ -273,34 +276,6 @@ static char	*get_var_value(char *var_name, t_shell *shell)
 }
 
 
-static size_t	calculate_expanded_size(char *token, t_shell *shell)
-{
-	size_t	size;
-	int		i;
-	char	*var_value;
-
-	size = 0;
-	i = 0;
-	while (token[i])
-	{
-		if (token[i] == '$' && is_ref(&token[i + 1]))
-		{
-			var_value = get_var_value(&token[i+1], shell);
-			if (var_value)
-			{
-				size += ft_strlen(var_value);
-				free(var_value);
-			}
-			i += ref_length(&token[i + 1]) + 1;
-		}
-		else
-		{
-			size++;
-			i++;
-		}
-	}
-	return (size + 1);
-}
 
 typedef struct s_buf
 {
@@ -649,7 +624,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	size_t	cap;
 
 	home = env_get(shell->env, "HOME");
-	cap = calculate_expanded_size(raw, shell) + (home ? ft_strlen(home) : 0);
+	cap = ft_strlen(raw) + (home ? ft_strlen(home) : 0);
 	w.len = 0;
 	w.cap = cap;
 	w.at_empty = 0;
@@ -698,7 +673,7 @@ char	*expand_variables(char *token, t_shell *shell)
 	size_t	cap;
 
 	home = env_get(shell->env, "HOME");
-	cap = calculate_expanded_size(token, shell) + (home ? ft_strlen(home) : 0);
+	cap = ft_strlen(token) + (home ? ft_strlen(home) : 0);
 	w.len = 0;
 	w.cap = cap;
 	w.at_empty = 0;

@@ -245,13 +245,15 @@ static t_node	*parse_primary(t_token **tokens)
 
 	if (!tokens || !*tokens)
 		return (NULL);
+	if (is_closer_word(*tokens))
+		return (parse_fail_at(*tokens));
 	node = parse_compound(tokens);
 	if (node || parse_failed())
 		return (node);
 	return (parse_command(tokens));
 }
 
-t_node	*parse_pipeline(t_token **tokens)
+static t_node	*parse_plain_pipeline(t_token **tokens)
 {
 	t_node	*left;
 	t_node	*node;
@@ -282,6 +284,26 @@ t_node	*parse_pipeline(t_token **tokens)
 		left = node;
 	}
 	return (left);
+}
+
+t_node	*parse_pipeline(t_token **tokens)
+{
+	t_node	*node;
+	int		negate;
+
+	negate = 0;
+	while (*tokens && (*tokens)->type == TOKEN_WORD
+		&& ft_strcmp((*tokens)->value, "!") == 0)
+	{
+		negate = !negate;
+		*tokens = (*tokens)->next;
+	}
+	node = parse_plain_pipeline(tokens);
+	if (!node && !parse_failed())
+		parse_fail_at(*tokens);
+	if (node && negate)
+		return (make_node(NODE_NOT, node, NULL));
+	return (node);
 }
 
 t_node	*make_node(t_nodetype type, t_node *left, t_node *right)

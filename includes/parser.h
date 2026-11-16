@@ -85,6 +85,7 @@ typedef enum e_nodetype
 	NODE_CASE,
 	NODE_GROUP,
 	NODE_FUNC,
+	NODE_NOT,
 } t_nodetype;
 
 typedef struct s_case
@@ -210,6 +211,7 @@ void	parse_report(t_shell *shell);
 t_node	*make_node(t_nodetype type, t_node *left, t_node *right);
 const char	*token_text(t_token *tok);
 void	*parse_fail_at(t_token *tok);
+int		is_closer_word(t_token *tok);
 
 // syntax_check.c
 /**
