@@ -26,6 +26,7 @@ t_env	*env_new(char *key, char *value)
 	else
 		node->value = ft_strdup("");
 	node->exported = 1;
+	node->readonly = 0;
 	node->next = NULL;
 	return (node);
 }

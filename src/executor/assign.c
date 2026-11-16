@@ -1,4 +1,5 @@
 #include "../../includes/executor.h"
+#include "../../includes/output.h"
 
 struct s_saved
 {
@@ -24,20 +25,52 @@ static void	split_assign(const char *assign, char **key, char **value)
 	*value = equal + 1;
 }
 
-void	assign_shell(t_shell *shell, char **assigns)
+static int	readonly_error(t_shell *shell, const char *key)
+{
+	if (!env_is_readonly(shell->env, key))
+		return (0);
+	ml_put_all(2, "minishell: ", key, ": readonly variable\n", NULL);
+	return (1);
+}
+
+int	assigns_ok(t_shell *shell, char **assigns)
 {
 	char	*key;
 	char	*value;
+	int		ok;
 	int		i;
 
+	ok = 1;
 	i = 0;
 	while (assigns && assigns[i])
 	{
 		split_assign(assigns[i++], &key, &value);
-		if (key)
+		if (key && readonly_error(shell, key))
+			ok = 0;
+		free(key);
+	}
+	return (ok);
+}
+
+int	assign_shell(t_shell *shell, char **assigns)
+{
+	char	*key;
+	char	*value;
+	int		status;
+	int		i;
+
+	status = 0;
+	i = 0;
+	while (assigns && assigns[i])
+	{
+		split_assign(assigns[i++], &key, &value);
+		if (key && readonly_error(shell, key))
+			status = 1;
+		else if (key)
 			env_assign(&shell->env, key, value);
 		free(key);
 	}
+	return (status);
 }
 
 t_saved	*overlay_apply(t_shell *shell, char **assigns, int *count)

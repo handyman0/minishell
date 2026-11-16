@@ -12,12 +12,12 @@ static const t_ext	g_ext[] = {{"true", builtin_true}, {"false", builtin_false},
 {"return", builtin_return}, {"local", builtin_local}, {"shift", builtin_shift},
 {"set", builtin_set}, {"eval", builtin_eval}, {"test", builtin_test},
 {"[", builtin_test}, {"read", builtin_read}, {"umask", builtin_umask},
-{"command", builtin_command}, {"times", builtin_times}, {".", builtin_source}, {NULL, NULL}};
+{"command", builtin_command}, {"times", builtin_times}, {"readonly", builtin_readonly}, {".", builtin_source}, {NULL, NULL}};
 
 static const char	*g_builtin_names[] = {"echo", "cd", "pwd", "export",
 	"unset", "env", "exit", "jobs", "fg", "bg", "alias", "unalias", "source",
 	"type", "which", "true", "false", "break", "continue", "return", "local",
-	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", "times", "exec", NULL};
+	"shift", "set", "eval", "test", "[", "read", ".", ":", "umask", "command", "times", "exec", "readonly", NULL};
 
 const char	**builtin_names(void)
 {

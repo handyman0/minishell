@@ -336,3 +336,20 @@ int	execute_ctl(t_node *node, t_shell *shell)
 		return (with_redirs(node, shell, execute_case));
 	return (with_redirs(node, shell, execute_group));
 }
+
+void	func_remove(t_shell *shell, const char *name)
+{
+	t_func	**link;
+	t_func	*func;
+
+	link = &shell->funcs;
+	while (*link && ft_strcmp((*link)->name, name) != 0)
+		link = &(*link)->next;
+	func = *link;
+	if (!func)
+		return ;
+	*link = func->next;
+	free_ast(func->body);
+	free(func->name);
+	free(func);
+}

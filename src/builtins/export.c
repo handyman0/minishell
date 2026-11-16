@@ -12,6 +12,7 @@
 
 #include "../includes/builtins.h"
 #include "../includes/minishell.h"
+#include "../includes/output.h"
 
 static int	is_valid_identifier(char *str)
 {
@@ -57,15 +58,22 @@ int	builtin_export(char **argv, t_shell *shell)
 		{
 			equal_sign = ft_strchr(argv[i], '=');
 			if (equal_sign)
-			{
 				*equal_sign = '\0';
+			if (env_is_readonly(shell->env, argv[i]))
+			{
+				ml_put_all(2, "minishell: ", argv[i],
+					": readonly variable\n", NULL);
+				status = 1;
+			}
+			else if (equal_sign)
+			{
 				env_set(&shell->env, argv[i], equal_sign + 1);
 				env_export(shell->env, argv[i]);
-				*equal_sign = '=';
 			}
-			else
-				if (!env_export(shell->env, argv[i]))
-					env_set(&shell->env, argv[i], "");
+			else if (!env_export(shell->env, argv[i]))
+				env_set(&shell->env, argv[i], "");
+			if (equal_sign)
+				*equal_sign = '=';
 		}
 		i++;
 	}

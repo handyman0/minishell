@@ -12,6 +12,7 @@
 
 #include "../includes/builtins.h"
 #include "../includes/minishell.h"
+#include "../includes/output.h"
 
 static int	is_valid_identifier(char *str)
 {
@@ -28,23 +29,43 @@ static int	is_valid_identifier(char *str)
 	return (1);
 }
 
+static int	unset_one(char *name, int functions, t_shell *shell)
+{
+	if (functions)
+		return (func_remove(shell, name), 0);
+	if (!is_valid_identifier(name))
+		return (ml_put_all(2, "minishell: unset: '", name,
+				"': not a valid identifier\n", NULL), 1);
+	if (env_is_readonly(shell->env, name))
+		return (ml_put_all(2, "minishell: unset: ", name,
+				": cannot unset: readonly variable\n", NULL), 1);
+	env_unset(&shell->env, name);
+	return (0);
+}
+
 int	builtin_unset(char **argv, t_shell *shell)
 {
-	int i = 1;
-	int status = 0;
+	int	i;
+	int	status;
+	int	functions;
 
-	while (argv[i])
+	i = 1;
+	functions = 0;
+	while (argv[i] && argv[i][0] == '-' && argv[i][1])
 	{
-		if (!is_valid_identifier(argv[i]))
-		{
-			ft_putstr_fd("minishell: unset: '", STDERR_FILENO);
-			ft_putstr_fd(argv[i], STDERR_FILENO);
-			ft_putstr_fd("': not a valid identifier\n", STDERR_FILENO);
-			status = 1;
-		}
+		if (ft_strcmp(argv[i], "--") == 0 && ++i)
+			break ;
+		if (ft_strcmp(argv[i], "-f") == 0)
+			functions = 1;
+		else if (ft_strcmp(argv[i], "-v") == 0)
+			functions = 0;
 		else
-			env_unset(&shell->env, argv[i]);
+			return (ml_put_all(2, "minishell: unset: ", argv[i],
+					": invalid option\n", NULL), 2);
 		i++;
 	}
+	status = 0;
+	while (argv[i])
+		status |= unset_one(argv[i++], functions, shell);
 	return (status);
 }

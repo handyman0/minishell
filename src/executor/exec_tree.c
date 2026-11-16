@@ -205,10 +205,12 @@ static int	run_command(t_node *node, t_shell *shell)
 	}
 	if (!node->data.cmd.argv || !node->data.cmd.argv[0])
 	{
-		assign_shell(shell, node->data.cmd.assigns);
+		if (assign_shell(shell, node->data.cmd.assigns))
+			return (1);
 		return (shell->subst_used ? shell->subst_status : 0);
 	}
-
+	if (!assigns_ok(shell, node->data.cmd.assigns))
+		return (1);
 	backup[0] = dup(STDIN_FILENO);
 	backup[1] = dup(STDOUT_FILENO);
 	backup[2] = dup(STDERR_FILENO);

@@ -44,6 +44,8 @@ void	env_set(t_env **env, const char *key, const char *value)
 	{
 		if (ft_strcmp(tmp->key, key) == 0)
 		{
+			if (tmp->readonly)
+				return ;
 			free(tmp->value);
 			tmp->value = ft_strdup(value);
 			return ;
@@ -66,6 +68,8 @@ void	env_unset(t_env **env, const char *key)
 	prev = NULL;
 	while (tmp)
 	{
+		if (ft_strcmp(tmp->key, key) == 0 && tmp->readonly)
+			return ;
 		if (ft_strcmp(tmp->key, key) == 0)
 		{
 			if (prev)
@@ -91,6 +95,8 @@ void	env_assign(t_env **env, const char *key, const char *value)
 		tmp = tmp->next;
 	if (tmp)
 	{
+		if (tmp->readonly)
+			return ;
 		free(tmp->value);
 		tmp->value = ft_strdup(value);
 		return ;
@@ -109,5 +115,22 @@ int	env_export(t_env *env, const char *key)
 	if (!env)
 		return (0);
 	env->exported = 1;
+	return (1);
+}
+
+int	env_is_readonly(t_env *env, const char *key)
+{
+	while (env && ft_strcmp(env->key, key) != 0)
+		env = env->next;
+	return (env && env->readonly);
+}
+
+int	env_set_readonly(t_env *env, const char *key)
+{
+	while (env && ft_strcmp(env->key, key) != 0)
+		env = env->next;
+	if (!env)
+		return (0);
+	env->readonly = 1;
 	return (1);
 }
