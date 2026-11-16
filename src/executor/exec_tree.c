@@ -24,6 +24,7 @@
 
 static void	errexit_check(t_shell *shell, int status)
 {
+	trap_run_err(shell, status);
 	if (status != 0 && (shell->opts & OPT_E) && shell->noerrexit == 0
 		&& !shell->spare)
 	{
@@ -675,6 +676,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 		return (0);
 	if (node->data.cmd.line > 0)
 		shell->lineno = node->data.cmd.line;
+	trap_run_debug(shell);
 	copy = clone_command(node);
 	if (!copy)
 		return (1);

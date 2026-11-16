@@ -95,6 +95,8 @@ pid_t	job_spec_pid(char *arg, t_shell *shell);
 char	*quote_word(const char *word);
 void	trap_run_pending(t_shell *shell);
 void	trap_run_exit(t_shell *shell);
+void	trap_run_err(t_shell *shell, int status);
+void	trap_run_debug(t_shell *shell);
 void	trap_subshell_reset(t_shell *shell);
 void	traps_free(t_shell *shell);
 void	bg_add(t_shell *shell, pid_t pid);

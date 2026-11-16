@@ -17,7 +17,7 @@ static const t_signame	g_sigs[] = {{"EXIT", 0}, {"HUP", SIGHUP},
 {"STOP", SIGSTOP}, {"TSTP", SIGTSTP}, {"TTIN", SIGTTIN}, {"TTOU", SIGTTOU},
 {"URG", SIGURG}, {"XCPU", SIGXCPU}, {"XFSZ", SIGXFSZ},
 {"VTALRM", SIGVTALRM}, {"PROF", SIGPROF}, {"WINCH", SIGWINCH}, {"IO", SIGIO},
-{"SYS", SIGSYS}, {NULL, 0}};
+{"SYS", SIGSYS}, {"ERR", 65}, {"DEBUG", 66}, {NULL, 0}};
 
 static t_shell	*g_trap_shell = NULL;
 
@@ -78,7 +78,7 @@ static void	install(t_shell *shell, int sig)
 	char				*action;
 
 	action = shell->trap_inherited[sig] ? NULL : shell->traps[sig];
-	if (sig == 0 || sig == SIGKILL || sig == SIGSTOP)
+	if (sig == 0 || sig >= 65 || sig == SIGKILL || sig == SIGSTOP)
 		return ;
 	if (!action)
 		return (default_disposition(shell, sig));
@@ -111,7 +111,7 @@ static void	print_traps(t_shell *shell)
 	int		sig;
 
 	sig = 0;
-	while (sig < 65)
+	while (sig < 67)
 	{
 		if (shell->traps[sig])
 		{
@@ -238,7 +238,7 @@ void	trap_subshell_reset(t_shell *shell)
 	int	sig;
 
 	sig = 0;
-	while (sig < 65)
+	while (sig < 67)
 	{
 		if (shell->traps[sig] && *shell->traps[sig])
 			shell->trap_inherited[sig] = 1;
@@ -253,7 +253,36 @@ void	traps_free(t_shell *shell)
 	int	sig;
 
 	sig = 0;
-	while (sig < 65)
+	while (sig < 67)
 		free(shell->traps[sig++]);
 	ft_bzero(shell->traps, sizeof(shell->traps));
+}
+
+static void	run_special(t_shell *shell, int slot)
+{
+	char	*action;
+	int		saved;
+
+	if (shell->in_trap || !shell->traps[slot] || !*shell->traps[slot]
+		|| shell->trap_inherited[slot])
+		return ;
+	action = ft_strdup(shell->traps[slot]);
+	saved = shell->exit_status;
+	shell->in_trap++;
+	run_line(action, shell);
+	shell->in_trap--;
+	if (shell->running)
+		shell->exit_status = saved;
+	free(action);
+}
+
+void	trap_run_err(t_shell *shell, int status)
+{
+	if (status != 0 && shell->noerrexit == 0)
+		run_special(shell, 65);
+}
+
+void	trap_run_debug(t_shell *shell)
+{
+	run_special(shell, 66);
 }

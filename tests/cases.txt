@@ -363,3 +363,4 @@ type -t ls; type -t cd; type -t if; type -a ls
 shopt -s extglob; case foo in @(foo|bar)) echo m1;; esac; case foobar in +(foo|bar)) echo m2;; esac; case baz in !(foo|bar)) echo m3;; esac; [[ abc == a@(b|x)c ]] && echo m4; [[ ab == !(ab) ]] || echo m5; x=aXb; echo ${x//@(X|Y)/-}
 declare -A m=([a]=1 [b]="two words"); m[c]=3; echo ${m[a]} "${m[b]}" ${m[c]} ${#m[@]}; for k in "${!m[@]}"; do echo "$k=${m[$k]}"; done | sort; unset m[a]; echo ${#m[@]}
 declare -A z; z[x]=y; z[x]+=Z; k=x; echo ${z[$k]} ${z[nope]}-; declare -A e=(); echo ${#e[@]}
+trap "echo ERR \$?" ERR; false; true; ls /nonexist 2>/dev/null; if false; then :; fi; false || true; echo end; trap "echo dbg" DEBUG; echo x; trap - DEBUG ERR; false; echo done

@@ -91,8 +91,8 @@ struct s_shell
 	int			func_depth;
 	t_func		*funcs;
 	t_local		*locals;
-	char		*traps[65];
-	char		trap_inherited[65];
+	char		*traps[67];
+	char		trap_inherited[67];
 	int			in_trap;
 	t_bg		*bgs;
 	pid_t		pgid;
