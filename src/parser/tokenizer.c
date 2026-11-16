@@ -332,6 +332,21 @@ static void	stamp(t_token *from, t_token *head, const int *map, int pos)
 	}
 }
 
+static int	arith_command_end(char *line, int i, t_token *cur)
+{
+	int	end;
+
+	if (line[i] != '(' || line[i + 1] != '(')
+		return (0);
+	if (cur && !opens_command(cur) && !(cur->type == TOKEN_WORD && cur->value
+			&& ft_strcmp(cur->value, "for") == 0))
+		return (0);
+	end = skip_array_literal(line, i);
+	if (end < 4 || line[end - 1] != ')' || line[end - 2] != ')')
+		return (0);
+	return (end);
+}
+
 static t_token	*tokenize_joined(char *line, const int *map)
 {
 	t_token	*head;
@@ -372,6 +387,14 @@ static t_token	*tokenize_joined(char *line, const int *map)
 		{
 			while (line[i] && line[i] != '\n')
 				i++;
+			continue ;
+		}
+		op_len = arith_command_end(line, i, current);
+		if (op_len > 0)
+		{
+			token_add_back(&head, &current, TOKEN_WORD,
+				ft_substr(line, i, op_len - i));
+			i = op_len;
 			continue ;
 		}
 		op_len = fd_redirection(line, &i, &head, &current);

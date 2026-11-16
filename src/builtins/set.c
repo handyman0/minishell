@@ -13,7 +13,7 @@ static const t_option	g_options[] = {{'a', "allexport", OPT_A},
 {'C', "noclobber", OPT_C}, {'e', "errexit", OPT_E}, {'f', "noglob", OPT_F},
 {'m', "monitor", OPT_M}, {'n', "noexec", OPT_N}, {'u', "nounset", OPT_U},
 {'v', "verbose", OPT_V}, {'x', "xtrace", OPT_X}, {'h', "hashondef", OPT_H},
-{'b', "notify", OPT_B}, {'B', "braceexpand", OPT_BRACE}, {0, "ignoreeof", OPT_I}, {0, NULL, 0}};
+{'b', "notify", OPT_B}, {'B', "braceexpand", OPT_BRACE}, {0, "pipefail", OPT_PIPEFAIL}, {0, "ignoreeof", OPT_I}, {0, NULL, 0}};
 
 char	*option_string(t_shell *shell)
 {

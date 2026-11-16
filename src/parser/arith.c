@@ -224,12 +224,46 @@ static const char	*match_level(t_arith *a, int lvl)
 
 static long	primary(t_arith *a);
 
+static long	store(t_arith *a, const char *name, long value);
+
+static long	post_step(t_arith *a, const char *name)
+{
+	long	old;
+
+	old = read_var(a, name);
+	store(a, name, old + (a->p[0] == '+' ? 1 : -1));
+	a->p += 2;
+	return (old);
+}
+
+static long	pre_step(t_arith *a)
+{
+	char	name[256];
+	char	sign;
+	size_t	len;
+
+	sign = *a->p;
+	a->p += 2;
+	skip_space(a);
+	len = 0;
+	while (ft_isalnum(a->p[len]) || a->p[len] == '_')
+		len++;
+	if (len == 0 || len >= sizeof(name) || ft_isdigit(*a->p))
+		return (fail(a, "syntax error in arithmetic expression"));
+	ft_memcpy(name, a->p, len);
+	name[len] = '\0';
+	a->p += len;
+	return (store(a, name, read_var(a, name) + (sign == '+' ? 1 : -1)));
+}
+
 static long	unary(t_arith *a)
 {
 	char	op;
 	long	value;
 
 	skip_space(a);
+	if ((a->p[0] == '+' || a->p[0] == '-') && a->p[1] == a->p[0])
+		return (pre_step(a));
 	if (*a->p != '-' && *a->p != '+' && *a->p != '!' && *a->p != '~')
 		return (primary(a));
 	op = *a->p++;
@@ -435,6 +469,8 @@ static long	primary(t_arith *a)
 	a->p += len;
 	if (*a->p == '[')
 		return (read_elem(a, name));
+	if ((a->p[0] == '+' || a->p[0] == '-') && a->p[1] == a->p[0])
+		return (post_step(a, name));
 	return (read_var(a, name));
 }
 

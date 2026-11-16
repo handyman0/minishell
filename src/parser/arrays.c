@@ -206,3 +206,17 @@ char	*arr_display(const char *v)
 	tmp = ft_strjoin(out, ")");
 	return (free(out), free_str_array(el), tmp);
 }
+
+char	*pipestatus_value(t_shell *shell)
+{
+	char	**el;
+	char	*res;
+	int		i;
+
+	el = ft_calloc(shell->npipe + 1, sizeof(char *));
+	i = -1;
+	while (el && ++i < shell->npipe)
+		el[i] = ft_itoa(shell->pipe_st[i]);
+	res = el ? arr_join(el, shell->npipe) : NULL;
+	return (free_str_array(el), res);
+}

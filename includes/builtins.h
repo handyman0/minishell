@@ -30,6 +30,7 @@ char	*logical_pwd(t_shell *shell);
  */
 int	builtin_hash(char **argv, t_shell *shell);
 int	cond_command(char **argv, t_shell *shell);
+int	arith_command(char *word, t_shell *shell);
 int	builtin_printf(char **argv, t_shell *shell);
 int	builtin_let(char **argv, t_shell *shell);
 int	builtin_builtin(char **argv, t_shell *shell);

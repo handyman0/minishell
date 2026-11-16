@@ -262,12 +262,57 @@ static char	**add_word(char **list, const char *word)
 	return (out);
 }
 
+static t_node	*parse_cfor(t_node *node, t_token **tokens)
+{
+	char	*spec;
+	char	*part;
+	int		n;
+	int		i;
+	int		start;
+
+	spec = ft_substr((*tokens)->value, 2, ft_strlen((*tokens)->value) - 4);
+	node->data.ctl.name = ft_strdup("");
+	node->data.ctl.flag = 2;
+	node->data.ctl.words = ft_calloc(1, sizeof(char *));
+	n = 0;
+	i = 0;
+	start = 0;
+	while (spec && n < 3)
+	{
+		if (!spec[i] || spec[i] == ';')
+		{
+			part = ft_substr(spec, start, i - start);
+			node->data.ctl.words = add_word(node->data.ctl.words, part);
+			free(part);
+			n++;
+			start = i + 1;
+		}
+		if (!spec[i++])
+			break ;
+	}
+	free(spec);
+	*tokens = (*tokens)->next;
+	return (node);
+}
+
 static t_node	*parse_for(t_token **tokens)
 {
 	t_node	*node;
 
 	node = new_ctl(NODE_FOR);
 	*tokens = (*tokens)->next;
+	if (node && *tokens && (*tokens)->type == TOKEN_WORD && (*tokens)->value
+		&& (*tokens)->value[0] == '(' && (*tokens)->value[1] == '(')
+	{
+		parse_cfor(node, tokens);
+		skip_newlines(tokens);
+		if (!expect(tokens, "do"))
+			return (free_ctl(node), NULL);
+		node->data.ctl.a = need_list(tokens, stop_done);
+		if (!node->data.ctl.a || !expect(tokens, "done"))
+			return (free_ctl(node), NULL);
+		return (node);
+	}
 	if (!node || !*tokens || (*tokens)->type != TOKEN_WORD
 		|| !valid_name((*tokens)->value))
 		return (parse_fail_at(*tokens), free_ctl(node), NULL);

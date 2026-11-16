@@ -212,6 +212,7 @@ int	opens_command(t_token *tok);
 int	assign_eq_index(const char *w);
 char	*assign_with_index(const char *base, const char *sub, int plus, const char *val, t_shell *shell);
 char	*arr_display(const char *v);
+char	*pipestatus_value(t_shell *shell);
 int	arr_is(const char *v);
 int	arr_count(const char *v);
 char	**arr_split(const char *v, int *n);

@@ -74,8 +74,9 @@ static int	wait_pids(t_job *job, int flags, int *stopped, int *last)
 		{
 			if (WIFSTOPPED(status))
 				*stopped = 1;
-			else
-				job->pids[i] = 0;
+			else if (job->pids[i] = 0, job->codes)
+				job->codes[i] = WIFSIGNALED(status) ? 128 + WTERMSIG(status)
+					: WEXITSTATUS(status);
 			if (i == job->npids - 1)
 				*last = status;
 		}
@@ -147,6 +148,10 @@ static t_job	*job_store(t_shell *shell, t_job *tmp, char *label)
 	if (!job)
 		return (free(label), NULL);
 	*job = *tmp;
+	job->pids = ft_calloc(tmp->npids + 1, sizeof(pid_t));
+	job->codes = NULL;
+	if (job->pids)
+		ft_memcpy(job->pids, tmp->pids, sizeof(pid_t) * tmp->npids);
 	job->id = shell->next_job_id++;
 	job->cmd = label;
 	job->next = NULL;
@@ -164,6 +169,12 @@ static t_job	*job_store(t_shell *shell, t_job *tmp, char *label)
 
 int	job_wait(t_shell *shell, t_node *node, pid_t *pids, int n)
 {
+	return (job_wait_codes(shell, node, pids, n, NULL));
+}
+
+int	job_wait_codes(t_shell *shell, t_node *node, pid_t *pids, int n,
+			int *codes)
+{
 	t_job	tmp;
 	t_job	*job;
 	int		status;
@@ -173,8 +184,8 @@ int	job_wait(t_shell *shell, t_node *node, pid_t *pids, int n)
 	tmp.pgid = pids[0];
 	last = pids[n - 1];
 	tmp.npids = n;
-	while (n-- > 0)
-		tmp.pids[n] = pids[n];
+	tmp.pids = pids;
+	tmp.codes = codes;
 	status = wait_job(shell, &tmp, 0);
 	if (tmp.state == JOB_STOPPED)
 	{
@@ -201,7 +212,7 @@ void	job_add_background(t_shell *shell, t_node *node, pid_t pgid, pid_t pid)
 		return ;
 	ft_bzero(&tmp, sizeof(t_job));
 	tmp.pgid = pgid;
-	tmp.pids[0] = pid;
+	tmp.pids = (pid_t []){pid};
 	tmp.npids = 1;
 	job = job_store(shell, &tmp, node_label(node));
 	if (!job)
@@ -228,6 +239,7 @@ static void	job_remove(t_shell *shell, t_job *job)
 	if (*link)
 		*link = job->next;
 	free(job->cmd);
+	free(job->pids);
 	free(job);
 }
 
@@ -345,6 +357,7 @@ void	jobs_free(t_shell *shell, int hangup)
 			kill(-job->pgid, SIGCONT);
 		}
 		free(job->cmd);
+		free(job->pids);
 		free(job);
 		job = next;
 	}

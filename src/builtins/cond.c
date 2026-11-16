@@ -247,3 +247,17 @@ int	cond_command(char **argv, t_shell *shell)
 				"expression\n", NULL), 2);
 	return (!res);
 }
+
+int	arith_command(char *word, t_shell *shell)
+{
+	char	*inner;
+	char	*text;
+	char	*res;
+	int		status;
+
+	inner = ft_substr(word, 2, ft_strlen(word) - 4);
+	text = expand_variables(inner ? inner : "", shell);
+	res = arith_string(text ? text : "", shell);
+	status = !res || ft_strcmp(res, "0") == 0 || !*res;
+	return (free(inner), free(text), free(res), status);
+}

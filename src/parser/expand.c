@@ -151,6 +151,8 @@ static char	*special_value(const char *name, t_shell *shell)
 		return (shell->last_bg ? ft_itoa((int)shell->last_bg) : ft_strdup(""));
 	if (ft_strcmp(name, "LINENO") == 0)
 		return (ft_itoa(shell->lineno));
+	if (ft_strcmp(name, "PIPESTATUS") == 0)
+		return (ft_itoa(shell->npipe ? shell->pipe_st[0] : 0));
 	if (!ft_isdigit(name[0]))
 		return (dynamic_value(name, shell));
 	n = ft_atoi(name);
@@ -855,6 +857,7 @@ static int	put_extra(t_word *w, char *inner, int quote, t_shell *shell)
 typedef struct s_aref
 {
 	char	*value;
+	char	*owned;
 	char	*sub;
 	char	*rest;
 	int		count;
@@ -969,6 +972,9 @@ static int	put_array(t_word *w, char *inner, int quote, t_shell *shell)
 		return (0);
 	name = ft_substr(inner, p, n);
 	r.value = env_get(shell->env, name);
+	r.owned = NULL;
+	if (ft_strcmp(name, "PIPESTATUS") == 0)
+		r.value = r.owned = pipestatus_value(shell);
 	r.sub = ft_substr(inner, p + n + 1, close - p - n - 1);
 	r.rest = inner + close + 1;
 	r.quote = quote;
@@ -976,6 +982,7 @@ static int	put_array(t_word *w, char *inner, int quote, t_shell *shell)
 	r.bang = inner[0] == '!';
 	done = (r.sub[0] == '@' || r.sub[0] == '*') && !r.sub[1]
 		? array_all(w, &r, shell) : array_one(w, &r, shell);
+	free(r.owned);
 	return (free(name), free(r.sub), done);
 }
 

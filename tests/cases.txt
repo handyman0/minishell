@@ -354,3 +354,6 @@ a=(x y "z w"); echo $a ${a[1]} "${a[2]}" ${#a[@]} ${#a[2]}; for e in "${a[@]}"; 
 b=(1 2 3); echo $((b[1]+10)) ${!b[@]} "${b[*]}"; c=hi; c+=" there"; echo $c; b[1]+=X; echo ${b[@]}; n=(); echo ${#n[@]} "[${n[@]}]"; i=1; echo ${b[i]} ${b[i+1]} ${b[-1]}
 f() { local a=(1 "2 3"); echo ${#a[@]} "${a[1]}"; }; f; declare -a d=(p q); echo ${d[1]}; a=(1 2 3 4); unset a[1]; echo ${a[@]} ${#a[@]}
 read -a arr <<< "p q r"; echo ${arr[1]} ${#arr[@]}; cat <<< "here $arr"; x=abc; tr a-z A-Z <<< "$x"; printf 'l1\nl2\n' | { mapfile -t L; echo ${#L[@]} ${L[1]}; }
+for ((i=0;i<3;i++)); do echo $i; done; for (( ; ; )); do echo once; break; done; for ((i=0,j=10;i<j;i+=4,j-=1)); do echo $i-$j; done
+i=1; (( i++ )); echo $i; (( i > 1 )) && echo big; if (( i == 2 )); then echo two; fi; (( j = i * 5 )); echo $j; ((0)); echo $?; echo $((i++)) $i $((++i)) $((i--)) $((--i))
+false | true | (exit 3); echo ${PIPESTATUS[@]} ${#PIPESTATUS[@]}; set -o pipefail; false | true; echo $?; true | false | true; echo $?; set +o pipefail; false | true; echo $?

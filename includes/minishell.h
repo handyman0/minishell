@@ -53,6 +53,9 @@ struct s_shell
 	int			line_base;
 	int			src_depth;
 	long		start_time;
+	int			*pipe_st;
+	int			npipe;
+	int			pipe_cap;
 	int			running;
 	t_node		*ast;
 	t_token		*tokens;

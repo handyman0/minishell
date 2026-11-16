@@ -49,6 +49,9 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->line_base = 0;
 	shell->src_depth = 0;
 	shell->start_time = time(NULL);
+	shell->pipe_st = NULL;
+	shell->npipe = 0;
+	shell->pipe_cap = 0;
 	shell->exit_status = 0;
 	shell->running = 1;
 	shell->ast = NULL;
@@ -396,6 +399,7 @@ static int	run_noninteractive(t_shell *shell, t_opts *o)
 static void	cleanup(t_shell *shell, int hangup)
 {
 	dirs_free();
+	free(shell->pipe_st);
 	jobs_free(shell, hangup);
 	funcs_free(shell);
 	traps_free(shell);

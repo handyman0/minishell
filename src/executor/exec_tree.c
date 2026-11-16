@@ -285,6 +285,9 @@ static int	run_command(t_node *node, t_shell *shell)
 		return (run_timed(node, shell, run_command));
 	if (node->data.cmd.argv[0] && ft_strcmp(node->data.cmd.argv[0], "[[") == 0)
 		return (cond_command(node->data.cmd.argv, shell));
+	if (node->data.cmd.argv[0] && node->data.cmd.argv[0][0] == '('
+		&& node->data.cmd.argv[0][1] == '(' && !node->data.cmd.argv[1])
+		return (arith_command(node->data.cmd.argv[0], shell));
 	expand_command(node, shell);
 	if (shell->expand_error)
 	{
@@ -463,14 +466,133 @@ static int	spawn_pipe(t_node *node, t_shell *shell, pid_t pids[2], int bg)
 	return (1);
 }
 
+static int	collect_stages(t_node *node, t_node **stages, int max)
+{
+	int	n;
+
+	if (node->type != NODE_PIPE)
+	{
+		if (max > 0)
+			stages[0] = node;
+		return (1);
+	}
+	n = collect_stages(node->data.op.left, stages, max);
+	return (n + collect_stages(node->data.op.right, stages + n,
+			max > n ? max - n : 0));
+}
+
+static void	stage_child(t_node *stage, t_shell *shell, pid_t pgid)
+{
+	if (job_monitor(shell) && pgid)
+		setpgid(0, pgid);
+	job_child_setup(shell, pgid ? getpgrp() : 0, 1);
+	exit(pipe_child(unwrap_subshell(stage), shell));
+}
+
+static void	stage_fds(int io[2], int fds[2], int prev)
+{
+	if (io[0] != -1)
+		dup2(io[0], STDIN_FILENO);
+	if (io[1] != -1)
+		dup2(io[1], STDOUT_FILENO);
+	if (prev != -1)
+		close(prev);
+	if (fds[0] != -1)
+		close(fds[0]);
+	if (fds[1] != -1)
+		close(fds[1]);
+}
+
+void	set_pipestatus(t_shell *shell, const int *codes, int n)
+{
+	int	*grown;
+
+	if (n > shell->pipe_cap)
+	{
+		grown = ft_calloc(n + 1, sizeof(int));
+		if (!grown)
+			return ;
+		free(shell->pipe_st);
+		shell->pipe_st = grown;
+		shell->pipe_cap = n;
+	}
+	shell->npipe = n;
+	ft_memcpy(shell->pipe_st, codes, sizeof(int) * n);
+}
+
+static int	spawn_stages(t_node **stages, int n, t_shell *shell, pid_t *pids)
+{
+	int	fds[2];
+	int	prev;
+	int	io[2];
+	int	i;
+
+	prev = -1;
+	i = -1;
+	while (++i < n)
+	{
+		fds[0] = -1;
+		fds[1] = -1;
+		if (i < n - 1 && pipe(fds) == -1)
+			return (i);
+		pids[i] = fork();
+		if (pids[i] == 0)
+		{
+			io[0] = prev;
+			io[1] = fds[1];
+			stage_fds(io, fds, prev);
+			stage_child(stages[i], shell, i ? pids[0] : 0);
+		}
+		job_parent_setup(shell, pids[i], i ? pids[0] : 0);
+		if (prev != -1)
+			close(prev);
+		if (fds[1] != -1)
+			close(fds[1]);
+		prev = fds[0];
+	}
+	return (n);
+}
+
+static void	pipefail(t_shell *shell, const int *codes, int n, int *status)
+{
+	if (!(shell->opts & OPT_PIPEFAIL) || *status == 128 + SIGTSTP)
+		return ;
+	*status = 0;
+	while (n-- > 0)
+	{
+		if (codes[n] != 0)
+		{
+			*status = codes[n];
+			return ;
+		}
+	}
+}
+
 static int	execute_pipe(t_node *node, t_shell *shell)
 {
-	pid_t	pids[2];
+	t_node	*local[16];
+	t_node	**stages;
+	pid_t	*pids;
+	int		*codes;
+	int		n;
 	int		status;
 
-	if (!spawn_pipe(node, shell, pids, 0))
-		return (1);
-	status = job_wait(shell, node, pids, 2);
+	n = collect_stages(node, NULL, 0);
+	stages = n > 16 ? malloc(sizeof(t_node *) * n) : local;
+	pids = ft_calloc(n + 1, sizeof(pid_t));
+	codes = ft_calloc(n + 1, sizeof(int));
+	if (!stages || !pids || !codes)
+		return (free(pids), free(codes), 1);
+	collect_stages(node, stages, n);
+	if (spawn_stages(stages, n, shell, pids) != n)
+		return (free(pids), free(codes), 1);
+	status = job_wait_codes(shell, node, pids, n, codes);
+	set_pipestatus(shell, codes, n);
+	pipefail(shell, codes, n, &status);
+	if (stages != local)
+		free(stages);
+	free(pids);
+	free(codes);
 	errexit_check(shell, status);
 	return (status);
 }
@@ -551,6 +673,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 		return (1);
 	status = run_command(copy, shell);
 	shell->exit_status = status;
+	set_pipestatus(shell, &status, 1);
 	errexit_check(shell, status);
 	trap_run_pending(shell);
 	free_ast(copy);

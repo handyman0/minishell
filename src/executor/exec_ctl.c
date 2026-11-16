@@ -80,12 +80,49 @@ static char	**copy_params(t_shell *shell)
 	return (out);
 }
 
+static int	arith_step(const char *text, t_shell *shell)
+{
+	char	*flat;
+	char	*res;
+	int		v;
+
+	while (*text == ' ' || *text == '\t')
+		text++;
+	if (!*text)
+		return (1);
+	flat = expand_variables((char *)text, shell);
+	res = arith_string(flat ? flat : "", shell);
+	v = res && res[0] && ft_strcmp(res, "0") != 0;
+	return (free(flat), free(res), v);
+}
+
+static int	execute_cfor(t_node *node, t_shell *shell)
+{
+	int	status;
+
+	status = 0;
+	arith_step(node->data.ctl.words[0], shell);
+	shell->loop_depth++;
+	while (shell->running && arith_step(node->data.ctl.words[1], shell))
+	{
+		status = execute_tree(node->data.ctl.a, shell);
+		shell->exit_status = status;
+		if (loop_control(shell))
+			break ;
+		arith_step(node->data.ctl.words[2], shell);
+	}
+	shell->loop_depth--;
+	return (status);
+}
+
 static int	execute_for(t_node *node, t_shell *shell)
 {
 	char	**items;
 	int		status;
 	int		i;
 
+	if (node->data.ctl.flag == 2)
+		return (execute_cfor(node, shell));
 	items = copy_params(shell);
 	if (node->data.ctl.flag)
 	{
