@@ -150,12 +150,33 @@ void	restore_fds(int backup[3])
 	}
 }
 
+
+int	g_noclobber;
+
+static int	open_out(t_redir *redir)
+{
+	struct stat	st;
+
+	if (redir->type == REDIR_OUT && g_noclobber)
+	{
+		if (stat(redir->file, &st) == 0 && S_ISREG(st.st_mode))
+		{
+			errno = EEXIST;
+			return (-1);
+		}
+		if (stat(redir->file, &st) == 0)
+			return (open(redir->file, O_WRONLY));
+		return (open(redir->file, O_WRONLY | O_CREAT | O_EXCL, 0644));
+	}
+	return (open(redir->file, O_WRONLY | O_CREAT | O_TRUNC, 0644));
+}
+
 static int	open_redir(t_redir *redir)
 {
 	if (redir->type == REDIR_IN)
 		return (open(redir->file, O_RDONLY));
-	if (redir->type == REDIR_OUT)
-		return (open(redir->file, O_WRONLY | O_CREAT | O_TRUNC, 0644));
+	if (redir->type == REDIR_OUT || redir->type == REDIR_CLOBBER)
+		return (open_out(redir));
 	return (open(redir->file, O_WRONLY | O_CREAT | O_APPEND, 0644));
 }
 
@@ -219,6 +240,8 @@ static int	run_command(t_node *node, t_shell *shell)
 		shell->running = shell->interactive;
 		return (1);
 	}
+	if (shell->opts & OPT_X)
+		xtrace_print(shell, node->data.cmd.argv, node->data.cmd.assigns);
 	if (!node->data.cmd.argv || !node->data.cmd.argv[0])
 	{
 		if (assign_shell(shell, node->data.cmd.assigns))
@@ -425,6 +448,8 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (!node || node->type != NODE_CMD)
 		return (1);
+	if ((shell->opts & OPT_N) && !shell->interactive)
+		return (0);
 	copy = clone_command(node);
 	if (!copy)
 		return (1);

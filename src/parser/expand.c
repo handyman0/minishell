@@ -13,6 +13,8 @@
 #include "../../includes/parser.h"
 #include "../../includes/minishell.h"
 #include "../../includes/env.h"
+#include "../../includes/ctl.h"
+#include "../../includes/output.h"
 
 static int	is_special(char c)
 {
@@ -231,6 +233,15 @@ static char	*apply_op(char *name, char *value, const char *rest, t_shell *shell)
 	return (free(word), res ? res : ft_strdup(value ? value : ""));
 }
 
+static void	check_unset(const char *name, char *value, t_shell *shell)
+{
+	if (value || !(shell->opts & OPT_U) || !name[0]
+		|| ft_strchr("@*?#$-", name[0]))
+		return ;
+	ml_put_all(2, "minishell: ", name, ": unbound variable\n", NULL);
+	shell->expand_error = 1;
+}
+
 static char	*param_expand(const char *in, t_shell *shell)
 {
 	char	*name;
@@ -242,12 +253,15 @@ static char	*param_expand(const char *in, t_shell *shell)
 	{
 		name = ft_strdup(in + 1);
 		value = lookup(name, shell);
+		check_unset(name, value, shell);
 		res = ft_itoa(value ? (int)ft_strlen(value) : 0);
 		return (free(name), free(value), res);
 	}
 	n = name_len(in, 1);
 	name = ft_substr(in, 0, n);
 	value = lookup(name, shell);
+	if (!in[n] || in[n] == '#' || in[n] == '%')
+		check_unset(name, value, shell);
 	if (!in[n])
 		res = value ? ft_strdup(value) : ft_strdup("");
 	else
@@ -273,6 +287,7 @@ static char	*get_var_value(char *var_name, t_shell *shell)
 		return (ft_strdup("$"));
 	name = ft_substr(var_name, 0, len);
 	value = lookup(name, shell);
+	check_unset(name, value, shell);
 	free(name);
 	return (value ? value : ft_strdup(""));
 }
@@ -371,6 +386,7 @@ typedef struct s_word
 	int		len;
 	size_t	cap;
 	int		at_empty;
+	int		noglob;
 }	t_word;
 
 static int	word_reserve(t_word *w, size_t extra)
@@ -587,10 +603,16 @@ static void	emit_one(t_word *w, int start, int end, t_token **tok[2])
 	}
 	if (pattern)
 		pattern[j] = '\0';
-	if (!has_glob || !pattern || !expand_glob(pattern, tok[0], tok[1]))
+	if (!has_glob || w->noglob || !pattern
+		|| !expand_glob(pattern, tok[0], tok[1]))
 		token_add_back(tok[0], tok[1], TOKEN_WORD,
 			ft_substr(w->str, start, end - start));
 	free(pattern);
+}
+
+static void	emit_empty(t_token **tok[2])
+{
+	token_add_back(tok[0], tok[1], TOKEN_WORD, ft_strdup(""));
 }
 
 static int	emit_fields(t_word *w, t_token **tok[2])
@@ -598,16 +620,23 @@ static int	emit_fields(t_word *w, t_token **tok[2])
 	int	start;
 	int	k;
 	int	count;
+	int	hard;
 
 	start = -1;
 	count = 0;
+	hard = 0;
 	k = 0;
 	while (k <= w->len)
 	{
-		if (k == w->len || (w->mask[k] & SEP) || ((w->mask[k] & SPLIT) && ft_isspace(w->str[k])))
+		hard = k < w->len && (w->mask[k] & SEP);
+		if (k == w->len || hard || ((w->mask[k] & SPLIT)
+				&& ft_isspace(w->str[k])))
 		{
 			if (start >= 0 && ++count)
 				emit_one(w, start, k, tok);
+			else if ((hard || (k == w->len && k > 0 && (w->mask[k - 1] & SEP)))
+				&& ++count)
+				emit_empty(tok);
 			start = -1;
 		}
 		else if (start < 0)
@@ -630,6 +659,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	w.len = 0;
 	w.cap = cap;
 	w.at_empty = 0;
+	w.noglob = (shell->opts & OPT_F) != 0;
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	tok[0] = head;
@@ -679,6 +709,7 @@ char	*expand_variables(char *token, t_shell *shell)
 	w.len = 0;
 	w.cap = cap;
 	w.at_empty = 0;
+	w.noglob = (shell->opts & OPT_F) != 0;
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
 	result = NULL;

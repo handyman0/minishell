@@ -70,6 +70,12 @@ static int	handle_operator(char *line, int i,
 			token_add_back(head, current, TOKEN_REDIR_IN, NULL);
 		return (1);
 	}
+	else if (line[i] == '>' && line[i + 1] == '|')
+	{
+		if (head && current)
+			token_add_back(head, current, TOKEN_REDIR_CLOBBER, NULL);
+		return (2);
+	}
 	else if (line[i] == '>' && line[i + 1] == '>')
 	{
 		if (head && current)

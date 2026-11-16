@@ -97,6 +97,8 @@ static void	run_tokens(t_token *tokens, t_shell *shell)
 		free_ast(ast);
 		ast = NULL;
 	}
+	if (ast && (shell->opts & OPT_N) && !shell->interactive)
+		free_ast(ast), ast = NULL;
 	if (ast)
 	{
 		shell->ast = ast;
@@ -113,6 +115,8 @@ void	run_line(char *line, t_shell *shell)
 {
 	t_token	*tokens;
 
+	if (shell->opts & OPT_V)
+		ml_put_all(2, line, "\n", NULL);
 	if (check_quotes(line))
 	{
 		shell->exit_status = 2;
@@ -236,7 +240,7 @@ static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
 	k = 1;
 	while (arg[k])
 	{
-		if (arg[k] == 'c')
+		if (arg[k] == 'c' && arg[0] == '-')
 		{
 			o->bad = (o->rest + 1 >= argc);
 			o->cmd = o->rest + 1 < argc ? argv[o->rest + 1] : NULL;
@@ -244,6 +248,10 @@ static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
 		}
 		else if (arg[k] == 's')
 			o->use_stdin = 1;
+		else if (arg[0] == '+' && arg[k] == 'o' && o->rest + 1 < argc)
+			o->opts &= ~option_bit_name(argv[++o->rest]);
+		else if (arg[0] == '+')
+			o->opts &= ~option_bit_letter(arg[k]);
 		else if (arg[k] == 'o' && o->rest + 1 < argc)
 			o->opts |= option_bit_name(argv[++o->rest]);
 		else
@@ -256,7 +264,8 @@ static void	parse_args(int argc, char **argv, t_opts *o)
 {
 	ft_bzero(o, sizeof(t_opts));
 	o->rest = 1;
-	while (o->rest < argc && argv[o->rest][0] == '-' && argv[o->rest][1])
+	while (o->rest < argc && (argv[o->rest][0] == '-' || argv[o->rest][0] == '+')
+		&& argv[o->rest][1])
 	{
 		if (ft_strcmp(argv[o->rest], "--") == 0)
 		{
@@ -322,6 +331,7 @@ int	main(int argc, char **argv, char **envp)
 				NULL), 2);
 	init_shell(&shell, envp);
 	shell.opts = o.opts;
+	g_noclobber = (o.opts & OPT_C) != 0;
 	jobs_init(&shell, !o.cmd && !o.script);
 	if (o.cmd || o.script)
 	{

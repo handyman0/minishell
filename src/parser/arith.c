@@ -1,5 +1,6 @@
 #include "../../includes/parser.h"
 #include "../../includes/output.h"
+#include "../../includes/ctl.h"
 
 typedef struct s_arith
 {
@@ -53,11 +54,48 @@ static long	number(t_arith *a)
 	return (value);
 }
 
+static long	apply(t_arith *a, const char *op, long l, long r);
+
+static long	read_var(t_arith *a, const char *name, int quiet)
+{
+	char	*value;
+
+	value = env_get(a->shell->env, name);
+	if (!value && !quiet && (a->shell->opts & OPT_U))
+	{
+		ml_put_all(2, "minishell: ", name, ": unbound variable\n", NULL);
+		a->shell->expand_error = 1;
+	}
+	if (!value || !*value)
+		return (0);
+	return (ft_atoi(value));
+}
+
+static long	assign_var(t_arith *a, const char *name, const char *op)
+{
+	long	value;
+	char	op_text[3];
+	char	*text;
+
+	a->p += ft_strlen(op);
+	value = expr(a, 0);
+	if (op[1])
+	{
+		op_text[0] = op[0];
+		op_text[1] = '\0';
+		value = apply(a, op_text, read_var(a, name, 0), value);
+	}
+	text = ft_itoa((int)value);
+	env_assign(&a->shell->env, (char *)name, text);
+	free(text);
+	return (value);
+}
+
 static long	variable(t_arith *a)
 {
-	char	name[256];
-	char	*value;
-	size_t	len;
+	char		name[256];
+	size_t		len;
+	const char	*op;
 
 	len = 0;
 	while (ft_isalnum(a->p[len]) || a->p[len] == '_')
@@ -67,10 +105,13 @@ static long	variable(t_arith *a)
 	ft_memcpy(name, a->p, len);
 	name[len] = '\0';
 	a->p += len;
-	value = env_get(a->shell->env, name);
-	if (!value || !*value)
-		return (0);
-	return (ft_atoi(value));
+	skip_space(a);
+	op = a->p;
+	if (op[0] == '=' && op[1] != '=')
+		return (assign_var(a, name, "="));
+	if (ft_strchr("+-*/%", op[0]) && op[1] == '=')
+		return (assign_var(a, name, (char []){op[0], '=', '\0'}));
+	return (read_var(a, name, 0));
 }
 static long	primary(t_arith *a);
 

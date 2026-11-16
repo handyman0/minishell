@@ -276,3 +276,19 @@ kill -l 2 15
 sleep 5 & kill %1; wait %1; echo rc=$?
 sleep 5 & kill -9 $!; wait $!; echo rc=$?
 kill -0 $$; echo rc=$?
+set -e; false; echo nao
+set -e; false || echo alt; echo seguiu
+set -e; if false; then :; fi; echo seguiu
+set -e; (false); echo nao
+set -e; f() { false; echo dentro; }; f; echo nao
+set -e; true | false; echo nao
+(set -u; echo $x; echo nao); test $? -ne 0 && echo falhou
+set -u; echo ${x:-d}; echo ${x-d}
+set -f; echo /et*; set +f; echo /etc | head -c 4
+set -x; echo a b
+set -x; foo=bar; echo "a b" $foo
+set -n; echo nao-executa
+set -a; X=1; sh -c 'echo $X'
+set -- "" a ""; printf "[%s]" "$@"; echo
+echo $((x=42)) $((x+=3)) $x
+(set -u; echo $((zz+1)); echo nao); test $? -ne 0 && echo falhou

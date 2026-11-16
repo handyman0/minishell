@@ -14,6 +14,9 @@ struct s_redir;
 # define OPT_V 64
 # define OPT_A 128
 # define OPT_M 256
+# define OPT_H 512
+# define OPT_B 1024
+# define OPT_I 2048
 
 struct s_func
 {
@@ -49,6 +52,7 @@ void	funcs_free(t_shell *shell);
 void	func_remove(t_shell *shell, const char *name);
 char	**expand_words(char **raw, t_shell *shell);
 int		apply_redirections(struct s_redir *redirs);
+extern int	g_noclobber;
 void	save_fds(int backup[3]);
 void	restore_fds(int backup[3]);
 int		glob_match(const char *pattern, const char *name);
@@ -70,6 +74,7 @@ int		builtin_wait(char **argv, t_shell *shell);
 int		builtin_kill(char **argv, t_shell *shell);
 int		builtin_getopts(char **argv, t_shell *shell);
 char	*option_string(t_shell *shell);
+void	xtrace_print(t_shell *shell, char **argv, char **assigns);
 unsigned int	option_bit_letter(char letter);
 unsigned int	option_bit_name(const char *name);
 int		signal_number(const char *s);

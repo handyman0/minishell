@@ -20,6 +20,7 @@ int	is_redirection_token(t_token *token)
 		return (0);
 	return (token->type == TOKEN_REDIR_IN || token->type == TOKEN_REDIR_OUT
 		|| token->type == TOKEN_REDIR_APPEND
+		|| token->type == TOKEN_REDIR_CLOBBER
 		|| token->type == TOKEN_HEREDOC);
 }
 
@@ -39,13 +40,15 @@ int	handle_redirection(t_token **tokens, t_redir **redirs)
 		case TOKEN_REDIR_IN: new_redir->type = REDIR_IN; break ;
 		case TOKEN_REDIR_OUT: new_redir->type = REDIR_OUT; break ;
 		case TOKEN_REDIR_APPEND: new_redir->type = REDIR_APPEND; break ;
+		case TOKEN_REDIR_CLOBBER: new_redir->type = REDIR_CLOBBER; break ;
 		case TOKEN_HEREDOC: new_redir->type = REDIR_HEREDOC; break ;
 		default :
 			free(new_redir);
 			return (0);
 	}
 	new_redir->fd = (current->type == TOKEN_REDIR_OUT
-			|| current->type == TOKEN_REDIR_APPEND);
+			|| current->type == TOKEN_REDIR_APPEND
+			|| current->type == TOKEN_REDIR_CLOBBER);
 	if (current->value)
 		new_redir->fd = ft_atoi(current->value);
 	new_redir->file = NULL;

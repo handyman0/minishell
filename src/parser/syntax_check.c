@@ -34,6 +34,8 @@ const char	*token_text(t_token *tok)
 		return ("<");
 	if (tok->type == TOKEN_REDIR_OUT)
 		return (">");
+	if (tok->type == TOKEN_REDIR_CLOBBER)
+		return (">|");
 	if (tok->type == TOKEN_REDIR_APPEND)
 		return (">>");
 	if (tok->type == TOKEN_HEREDOC)

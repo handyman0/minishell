@@ -12,7 +12,8 @@ typedef struct s_option
 static const t_option	g_options[] = {{'a', "allexport", OPT_A},
 {'C', "noclobber", OPT_C}, {'e', "errexit", OPT_E}, {'f', "noglob", OPT_F},
 {'m', "monitor", OPT_M}, {'n', "noexec", OPT_N}, {'u', "nounset", OPT_U},
-{'v', "verbose", OPT_V}, {'x', "xtrace", OPT_X}, {0, NULL, 0}};
+{'v', "verbose", OPT_V}, {'x', "xtrace", OPT_X}, {'h', "hashondef", OPT_H},
+{'b', "notify", OPT_B}, {0, "ignoreeof", OPT_I}, {0, NULL, 0}};
 
 char	*option_string(t_shell *shell)
 {
@@ -24,7 +25,7 @@ char	*option_string(t_shell *shell)
 	i = 0;
 	while (g_options[i].name)
 	{
-		if (shell->opts & g_options[i].bit)
+		if ((shell->opts & g_options[i].bit) && g_options[i].letter)
 			buf[n++] = g_options[i].letter;
 		i++;
 	}
@@ -37,6 +38,9 @@ char	*option_string(t_shell *shell)
 static const t_option	*by_letter(char letter)
 {
 	int	i;
+
+	if (!letter)
+		return (NULL);
 
 	i = 0;
 	while (g_options[i].name)
@@ -88,6 +92,7 @@ static int	apply(t_shell *shell, const t_option *opt, int on)
 		shell->opts |= opt->bit;
 	else
 		shell->opts &= ~opt->bit;
+	g_noclobber = (shell->opts & OPT_C) != 0;
 	return (0);
 }
 

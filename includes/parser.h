@@ -27,6 +27,7 @@ typedef enum e_toktype
 	TOKEN_REDIR_IN, // <
 	TOKEN_REDIR_OUT, // >
 	TOKEN_REDIR_APPEND, // >>
+	TOKEN_REDIR_CLOBBER, // >|
 	TOKEN_HEREDOC, // <<
 	TOKEN_AND, // &&
 	TOKEN_OR, // ||
@@ -57,6 +58,7 @@ typedef enum e_redir_type
 	REDIR_IN, // <
 	REDIR_OUT, // >
 	REDIR_APPEND, // >>
+	REDIR_CLOBBER, // >|
 	REDIR_HEREDOC, // <<
 	REDIR_DUP, // >&N
 } t_redir_type;

@@ -68,6 +68,8 @@ int	assign_shell(t_shell *shell, char **assigns)
 			status = 1;
 		else if (key)
 			env_assign(&shell->env, key, value);
+		if (key && (shell->opts & OPT_A))
+			env_export(shell->env, key);
 		free(key);
 	}
 	return (status);
