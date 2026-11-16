@@ -88,3 +88,27 @@ int	skip_quote(const char *s, int i)
 		return (skip_single(s, i));
 	return (skip_double(s, i));
 }
+
+int	skip_brace(const char *s, int i)
+{
+	int	depth;
+
+	depth = 1;
+	i += 2;
+	while (s[i])
+	{
+		if (s[i] == '\\' && s[i + 1])
+			i += 2;
+		else if (s[i] == '$' && s[i + 1] == '{')
+			i += 2, depth++;
+		else if (s[i] == '}' && --depth == 0)
+			return (i + 1);
+		else if (s[i] == '}')
+			i++;
+		else
+			i = skip_nested(s, i);
+		if (i == -1)
+			return (-1);
+	}
+	return (-1);
+}

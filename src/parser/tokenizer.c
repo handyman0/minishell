@@ -123,6 +123,8 @@ static int	skip_construct(char *line, int pos)
 		next = skip_quote(line, pos);
 	else if (line[pos] == '`')
 		next = skip_backtick(line, pos);
+	else if (line[pos + 1] == '{')
+		next = skip_brace(line, pos);
 	else
 		next = skip_dollar_paren(line, pos);
 	if (next == -1)
@@ -142,7 +144,7 @@ static char	*extract_word(char *line, int *i, int len)
 		if (line[p] == '\\' && line[p + 1])
 			p += 2;
 		else if (line[p] == '\'' || line[p] == '"' || line[p] == '`'
-			|| (line[p] == '$' && line[p + 1] == '('))
+			|| (line[p] == '$' && (line[p + 1] == '(' || line[p + 1] == '{')))
 			p = skip_construct(line, p);
 		else
 			p++;

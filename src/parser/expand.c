@@ -399,6 +399,7 @@ typedef struct s_word
 	size_t	cap;
 	int		at_empty;
 	int		noglob;
+	int		lit;
 	int		emitted;
 	const char	*ifs;
 }	t_word;
@@ -494,10 +495,85 @@ static void	put_split_params(t_word *w, t_shell *shell)
 	}
 }
 
+static void	fill_chars(t_word *w, char *raw, int quote, t_shell *shell);
+
+static int	assign_default(char *name, char *text, t_shell *shell)
+{
+	if ((!ft_isalpha(name[0]) && name[0] != '_') || env_is_readonly(shell->env,
+			name))
+	{
+		ml_put_all(2, "minishell: ", name, ": cannot assign in this way\n",
+			NULL);
+		shell->expand_error = 1;
+		return (0);
+	}
+	env_assign(&shell->env, name, text);
+	return (1);
+}
+
+static void	use_word(t_word *w, char *name, char op, char *word_ctx[3])
+{
+	t_shell	*shell;
+	char	*flat;
+	int		quote;
+
+	shell = (t_shell *)word_ctx[2];
+	quote = word_ctx[1][0];
+	if (op == '-' || op == '+')
+	{
+		w->lit = SPLIT;
+		fill_chars(w, word_ctx[0], quote, shell);
+		w->lit = 0;
+		return ;
+	}
+	flat = expand_variables(word_ctx[0], shell);
+	if (op == '=' && flat && assign_default(name, flat, shell))
+		put_value(w, ft_strdup(flat), quote ? QUOTED : SPLIT);
+	else if (op == '?')
+	{
+		ml_put_all(2, "minishell: ", name, ": ",
+			flat && *flat ? flat : "parameter null or not set", "\n", NULL);
+		shell->expand_error = 1;
+	}
+	free(flat);
+}
+
+static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
+{
+	char	*inner;
+	char	*name;
+	char	*value;
+	char	*ctx[3];
+	char	qc[2];
+	int		n;
+	int		colon;
+
+	inner = ft_substr(raw, 1, brace_end(raw) - 1);
+	n = inner[0] == '#' ? 0 : name_len(inner, 1);
+	colon = inner[n] == ':';
+	if (!inner[0] || !n || !inner[n] || !ft_strchr("-=+?", inner[n + colon]))
+		return (free(inner), 0);
+	name = ft_substr(inner, 0, n);
+	value = lookup(name, shell);
+	qc[0] = (char)quote;
+	qc[1] = '\0';
+	ctx[0] = inner + n + colon + 1;
+	ctx[1] = qc;
+	ctx[2] = (char *)shell;
+	if (inner[n + colon] == '+' ? (value && (!colon || *value))
+		: (!value || (colon && !*value)))
+		use_word(w, name, inner[n + colon], ctx);
+	else if (inner[n + colon] != '+')
+		put_value(w, ft_strdup(value), quote ? QUOTED : SPLIT);
+	return (free(inner), free(name), free(value), 1);
+}
+
 static int	put_dollar(t_word *w, char *raw, int quote, t_shell *shell)
 {
 	if (quote == '"' && is_at_ref(raw + 1))
 		put_at_words(w, shell);
+	else if (raw[1] == '{' && put_brace(w, raw + 1, quote, shell))
+		;
 	else if (!quote && is_plain_params(raw + 1))
 		put_split_params(w, shell);
 	else
@@ -589,21 +665,12 @@ static int	put_special(t_word *w, char *raw, int quote, t_shell *shell)
 	return (0);
 }
 
-static void	fill_word(t_word *w, char *raw, t_shell *shell)
+static void	fill_chars(t_word *w, char *raw, int quote, t_shell *shell)
 {
-	int		i;
-	int		n;
-	int		quote;
-	char	*home;
+	int	i;
+	int	n;
 
 	i = 0;
-	quote = 0;
-	home = env_get(shell->env, "HOME");
-	if (raw[0] == '~' && (!raw[1] || raw[1] == '/') && home)
-	{
-		put_value(w, ft_strdup(home), QUOTED);
-		i = 1;
-	}
 	while (raw[i])
 	{
 		n = put_special(w, raw + i, quote, shell);
@@ -615,8 +682,23 @@ static void	fill_word(t_word *w, char *raw, t_shell *shell)
 		else if (raw[i] == '$' && quote != '\'' && is_ref(&raw[i + 1]))
 			i += put_dollar(w, &raw[i], quote, shell);
 		else
-			put_char(w, raw[i++], quote ? QUOTED : 0);
+			put_char(w, raw[i++], quote ? QUOTED : w->lit);
 	}
+}
+
+static void	fill_word(t_word *w, char *raw, t_shell *shell)
+{
+	int		i;
+	char	*home;
+
+	i = 0;
+	home = env_get(shell->env, "HOME");
+	if (raw[0] == '~' && (!raw[1] || raw[1] == '/') && home)
+	{
+		put_value(w, ft_strdup(home), QUOTED);
+		i = 1;
+	}
+	fill_chars(w, raw + i, 0, shell);
 }
 
 static void	emit_one(t_word *w, int start, int end, t_token **tok[2])
@@ -725,6 +807,7 @@ static void	expand_word(char *raw, t_shell *shell, t_token **head,
 	w.cap = cap;
 	w.at_empty = 0;
 	w.noglob = (shell->opts & OPT_F) != 0;
+	w.lit = 0;
 	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
@@ -776,6 +859,7 @@ char	*expand_variables(char *token, t_shell *shell)
 	w.cap = cap;
 	w.at_empty = 0;
 	w.noglob = (shell->opts & OPT_F) != 0;
+	w.lit = 0;
 	w.ifs = ifs_value(shell);
 	w.str = ft_calloc(cap + 1, 1);
 	w.mask = ft_calloc(cap + 1, 1);
