@@ -10,6 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
+#include <time.h>
 #include "../includes/minishell.h"
 #include "../includes/builtins.h"
 #include "../includes/output.h"
@@ -47,6 +48,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->lineno = 0;
 	shell->line_base = 0;
 	shell->src_depth = 0;
+	shell->start_time = time(NULL);
 	shell->exit_status = 0;
 	shell->running = 1;
 	shell->ast = NULL;

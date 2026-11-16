@@ -152,7 +152,7 @@ static char	*special_value(const char *name, t_shell *shell)
 	if (ft_strcmp(name, "LINENO") == 0)
 		return (ft_itoa(shell->lineno));
 	if (!ft_isdigit(name[0]))
-		return (NULL);
+		return (dynamic_value(name, shell));
 	n = ft_atoi(name);
 	if (n == 0)
 		return (ft_strdup(shell->argv0));
