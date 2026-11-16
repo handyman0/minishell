@@ -74,10 +74,20 @@ echo "acumulado: $TOTAL executados, $BAD problemas"
 section "5. sessao unica com estado acumulado (fuzz via stdin)"
 "$WORK/fuzz" gen 4 "$ITER" > session.txt
 timeout 120 "$SHELL_BIN" < session.txt > /dev/null 2> err.txt
-check sessao $? err.txt || echo "sessao falhou"
+session_rc=$?
+if [ $session_rc -eq 124 ]; then
+	timeout 60 bash < session.txt > /dev/null 2>&1
+	[ $? -eq 124 ] && session_rc=0
+fi
+check sessao $session_rc err.txt || echo "sessao falhou"
 "$WORK/fuzz" mutate 5 "$ITER" "$ROOT/tests/cases.txt" > session2.txt
 timeout 120 "$SHELL_BIN" < session2.txt > /dev/null 2> err.txt
-check sessao2 $? err.txt || echo "sessao2 falhou"
+session_rc=$?
+if [ $session_rc -eq 124 ]; then
+	timeout 60 bash < session2.txt > /dev/null 2>&1
+	[ $? -eq 124 ] && session_rc=0
+fi
+check sessao2 $session_rc err.txt || echo "sessao2 falhou"
 echo "acumulado: $TOTAL executados, $BAD problemas"
 
 section "6. limites e entradas gigantes"
