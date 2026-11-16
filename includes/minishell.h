@@ -66,6 +66,8 @@ struct s_shell
 	pid_t		pid;
 	int			brk;
 	int			bypass_func;
+	unsigned int	opts;
+	int			noerrexit;
 	int			expand_error;
 	int			cont;
 	int			ret;

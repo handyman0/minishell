@@ -5,6 +5,16 @@
 
 struct s_redir;
 
+# define OPT_E 1
+# define OPT_U 2
+# define OPT_X 4
+# define OPT_F 8
+# define OPT_C 16
+# define OPT_N 32
+# define OPT_V 64
+# define OPT_A 128
+# define OPT_M 256
+
 struct s_func
 {
 	char			*name;
@@ -58,6 +68,8 @@ int		builtin_readonly(char **argv, t_shell *shell);
 int		builtin_trap(char **argv, t_shell *shell);
 int		builtin_wait(char **argv, t_shell *shell);
 int		builtin_kill(char **argv, t_shell *shell);
+int		builtin_getopts(char **argv, t_shell *shell);
+char	*option_string(t_shell *shell);
 int		signal_number(const char *s);
 const char	*signal_name(int num);
 pid_t	job_spec_pid(char *arg, t_shell *shell);

@@ -109,28 +109,6 @@ int	builtin_shift(char **argv, t_shell *shell)
 	return (0);
 }
 
-int	builtin_set(char **argv, t_shell *shell)
-{
-	int	i;
-
-	if (!argv[1] || ft_strcmp(argv[1], "--") != 0)
-		return (0);
-	i = 0;
-	while (i < shell->nparams)
-		free(shell->params[i++]);
-	free(shell->params);
-	shell->nparams = 0;
-	while (argv[2 + shell->nparams])
-		shell->nparams++;
-	shell->params = ft_calloc(shell->nparams + 1, sizeof(char *));
-	i = 0;
-	while (shell->params && i < shell->nparams)
-	{
-		shell->params[i] = ft_strdup(argv[2 + i]);
-		i++;
-	}
-	return (0);
-}
 
 int	builtin_eval(char **argv, t_shell *shell)
 {

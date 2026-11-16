@@ -50,6 +50,8 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->pid = getpid();
 	shell->brk = 0;
 	shell->bypass_func = 0;
+	shell->opts = 0;
+	shell->noerrexit = 0;
 	shell->expand_error = 0;
 	shell->cont = 0;
 	shell->ret = 0;

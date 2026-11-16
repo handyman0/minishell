@@ -16,7 +16,7 @@
 
 static int	is_special(char c)
 {
-	return (c && ft_strchr("?#@*$!", c));
+	return (c && ft_strchr("?#@*$!-", c));
 }
 
 static int	name_len(const char *s, int braced)
@@ -113,6 +113,8 @@ static char	*special_value(const char *name, t_shell *shell)
 
 	if (name[0] == '?')
 		return (ft_itoa(shell->exit_status));
+	if (name[0] == '-')
+		return (option_string(shell));
 	if (name[0] == '#')
 		return (ft_itoa(shell->nparams));
 	if (name[0] == '@' || name[0] == '*')
