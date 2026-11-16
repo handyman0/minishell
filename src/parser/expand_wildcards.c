@@ -254,3 +254,8 @@ int	expand_glob(char *pattern, t_token **head, t_token **cur)
 	free(prefix);
 	return (count);
 }
+
+int	glob_match(const char *pattern, const char *name)
+{
+	return (match_pattern(pattern, name));
+}

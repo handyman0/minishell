@@ -39,25 +39,53 @@ static int	name_len(const char *s, int braced)
 	return (i);
 }
 
-static int	brace_offset(const char *s)
+static int	brace_end(const char *s)
 {
-	int	n;
+	int	i;
+	int	depth;
+	int	next;
 
-	if (s[0] != '{')
-		return (0);
-	n = name_len(s + 1, 1);
-	return (n > 0 && s[1 + n] == '}');
+	i = 1;
+	depth = 1;
+	while (s[i])
+	{
+		next = i + 1;
+		if (s[i] == '\\' && s[i + 1])
+			next = i + 2;
+		else if (s[i] == '\'' || s[i] == '"')
+			next = skip_quote(s, i);
+		else if (s[i] == '`')
+			next = skip_backtick(s, i);
+		else if (s[i] == '$' && s[i + 1] == '(')
+			next = skip_dollar_paren(s, i);
+		else if (s[i] == '{')
+			depth++;
+		else if (s[i] == '}' && --depth == 0)
+			return (i);
+		if (next == -1)
+			return (-1);
+		i = next;
+	}
+	return (-1);
 }
 
 static int	is_ref(const char *s)
 {
-	return (brace_offset(s) || name_len(s, 0) > 0);
+	int	n;
+
+	if (s[0] != '{')
+		return (name_len(s, 0) > 0);
+	if (s[1] == '#' && s[2] && s[2] != '}')
+		n = name_len(s + 2, 1);
+	else
+		n = name_len(s + 1, 1);
+	return (n > 0 && brace_end(s) != -1);
 }
 
 static int	ref_length(char *s)
 {
-	if (brace_offset(s))
-		return (name_len(s + 1, 1) + 2);
+	if (s[0] == '{')
+		return (brace_end(s) + 1);
 	return (name_len(s, 0));
 }
 
@@ -103,26 +131,147 @@ static char	*special_value(const char *name, t_shell *shell)
 	return (ft_strdup(""));
 }
 
+static char	*lookup(const char *name, t_shell *shell)
+{
+	char	*value;
+	int		n;
+
+	value = special_value(name, shell);
+	if (value)
+	{
+		n = ft_isdigit(name[0]) ? ft_atoi(name) : 0;
+		if ((n > shell->nparams) || (name[0] == '!' && !shell->last_bg))
+			return (free(value), NULL);
+		return (value);
+	}
+	if (env_get(shell->env, name))
+		return (ft_strdup(env_get(shell->env, name)));
+	return (NULL);
+}
+
+static char	*trim_prefix(char *value, const char *pat, int longest)
+{
+	size_t	len;
+	size_t	i;
+	char	*head;
+	int		hit;
+
+	len = ft_strlen(value);
+	i = longest ? len + 1 : 0;
+	while (longest ? i-- > 0 : i <= len)
+	{
+		head = ft_substr(value, 0, i);
+		hit = head && glob_match(pat, head);
+		free(head);
+		if (hit)
+			return (ft_strdup(value + i));
+		i += !longest;
+	}
+	return (ft_strdup(value));
+}
+
+static char	*trim_suffix(char *value, const char *pat, int longest)
+{
+	size_t	len;
+	size_t	i;
+	int		hit;
+
+	len = ft_strlen(value);
+	i = longest ? 0 : len + 1;
+	while (longest ? i <= len : i-- > 0)
+	{
+		hit = glob_match(pat, value + i);
+		if (hit)
+			return (ft_substr(value, 0, i));
+		i += longest;
+	}
+	return (ft_strdup(value));
+}
+
+static char	*apply_op(char *name, char *value, const char *rest, t_shell *shell)
+{
+	int		colon;
+	char	op;
+	char	*word;
+	char	*res;
+	int		unset;
+	int		longest;
+	colon = (rest[0] == ':');
+	op = rest[colon];
+	unset = !value || (colon && !*value);
+	longest = (op == '#' || op == '%') && rest[colon + 1] == op;
+	word = expand_variables((char *)rest + colon + 1 + longest, shell);
+	res = NULL;
+	if (op == '#' || op == '%')
+		res = op == '#' ? trim_prefix(value ? value : "", word, longest)
+			: trim_suffix(value ? value : "", word, longest);
+	else if (op == '-' || op == '=' || op == '+' || op == '?')
+	{
+		res = ft_strdup(value ? value : "");
+		if (op == '+' ? !unset : unset)
+		{
+			free(res);
+			res = op == '+' ? ft_strdup(word) : ft_strdup(word);
+			if (op == '=' && (ft_isalpha(name[0]) || name[0] == '_'))
+				env_assign(&shell->env, name, word);
+			if (op == '?')
+				ml_put_all(2, "minishell: ", name, ": ",
+					*word ? word : "parameter null or not set", "\n", NULL);
+			if (op == '?')
+				res[0] = '\0';
+		}
+		else if (op == '+')
+			res[0] = '\0';
+	}
+	return (free(word), res ? res : ft_strdup(value ? value : ""));
+}
+
+static char	*param_expand(const char *in, t_shell *shell)
+{
+	char	*name;
+	char	*value;
+	char	*res;
+	int		n;
+
+	if (in[0] == '#' && in[1])
+	{
+		name = ft_strdup(in + 1);
+		value = lookup(name, shell);
+		res = ft_itoa(value ? (int)ft_strlen(value) : 0);
+		return (free(name), free(value), res);
+	}
+	n = name_len(in, 1);
+	name = ft_substr(in, 0, n);
+	value = lookup(name, shell);
+	if (!in[n])
+		res = value ? ft_strdup(value) : ft_strdup("");
+	else
+		res = apply_op(name, value, in + n, shell);
+	return (free(name), free(value), res);
+}
+
 static char	*get_var_value(char *var_name, t_shell *shell)
 {
 	int		len;
 	char	*name;
 	char	*value;
 
-	len = brace_offset(var_name);
-	var_name += len;
-	len = name_len(var_name, len);
+	if (var_name[0] == '{')
+	{
+		len = brace_end(var_name);
+		name = ft_substr(var_name, 1, len - 1);
+		value = param_expand(name, shell);
+		return (free(name), value);
+	}
+	len = name_len(var_name, 0);
 	if (len == 0)
 		return (ft_strdup("$"));
 	name = ft_substr(var_name, 0, len);
-	if (!name)
-		return (NULL);
-	value = special_value(name, shell);
-	if (!value && env_get(shell->env, name))
-		value = ft_strdup(env_get(shell->env, name));
+	value = lookup(name, shell);
 	free(name);
 	return (value ? value : ft_strdup(""));
 }
+
 
 static size_t	calculate_expanded_size(char *token, t_shell *shell)
 {

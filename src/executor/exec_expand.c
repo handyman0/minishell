@@ -154,3 +154,12 @@ void	expand_command(t_node *node, t_shell *shell)
 	free_str_array(node->data.cmd.argv);
 	node->data.cmd.argv = tokens_to_argv(tokens);
 }
+
+char	**expand_words(char **raw, t_shell *shell)
+{
+	t_token	*tokens;
+
+	tokens = argv_to_tokens(raw);
+	expand_tokens(&tokens, shell);
+	return (tokens_to_argv(tokens));
+}
