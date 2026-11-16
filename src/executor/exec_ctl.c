@@ -97,6 +97,14 @@ static int	execute_for(t_node *node, t_shell *shell)
 	i = 0;
 	while (items && items[i])
 	{
+		if (env_is_readonly(shell->env, node->data.ctl.name))
+		{
+			ml_put_all(2, "minishell: ", node->data.ctl.name,
+				": readonly variable\n", NULL);
+			shell->running = shell->spare;
+			status = 1;
+			break ;
+		}
 		env_assign(&shell->env, node->data.ctl.name, items[i++]);
 		status = execute_tree(node->data.ctl.a, shell);
 		shell->exit_status = status;

@@ -25,7 +25,7 @@
 static void	errexit_check(t_shell *shell, int status)
 {
 	if (status != 0 && (shell->opts & OPT_E) && shell->noerrexit == 0
-		&& !shell->interactive)
+		&& !shell->spare)
 	{
 		shell->exit_status = status;
 		shell->running = 0;
@@ -237,7 +237,7 @@ static int	run_command(t_node *node, t_shell *shell)
 	if (shell->expand_error)
 	{
 		shell->expand_error = 0;
-		shell->running = shell->interactive;
+		shell->running = shell->spare;
 		return (1);
 	}
 	if (shell->opts & OPT_X)
@@ -263,7 +263,7 @@ static int	run_command(t_node *node, t_shell *shell)
 		{
 			restore_fds(backup);
 			if (!func && is_special_builtin(node->data.cmd.argv[0]))
-				shell->running = shell->interactive;
+				shell->running = shell->spare;
 			return (1);
 		}
 		saved = node->data.cmd.assigns
@@ -448,7 +448,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 
 	if (!node || node->type != NODE_CMD)
 		return (1);
-	if ((shell->opts & OPT_N) && !shell->interactive)
+	if ((shell->opts & OPT_N) && !shell->spare)
 		return (0);
 	copy = clone_command(node);
 	if (!copy)

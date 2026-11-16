@@ -9,7 +9,7 @@ static int	exec_fail(t_shell *shell, const char *name, int status)
 		ml_put_all(2, "minishell: exec: ", name, ": not found\n", NULL);
 	else
 		put_errno("exec", name);
-	shell->running = shell->interactive;
+	shell->running = shell->spare;
 	return (status);
 }
 
@@ -44,7 +44,7 @@ int	run_exec_builtin(t_node *node, t_shell *shell, int backup[3])
 	if (!apply_redirections(node->data.cmd.redirs))
 	{
 		restore_fds(backup);
-		shell->running = shell->interactive;
+		shell->running = shell->spare;
 		return (1);
 	}
 	if (!*argv)

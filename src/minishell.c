@@ -60,6 +60,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->bypass_func = 0;
 	shell->opts = 0;
 	shell->noerrexit = 0;
+	shell->spare = 0;
 	shell->optpos = 0;
 	shell->optind_last = 1;
 	shell->optsilent = 0;
@@ -100,7 +101,7 @@ static void	run_tokens(t_token *tokens, t_shell *shell)
 	if (parse_failed())
 	{
 		parse_report(shell);
-		shell->running = shell->interactive;
+		shell->running = shell->spare;
 		free_ast(ast);
 		ast = NULL;
 	}
@@ -133,7 +134,7 @@ void	run_line(char *line, t_shell *shell)
 	if (check_quotes(line))
 	{
 		shell->exit_status = 2;
-		shell->running = shell->interactive;
+		shell->running = shell->spare;
 		return ;
 	}
 	tokens = tokenize_line(line);
@@ -143,7 +144,7 @@ void	run_line(char *line, t_shell *shell)
 	if (check_syntax(tokens))
 	{
 		shell->exit_status = 2;
-		shell->running = shell->interactive;
+		shell->running = shell->spare;
 		free_tokens(tokens);
 		return ;
 	}
@@ -244,6 +245,7 @@ typedef struct s_opts
 	int		bad;
 	int		rest;
 	unsigned int	opts;
+	int		force_i;
 }	t_opts;
 
 static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
@@ -259,6 +261,8 @@ static void	parse_flags(char *arg, int argc, char **argv, t_opts *o)
 			o->cmd = o->rest + 1 < argc ? argv[o->rest + 1] : NULL;
 			o->rest++;
 		}
+		else if (arg[k] == 'i' && arg[0] == '-')
+			o->force_i = 1;
 		else if (arg[k] == 's')
 			o->use_stdin = 1;
 		else if (arg[0] == '+' && arg[k] == 'o' && o->rest + 1 < argc)
@@ -346,6 +350,7 @@ int	main(int argc, char **argv, char **envp)
 	shell.opts = o.opts;
 	g_noclobber = (o.opts & OPT_C) != 0;
 	jobs_init(&shell, !o.cmd && !o.script);
+	shell.spare = shell.interactive || o.force_i;
 	if (o.cmd || o.script)
 	{
 		if (o.script || o.rest < argc)

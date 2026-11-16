@@ -30,6 +30,7 @@ static int	readonly_error(t_shell *shell, const char *key)
 	if (!env_is_readonly(shell->env, key))
 		return (0);
 	ml_put_all(2, "minishell: ", key, ": readonly variable\n", NULL);
+	shell->running = shell->spare;
 	return (1);
 }
 

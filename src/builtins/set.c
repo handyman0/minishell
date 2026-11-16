@@ -216,7 +216,7 @@ int	builtin_set(char **argv, t_shell *shell)
 		i++;
 	}
 	if (status)
-		return (shell->running = shell->interactive, status);
+		return (shell->running = shell->spare, status);
 	if (argv[i] || (i > 1 && ft_strcmp(argv[i - 1], "--") == 0))
 		set_params(shell, argv + i);
 	return (0);
