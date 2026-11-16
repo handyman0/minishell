@@ -328,6 +328,8 @@ int	execute_ctl(t_node *node, t_shell *shell)
 		return (define_function(node, shell));
 	if (node->type == NODE_IF)
 		return (with_redirs(node, shell, execute_if));
+	if (node->type == NODE_PAREN)
+		return (with_redirs(node, shell, execute_subshell));
 	if (node->type == NODE_WHILE)
 		return (with_redirs(node, shell, execute_while));
 	if (node->type == NODE_FOR)

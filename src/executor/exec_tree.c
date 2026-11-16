@@ -350,7 +350,7 @@ static int	execute_pipe(t_node *node, t_shell *shell)
 	return (status);
 }
 
-static int	execute_subshell(t_node *node, t_shell *shell)
+int	execute_subshell(t_node *node, t_shell *shell)
 {
 	pid_t	pid;
 
@@ -423,8 +423,6 @@ int	execute_tree(t_node *node, t_shell *shell)
 			return (execute_chain(node, shell));
 		case NODE_NOT:
 			return (execute_tree(node->data.op.left, shell) == 0);
-		case NODE_PAREN:
-			return (execute_subshell(node, shell));
 		case NODE_BG:
 			return (execute_background(node, shell));
 		default:

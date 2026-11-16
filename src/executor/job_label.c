@@ -35,7 +35,7 @@ char	*node_label(t_node *node)
 	if (node->type == NODE_CMD)
 		return (argv_label(node->data.cmd.argv));
 	if (node->type == NODE_PAREN)
-		return (glue(glue(ft_strdup("("), "", node_label(node->data.op.left)),
+		return (glue(glue(ft_strdup("("), "", node_label(node->data.ctl.a)),
 				")", NULL));
 	if (node->type == NODE_BG)
 		return (glue(node_label(node->data.op.left), " &", NULL));

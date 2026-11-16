@@ -251,3 +251,6 @@ eval 'echo via eval'
 x=5; eval "y=\$x"; echo $y
 echo a ;; echo b
 echo ;; [a-m]* || ? { ? ;; a b && 2>> ;;
+(echo y) > o3; cat o3
+(echo a; echo b) > o4 2>&1; cat o4
+(echo z) | cat

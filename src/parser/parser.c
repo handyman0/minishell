@@ -341,7 +341,8 @@ int	is_ctl_node(t_node *node)
 {
 	return (node->type == NODE_IF || node->type == NODE_WHILE
 		|| node->type == NODE_FOR || node->type == NODE_CASE
-		|| node->type == NODE_GROUP || node->type == NODE_FUNC);
+		|| node->type == NODE_GROUP || node->type == NODE_FUNC
+		|| node->type == NODE_PAREN);
 }
 
 void	free_ctl(t_node *node)

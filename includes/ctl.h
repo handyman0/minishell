@@ -23,6 +23,7 @@ struct s_local
 };
 
 int		execute_ctl(t_node *node, t_shell *shell);
+int		execute_subshell(t_node *node, t_shell *shell);
 t_func	*find_func(t_shell *shell, const char *name);
 int		call_function(t_shell *shell, t_func *func, char **argv);
 void	funcs_free(t_shell *shell);

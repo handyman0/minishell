@@ -366,6 +366,7 @@ static t_node	*parse_group(t_token **tokens)
 static t_node	*parse_subshell(t_token **tokens)
 {
 	t_node	*inner;
+	t_node	*node;
 
 	*tokens = (*tokens)->next;
 	inner = need_list(tokens, stop_paren);
@@ -374,7 +375,10 @@ static t_node	*parse_subshell(t_token **tokens)
 	if (!*tokens || (*tokens)->type != TOKEN_RPAREN)
 		return (parse_fail_at(*tokens), free_ast(inner), NULL);
 	*tokens = (*tokens)->next;
-	return (make_node(NODE_PAREN, inner, NULL));
+	node = new_ctl(NODE_PAREN);
+	if (node)
+		node->data.ctl.a = inner;
+	return (node ? node : (free_ast(inner), NULL));
 }
 
 static int	is_funcdef(t_token *tok)
