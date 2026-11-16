@@ -593,7 +593,7 @@ static void	use_word(t_word *w, char *name, char op, char *word_ctx[3])
 }
 
 
-static char	*expand_pattern(char *word, t_shell *shell)
+char	*expand_pattern(char *word, t_shell *shell)
 {
 	t_word	t;
 	char	*pat;

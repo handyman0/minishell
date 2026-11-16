@@ -126,7 +126,7 @@ static int	case_matches(t_case *item, const char *word, t_shell *shell)
 	i = 0;
 	while (!hit && item->patterns[i])
 	{
-		pattern = expand_variables(item->patterns[i++], shell);
+		pattern = expand_pattern(item->patterns[i++], shell);
 		hit = pattern && glob_match(pattern, word);
 		free(pattern);
 	}
