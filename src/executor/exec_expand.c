@@ -53,7 +53,10 @@ static void	expand_redirs(t_redir *redir, t_shell *shell)
 	while (redir)
 	{
 		expanded = NULL;
-		if (redir->type != REDIR_HEREDOC)
+		if ((redir->file[0] == '<' || redir->file[0] == '>') && redir->file[1] == '(')
+			expanded = run_procsub(shell, ft_substr(redir->file, 2,
+					ft_strlen(redir->file) - 3), redir->file[0] == '>');
+		else if (redir->type != REDIR_HEREDOC)
 			expanded = expand_variables(redir->file, shell);
 		if (redir->type == REDIR_HERESTR)
 			redir->hd_fd = herestring_fd(expanded);

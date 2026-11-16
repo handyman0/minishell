@@ -389,6 +389,15 @@ static t_token	*tokenize_joined(char *line, const int *map)
 				i++;
 			continue ;
 		}
+		if ((line[i] == '<' || line[i] == '>') && line[i + 1] == '('
+			&& skip_array_literal(line, i + 1) > 0)
+		{
+			op_len = skip_array_literal(line, i + 1);
+			token_add_back(&head, &current, TOKEN_WORD,
+				ft_substr(line, i, op_len - i));
+			i = op_len;
+			continue ;
+		}
 		op_len = arith_command_end(line, i, current);
 		if (op_len > 0)
 		{

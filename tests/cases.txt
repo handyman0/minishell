@@ -357,3 +357,6 @@ read -a arr <<< "p q r"; echo ${arr[1]} ${#arr[@]}; cat <<< "here $arr"; x=abc; 
 for ((i=0;i<3;i++)); do echo $i; done; for (( ; ; )); do echo once; break; done; for ((i=0,j=10;i<j;i+=4,j-=1)); do echo $i-$j; done
 i=1; (( i++ )); echo $i; (( i > 1 )) && echo big; if (( i == 2 )); then echo two; fi; (( j = i * 5 )); echo $j; ((0)); echo $?; echo $((i++)) $i $((++i)) $((i--)) $((--i))
 false | true | (exit 3); echo ${PIPESTATUS[@]} ${#PIPESTATUS[@]}; set -o pipefail; false | true; echo $?; true | false | true; echo $?; set +o pipefail; false | true; echo $?
+cat <(echo hi) <(seq 1 3); diff <(echo a) <(echo b); wc -l < <(printf '1\n2\n'); while read l; do echo "[$l]"; done < <(echo foo; echo bar)
+shopt -s nullglob; echo /nonexistent_dir/*.zz end; shopt -u nullglob; echo /nonexistent_dir/*.zz; shopt -q nullglob; echo $?; echo $((2#101)) $((16#ff)) $((8#17)) $((36#zz))
+type -t ls; type -t cd; type -t if; type -a ls

@@ -24,6 +24,7 @@ typedef struct s_env t_env;
 typedef struct s_token t_token;
 typedef struct s_node t_node;
 typedef struct s_shell t_shell;
+#define PS_MAX 16
 typedef struct s_job t_job;
 typedef struct s_func t_func;
 typedef struct s_bg t_bg;
@@ -56,6 +57,9 @@ struct s_shell
 	int			*pipe_st;
 	int			npipe;
 	int			pipe_cap;
+	int			ps_n;
+	int			ps_fd[PS_MAX];
+	pid_t		ps_pid[PS_MAX];
 	int			running;
 	t_node		*ast;
 	t_token		*tokens;

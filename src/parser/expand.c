@@ -1272,6 +1272,12 @@ static int	emit_fields(t_word *w, t_token **tok[2])
 static void	expand_word(char *raw, t_shell *shell, t_token **head,
 				t_token **cur)
 {
+	if ((raw[0] == '<' || raw[0] == '>') && raw[1] == '(' && raw[ft_strlen(raw) - 1] == ')')
+	{
+		token_add_back(head, cur, TOKEN_WORD, run_procsub(shell,
+				ft_substr(raw, 2, ft_strlen(raw) - 3), raw[0] == '>'));
+		return ;
+	}
 	t_word	w;
 	t_token	**tok[2];
 	char	*home;

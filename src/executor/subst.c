@@ -20,13 +20,22 @@ static void	read_all(int fd, t_out *out)
 	}
 }
 
-static void	child_run(t_shell *shell, int fds[2], char *cmd)
+static void	child_run(t_shell *shell, int fds[2], char *cmd, int reads)
 {
 	int	status;
 
-	close(fds[0]);
-	dup2(fds[1], STDOUT_FILENO);
-	close(fds[1]);
+	if (reads)
+	{
+		close(fds[1]);
+		dup2(fds[0], STDIN_FILENO);
+		close(fds[0]);
+	}
+	else
+	{
+		close(fds[0]);
+		dup2(fds[1], STDOUT_FILENO);
+		close(fds[1]);
+	}
 	shell->in_child = 1;
 	signals_child();
 	trap_subshell_reset(shell);
@@ -94,9 +103,42 @@ char	*run_substitution(t_shell *shell, char *cmd)
 	if (pid == -1)
 		return (close(fds[0]), close(fds[1]), free(cmd), ft_strdup(""));
 	if (pid == 0)
-		child_run(shell, fds, cmd);
+		child_run(shell, fds, cmd, 0);
 	close(fds[1]);
 	collect(shell, pid, fds[0], &out);
 	free(cmd);
 	return (finish_output(&out));
+}
+
+char	*run_procsub(t_shell *shell, char *cmd, int reads)
+{
+	int		fds[2];
+	pid_t	pid;
+	char	*num;
+	char	*path;
+
+	if (shell->ps_n >= PS_MAX || pipe(fds) == -1)
+		return (free(cmd), ft_strdup(""));
+	pid = fork();
+	if (pid == -1)
+		return (close(fds[0]), close(fds[1]), free(cmd), ft_strdup(""));
+	if (pid == 0)
+		child_run(shell, fds, cmd, reads);
+	close(fds[reads ? 0 : 1]);
+	shell->ps_fd[shell->ps_n] = fds[reads ? 1 : 0];
+	shell->ps_pid[shell->ps_n++] = pid;
+	free(cmd);
+	num = ft_itoa(fds[reads ? 1 : 0]);
+	path = ft_strjoin("/dev/fd/", num);
+	return (free(num), path);
+}
+
+void	procsub_cleanup(t_shell *shell)
+{
+	while (shell->ps_n > 0)
+	{
+		shell->ps_n--;
+		close(shell->ps_fd[shell->ps_n]);
+		bg_add(shell, shell->ps_pid[shell->ps_n]);
+	}
 }

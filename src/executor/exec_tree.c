@@ -672,6 +672,7 @@ static int	execute_command(t_node *node, t_shell *shell)
 	if (!copy)
 		return (1);
 	status = run_command(copy, shell);
+	procsub_cleanup(shell);
 	shell->exit_status = status;
 	set_pipestatus(shell, &status, 1);
 	errexit_check(shell, status);

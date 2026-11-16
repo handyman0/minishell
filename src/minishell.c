@@ -52,6 +52,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	shell->pipe_st = NULL;
 	shell->npipe = 0;
 	shell->pipe_cap = 0;
+	shell->ps_n = 0;
 	shell->exit_status = 0;
 	shell->running = 1;
 	shell->ast = NULL;

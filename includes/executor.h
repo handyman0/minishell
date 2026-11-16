@@ -57,6 +57,8 @@ int		assign_shell(t_shell *shell, char **assigns);
 int		execute_builtin(t_node *node, t_shell *shell);
 int		herestring_fd(const char *text);
 void	set_pipestatus(t_shell *shell, const int *codes, int n);
+char	*run_procsub(t_shell *shell, char *cmd, int reads);
+void	procsub_cleanup(t_shell *shell);
 int		run_timed(t_node *node, t_shell *shell, int (*run)(t_node *, t_shell *));
 int		assigns_ok(t_shell *shell, char **assigns);
 t_saved	*overlay_apply(t_shell *shell, char **assigns, int *count);
