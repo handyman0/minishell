@@ -153,6 +153,12 @@ static int	skip_open(const char *line, int i, char *unclosed)
 	return (next);
 }
 
+static int	comment_start(const char *line, int i)
+{
+	return (line[i] == '#' && (i == 0 || ft_isspace(line[i - 1])
+			|| ft_strchr(";&|()", line[i - 1])));
+}
+
 char	open_quote(const char *line)
 {
 	char	unclosed;
@@ -162,7 +168,10 @@ char	open_quote(const char *line)
 	i = 0;
 	while (line[i])
 	{
-		if (line[i] == '\\' && line[i + 1])
+		if (comment_start(line, i))
+			while (line[i] && line[i] != '\n')
+				i++;
+		else if (line[i] == '\\' && line[i + 1])
 			i += 2;
 		else if (line[i] == '\'' || line[i] == '"' || line[i] == '`'
 			|| (line[i] == '$' && (line[i + 1] == '(' || line[i + 1] == '{')))
