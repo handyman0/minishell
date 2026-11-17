@@ -58,7 +58,7 @@ int	builtin_exit(char **argv, t_shell *shell)
 		}
 	}
 	else
-		exit_code = shell->exit_status;
+		exit_code = shell->in_trap ? shell->trap_status : shell->exit_status;
 	shell->running = 0;
 	return (exit_code);
 }

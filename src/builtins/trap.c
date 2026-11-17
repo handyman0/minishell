@@ -185,12 +185,16 @@ static void	run_action(t_shell *shell, const char *action)
 {
 	char	*text;
 	int		saved;
+	int		prev;
 
 	text = ft_strdup(action);
 	saved = shell->exit_status;
+	prev = shell->trap_status;
+	shell->trap_status = saved;
 	shell->in_trap++;
 	run_line(text, shell);
 	shell->in_trap--;
+	shell->trap_status = prev;
 	if (shell->running)
 		shell->exit_status = saved;
 	free(text);
@@ -220,6 +224,7 @@ void	trap_run_exit(t_shell *shell)
 {
 	char	*action;
 	int		saved;
+	int		prev;
 
 	if (!shell->traps[0] || !*shell->traps[0] || shell->trap_inherited[0])
 		return ;
@@ -227,7 +232,12 @@ void	trap_run_exit(t_shell *shell)
 	shell->traps[0] = NULL;
 	saved = shell->exit_status;
 	shell->running = 1;
+	prev = shell->trap_status;
+	shell->trap_status = saved;
+	shell->in_trap++;
 	run_line(action, shell);
+	shell->in_trap--;
+	shell->trap_status = prev;
 	if (shell->running)
 		shell->exit_status = saved;
 	free(action);
@@ -262,15 +272,19 @@ static void	run_special(t_shell *shell, int slot)
 {
 	char	*action;
 	int		saved;
+	int		prev;
 
 	if (shell->in_trap || !shell->traps[slot] || !*shell->traps[slot]
 		|| shell->trap_inherited[slot])
 		return ;
 	action = ft_strdup(shell->traps[slot]);
 	saved = shell->exit_status;
+	prev = shell->trap_status;
+	shell->trap_status = saved;
 	shell->in_trap++;
 	run_line(action, shell);
 	shell->in_trap--;
+	shell->trap_status = prev;
 	if (shell->running)
 		shell->exit_status = saved;
 	free(action);

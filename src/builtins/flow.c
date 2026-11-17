@@ -59,7 +59,7 @@ int	builtin_return(char **argv, t_shell *shell)
 	shell->ret = 1;
 	if (argv[1])
 		return (ft_atoi(argv[1]) & 255);
-	return (shell->exit_status);
+	return (shell->in_trap ? shell->trap_status : shell->exit_status);
 }
 
 int	builtin_local(char **argv, t_shell *shell)

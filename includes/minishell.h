@@ -94,6 +94,7 @@ struct s_shell
 	char		*traps[67];
 	char		trap_inherited[67];
 	int			in_trap;
+	int			trap_status;
 	t_bg		*bgs;
 	pid_t		pgid;
 	struct termios	tmodes;

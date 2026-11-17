@@ -89,6 +89,7 @@ static void	init_shell(t_shell *shell, char **envp)
 	ft_bzero(shell->traps, sizeof(shell->traps));
 	ft_bzero(shell->trap_inherited, sizeof(shell->trap_inherited));
 	shell->in_trap = 0;
+	shell->trap_status = 0;
 	shell->bgs = NULL;
 	if (getcwd(cwd, sizeof(cwd)) != NULL)
 		env_set(&shell->env, "PWD", cwd);
