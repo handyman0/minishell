@@ -135,7 +135,7 @@ static char	*assigned_value(const char *name, int eq, const char *word,
 	base = env_get(shell->env, name);
 	if (word[eq + 1] == '(' && word[ft_strlen(word) - 1] == ')')
 		return (array_literal(base, plus, word + eq + 1, shell));
-	val = expand_variables((char *)word + eq + 1, shell);
+	val = expand_assign_value((char *)word + eq + 1, shell);
 	sub = NULL;
 	if (word[eq - 1 - plus] == ']')
 	{

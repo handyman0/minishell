@@ -563,11 +563,17 @@ static int	assign_default(char *name, char *text, t_shell *shell)
 static char	*tilde_word(char *word, t_shell *shell)
 {
 	char	*home;
+	char	*res;
+	int		n;
 
-	home = env_get(shell->env, "HOME");
-	if (word[0] != '~' || (word[1] && word[1] != '/') || !home)
+	if (word[0] != '~')
 		return (ft_strdup(word));
-	return (ft_strjoin(home, word + 1));
+	n = tilde_name_len(word + 1, 0);
+	home = n < 0 ? NULL : tilde_lookup(word + 1, n, shell);
+	if (!home)
+		return (ft_strdup(word));
+	res = ft_strjoin(home, word + 1 + n);
+	return (free(home), res);
 }
 
 static void	use_word(t_word *w, char *name, char op, char *word_ctx[3])
@@ -1187,19 +1193,70 @@ static void	fill_chars(t_word *w, char *raw, int quote, t_shell *shell)
 	}
 }
 
+static int	g_assign_tilde;
+
+static int	tilde_at(t_word *w, char *raw, t_shell *shell)
+{
+	char	*home;
+	int		n;
+
+	if (raw[0] != '~')
+		return (0);
+	n = tilde_name_len(raw + 1, g_assign_tilde);
+	if (n < 0)
+		return (0);
+	home = tilde_lookup(raw + 1, n, shell);
+	if (!home)
+		return (0);
+	put_value(w, home, QUOTED);
+	return (n + 1);
+}
+
+static int	piece_end(char *raw, int i)
+{
+	int	next;
+
+	while (raw[i])
+	{
+		if (raw[i] == ':')
+			return (i + 1);
+		if (raw[i] == '\\' && raw[i + 1])
+			i += 2;
+		else if (raw[i] == '\'' || raw[i] == '"' || raw[i] == '`'
+			|| (raw[i] == '$' && (raw[i + 1] == '(' || raw[i + 1] == '{')))
+		{
+			if (raw[i] == '\'' || raw[i] == '"')
+				next = skip_quote(raw, i);
+			else if (raw[i] == '`')
+				next = skip_backtick(raw, i);
+			else if (raw[i + 1] == '{')
+				next = skip_brace(raw, i);
+			else
+				next = skip_dollar_paren(raw, i);
+			i = next < 0 ? (int)ft_strlen(raw) : next;
+		}
+		else
+			i++;
+	}
+	return (i);
+}
+
 static void	fill_word(t_word *w, char *raw, t_shell *shell)
 {
+	char	*piece;
 	int		i;
-	char	*home;
+	int		j;
 
 	i = 0;
-	home = env_get(shell->env, "HOME");
-	if (raw[0] == '~' && (!raw[1] || raw[1] == '/') && home)
+	while (raw[i])
 	{
-		put_value(w, ft_strdup(home), QUOTED);
-		i = 1;
+		i += tilde_at(w, raw + i, shell);
+		j = g_assign_tilde ? piece_end(raw, i) : (int)ft_strlen(raw);
+		piece = ft_substr(raw, i, j - i);
+		fill_chars(w, piece, 0, shell);
+		free(piece);
+		i = j;
 	}
-	fill_chars(w, raw + i, 0, shell);
 }
 
 static void	emit_one(t_word *w, int start, int end, t_token **tok[2])
@@ -1416,4 +1473,14 @@ char	*expand_variables(char *token, t_shell *shell)
 	free(w.str);
 	free(w.mask);
 	return (result);
+}
+
+char	*expand_assign_value(char *token, t_shell *shell)
+{
+	char	*res;
+
+	g_assign_tilde = 1;
+	res = expand_variables(token, shell);
+	g_assign_tilde = 0;
+	return (res);
 }

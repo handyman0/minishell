@@ -207,6 +207,9 @@ t_node	*parse_pipeline(t_token **tokens);
  */
 char	*expand_variables(char *token, t_shell *shell);
 char	*expand_pattern(char *word, t_shell *shell);
+char	*expand_assign_value(char *token, t_shell *shell);
+int		tilde_name_len(const char *s, int assign);
+char	*tilde_lookup(const char *name, int n, t_shell *shell);
 char	*dynamic_value(const char *name, t_shell *shell);
 int	opens_command(t_token *tok);
 int	assign_eq_index(const char *w);
