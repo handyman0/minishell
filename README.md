@@ -132,8 +132,10 @@ editor dentro de um terminal simulado.
 Já feitos: `ulimit`, `history`, `echo -e`, `printf` embutido, `{a,b}`, `[[ ... ]]`, `(( ... ))`, `for ((;;))`,
 `declare`, `let`, `pushd`/`popd`/`dirs`, `time`, `mapfile`, `shopt`, arrays indexados (`a=(1 2)`, `${a[@]}`, `${#a[@]}`),
 `<<<`, `<(...)`/`>(...)`, `PIPESTATUS`, `pipefail`, `PPID`/`RANDOM`/`SECONDS`, expansão de parâmetros completa
-(`${x:2:3}`, `${x/a/b}`, `${x^^}`, `${!x}`) e glob em vários níveis.
+(`${x:2:3}`, `${x/a/b}`, `${x^^}`, `${!x}`), glob em vários níveis, arrays associativos (`declare -A`), `extglob`
+(`@(a|b)`), `select`, `trap ... ERR`/`DEBUG`, `alias` por posição gramatical (dentro de `for`/`case`/definição de
+função), `~usuario` e `Tab` com opções (via `--help`/`-h`, com cache) e subcomandos de `git`, `docker`,
+`systemctl` e afins, mais alvos do `make`.
 
-Próximos passos, em ordem de impacto para o uso diário: arrays associativos (`declare -A`), `extglob`
-(`@(a|b)`), `select`, `trap ... ERR`, `alias` exótico (dentro de `for`/`case`) e `Tab` com opções de comandos e
-subcomandos.
+Casos ainda abertos na suíte POSIX (12 de 1876): alias que forma here-document ou operador, ordem de expansão
+entre atribuições e redirecionamentos, `set -h`, e leitura do stdin byte a byte para `tail &` com `-m`.
