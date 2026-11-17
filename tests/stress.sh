@@ -184,6 +184,8 @@ if command -v script > /dev/null; then
 		cat keys_out.bin >> keys_err.txt
 		check "teclas-$seed" $rc keys_err.txt || echo "editor: semente $seed falhou (rc=$rc)"
 	done
+	bash "$ROOT/tests/complete.sh" "$SHELL_BIN" > comp_out.txt 2>&1
+	check "tab-opcoes" $? comp_out.txt || cat comp_out.txt
 	echo "acumulado: $TOTAL executados, $BAD problemas"
 else
 	echo "script nao encontrado, secao ignorada"

@@ -95,6 +95,7 @@ const char	*history_suggestion(const char *buf, size_t len);
 
 void		ml_sort_strings(char **items, int count);
 int			complete_tab(t_edit *e);
+char		**opts_candidates(char **words, int nw, const char *text, t_shell *shell);
 void		le_set_buffer(t_edit *e, const char *text);
 int			search_history(t_edit *e);
 int			le_insert(t_edit *e, const char *src, size_t n);

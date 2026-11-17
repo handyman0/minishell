@@ -366,6 +366,53 @@ static void	apply_single(t_edit *e, size_t start, t_matches *m, t_kind kind,
 	free(text);
 }
 
+static int	redirect_before(t_edit *e, size_t start)
+{
+	size_t	i;
+
+	i = start;
+	while (i > 0 && e->buf[i - 1] == ' ')
+		i--;
+	return (i > 0 && (e->buf[i - 1] == '>' || e->buf[i - 1] == '<'));
+}
+
+static char	**current_words(t_edit *e, size_t start, int *nw)
+{
+	size_t	from;
+	char	*seg;
+	char	**words;
+
+	from = start;
+	while (from > 0 && !ft_strchr("|&;(", e->buf[from - 1]))
+		from--;
+	seg = ft_substr(e->buf, from, start - from);
+	words = seg ? ft_split(seg, ' ') : NULL;
+	free(seg);
+	*nw = 0;
+	while (words && words[*nw])
+		(*nw)++;
+	return (words);
+}
+
+static void	option_matches(t_edit *e, size_t start, const char *text,
+				t_matches *m)
+{
+	char	**words;
+	char	**found;
+	int		nw;
+	int		i;
+
+	if (ft_strchr(text, '/') || redirect_before(e, start))
+		return ;
+	words = current_words(e, start, &nw);
+	found = words ? opts_candidates(words, nw, text, e->shell) : NULL;
+	i = 0;
+	while (found && found[i])
+		add_match(m, found[i++]);
+	free(found);
+	free_str_array(words);
+}
+
 static void	complete_run(t_edit *e, size_t start, const char *text,
 				t_matches *m)
 {
@@ -380,7 +427,11 @@ static void	complete_run(t_edit *e, size_t start, const char *text,
 	else if (kind == KIND_VARIABLE)
 		variable_matches(m, text, e->shell);
 	else
-		file_matches(m, text, e->shell, only_directories(e));
+	{
+		option_matches(e, start, text, m);
+		if (m->count == 0)
+			file_matches(m, text, e->shell, only_directories(e));
+	}
 	unique_matches(m);
 	if (m->count == 1)
 		return (apply_single(e, start, m, kind, brace));
