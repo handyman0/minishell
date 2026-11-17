@@ -45,7 +45,8 @@ char	*find_path(char *cmd, t_shell *shell)
 
 	if (!cmd || !*cmd || !shell)
 		return (NULL);
-
+	if (ft_strchr(cmd, '/'))
+		return (access(cmd, F_OK) == 0 ? ft_strdup(cmd) : NULL);
 	path_env = NULL;
 	if (shell->env)
 		path_env = env_get(shell->env, "PATH");

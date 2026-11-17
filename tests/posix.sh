@@ -51,6 +51,7 @@ RESULTS="$RUN/results.txt"
 : > "$RUN/detalhes.txt"
 trap 'chmod -R u+rwx "$RUN" 2> /dev/null; rm -rf "$RUN"' EXIT
 
+testee() { "$BIN" "$@"; }
 SETUP=
 setup() {
 	case "${1--}" in
