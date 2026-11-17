@@ -484,9 +484,22 @@ static int	pipe_child(t_node *node, t_shell *shell)
 	return (status);
 }
 
+static void	null_stdin(void)
+{
+	int	fd;
+
+	fd = open("/dev/null", O_RDONLY);
+	if (fd >= 0)
+		dup2(fd, STDIN_FILENO);
+	if (fd > STDIN_FILENO)
+		close(fd);
+}
+
 static void	pipe_stage(t_node *node, t_shell *shell, int fds[2], int mode)
 {
 	job_child_setup(shell, (mode & 1) ? 0 : getpgrp(), !(mode & 2));
+	if ((mode & 3) == 3 && !job_monitor(shell))
+		null_stdin();
 	if (mode & 1)
 		dup2(fds[1], STDOUT_FILENO);
 	else
@@ -682,6 +695,8 @@ static int	background_pipe(t_node *node, t_shell *shell)
 	if (!spawn_pipe(node->data.op.left, shell, pids, 1))
 		return (1);
 	shell->last_bg = pids[1];
+	if (!job_monitor(shell))
+		bg_add(shell, pids[0]);
 	bg_add(shell, pids[1]);
 	job_add_background(shell, node->data.op.left, pids[0], pids[1]);
 	return (0);
@@ -692,7 +707,7 @@ static int	execute_background(t_node *node, t_shell *shell)
 	pid_t	pid;
 	int		fd;
 
-	if (job_monitor(shell) && node->data.op.left->type == NODE_PIPE)
+	if (node->data.op.left->type == NODE_PIPE)
 		return (background_pipe(node, shell));
 
 	pid = fork();
