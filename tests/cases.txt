@@ -377,3 +377,5 @@ cat </dev/null
 exec 3>/dev/null; { echo hi >&3; } 3>&1; echo ok >&3; echo rc=$?
 { exec 4>&1; } 3>&2; echo foo >&4
 echo x # it's a comment
+umask 077; umask g=u; umask; umask -S; umask o=u,u-w; umask
+umask 022; umask g+u,o+rwx-u; umask -S

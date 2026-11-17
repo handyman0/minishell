@@ -64,17 +64,26 @@ static int	parse_octal(const char *s, unsigned int *mask)
 	return (1);
 }
 
-static unsigned int	class_bits(const char *who, const char *perms)
+static unsigned int	perm_rwx(const char *perms, unsigned int allowed)
 {
-	unsigned int	bits;
 	unsigned int	rwx;
 	int				i;
 
+	if (perms[0] && ft_strchr("ugo", perms[0]))
+		return ((allowed >> (6 - 3 * (int)(ft_strchr("ugo", perms[0])
+						- "ugo"))) & 7);
 	rwx = 0;
 	i = 0;
 	while (perms[i] && ft_strchr("rwxXst", perms[i]))
 		rwx |= (perms[i] == 'r') * 4 | (perms[i] == 'w') * 2
 			| (perms[i] == 'x' || perms[i] == 'X') * 1, i++;
+	return (rwx);
+}
+
+static unsigned int	class_bits(const char *who, unsigned int rwx)
+{
+	unsigned int	bits;
+
 	bits = 0;
 	while (*who)
 	{
@@ -100,13 +109,16 @@ static int	apply_clause(const char *c, unsigned int *allowed)
 	who[n] = '\0';
 	if (n == 0)
 		ft_strlcpy(who, "a", sizeof(who));
-	cover = class_bits(who, "rwx");
+	cover = class_bits(who, 7);
 	while (*c == '+' || *c == '-' || *c == '=')
 	{
 		op = *c++;
-		bits = class_bits(who, c);
-		while (*c && ft_strchr("rwxXst", *c))
+		bits = class_bits(who, perm_rwx(c, *allowed));
+		if (*c && ft_strchr("ugo", *c))
 			c++;
+		else
+			while (*c && ft_strchr("rwxXst", *c))
+				c++;
 		if (op == '=')
 			*allowed = (*allowed & ~cover) | bits;
 		else
