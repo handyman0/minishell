@@ -33,7 +33,7 @@ static int	exec_command(t_node *node, t_shell *shell, char **argv)
 	return (exec_fail(shell, argv[0], errno == ENOENT ? 127 : 126));
 }
 
-int	run_exec_builtin(t_node *node, t_shell *shell, int backup[3])
+int	run_exec_builtin(t_node *node, t_shell *shell, int backup[4])
 {
 	char	**argv;
 	int		status;
@@ -50,6 +50,7 @@ int	run_exec_builtin(t_node *node, t_shell *shell, int backup[3])
 	if (!*argv)
 	{
 		assign_shell(shell, node->data.cmd.assigns);
+		forget_fds(backup);
 		close(backup[0]);
 		close(backup[1]);
 		close(backup[2]);

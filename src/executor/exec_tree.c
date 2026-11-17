@@ -131,14 +131,39 @@ int	execute_builtin(t_node *node, t_shell *shell)
 	return (-1);
 }
 
-void	save_fds(int backup[3])
+#define MAX_RFDS 64
+
+static struct s_rfd
+{
+	int	fd;
+	int	saved;
+}	g_rfds[MAX_RFDS];
+static int	g_nrfds;
+
+static void	record_fd(int fd)
+{
+	if (fd <= 2 || g_nrfds >= MAX_RFDS)
+		return ;
+	g_rfds[g_nrfds].fd = fd;
+	g_rfds[g_nrfds++].saved = fcntl(fd, F_DUPFD_CLOEXEC, 10);
+}
+
+void	save_fds(int backup[4])
 {
 	backup[0] = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 10);
 	backup[1] = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 10);
 	backup[2] = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 10);
+	backup[3] = g_nrfds;
 }
 
-void	restore_fds(int backup[3])
+void	forget_fds(int backup[4])
+{
+	while (g_nrfds > backup[3])
+		if (g_rfds[--g_nrfds].saved >= 0)
+			close(g_rfds[g_nrfds].saved);
+}
+
+void	restore_fds(int backup[4])
 {
 	int	i;
 
@@ -149,8 +174,18 @@ void	restore_fds(int backup[3])
 		close(backup[i]);
 		i++;
 	}
+	while (g_nrfds > backup[3])
+	{
+		g_nrfds--;
+		if (g_rfds[g_nrfds].saved >= 0)
+		{
+			dup2(g_rfds[g_nrfds].saved, g_rfds[g_nrfds].fd);
+			close(g_rfds[g_nrfds].saved);
+		}
+		else
+			close(g_rfds[g_nrfds].fd);
+	}
 }
-
 
 int	g_noclobber;
 
@@ -252,6 +287,7 @@ int	apply_redirections(t_redir *redirs)
 {
 	while (redirs)
 	{
+		record_fd(redirs->fd);
 		if (!apply_one(redirs))
 			return (0);
 		redirs = redirs->next;
@@ -266,13 +302,25 @@ static int	is_dir(char *path)
 	return (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
 }
 
+static int	is_exec_via(char **argv)
+{
+	int	i;
+
+	if (ft_strcmp(argv[0], "command") != 0 && ft_strcmp(argv[0], "builtin") != 0)
+		return (0);
+	i = 1;
+	while (argv[i] && argv[i][0] == '-' && argv[i][1])
+		i++;
+	return (argv[i] && ft_strcmp(argv[i], "exec") == 0);
+}
+
 static int	run_command(t_node *node, t_shell *shell)
 {
 	char	*path;
 	char	**env_array;
 	int		status;
 	int		builtin_status;
-	int		backup[3];
+	int		backup[4];
 	t_saved	*saved;
 	t_func	*func;
 	int		nsaved;
@@ -317,6 +365,7 @@ static int	run_command(t_node *node, t_shell *shell)
 	backup[0] = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 10);
 	backup[1] = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 10);
 	backup[2] = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 10);
+	backup[3] = g_nrfds;
 	if (ft_strcmp(node->data.cmd.argv[0], "exec") == 0)
 		return (run_exec_builtin(node, shell, backup));
 	func = shell->bypass_func || is_special_builtin(node->data.cmd.argv[0])
@@ -340,6 +389,8 @@ static int	run_command(t_node *node, t_shell *shell)
 			: execute_builtin(node, shell);
 		if (saved)
 			overlay_restore(shell, saved, nsaved);
+		if (!func && is_exec_via(node->data.cmd.argv))
+			forget_fds(backup);
 		restore_fds(backup);
 		return (builtin_status);
 	}

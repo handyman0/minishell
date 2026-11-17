@@ -410,7 +410,7 @@ static int	with_redirs(t_node *node, t_shell *shell,
 {
 	t_node	fake;
 	t_node	*copy;
-	int		backup[3];
+	int		backup[4];
 	int		status;
 
 	if (!node->data.ctl.redirs)
