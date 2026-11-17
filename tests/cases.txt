@@ -367,3 +367,9 @@ trap "echo ERR \$?" ERR; false; true; ls /nonexist 2>/dev/null; if false; then :
 HOME=/h; a=~:~/x:b~ c=x:~ d="~":~; echo $a $c $d
 echo ~root ~root/x ~nouser ~+ ~- "~root" ~"root"
 HOME=/h; PATH=~/bin:~; echo $PATH; x=${u:-~}; echo $x; echo ${u:-~/a}
+alias e='echo echo' echo='echo % '; e !
+alias forx='for x ' i='in 0' in='in 1' for='in 2'; forx i a; do echo $x; done; forx for a; do echo $x; done
+alias c='case a ' case='
+ in a) :' in=; c case X; echo A; esac
+alias b=" "; echo ok | b
+cat </dev/null

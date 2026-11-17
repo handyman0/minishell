@@ -223,6 +223,8 @@ int	line_incomplete(char *line)
 	if (open_quote(line) || trailing_backslash(line))
 		return (1);
 	tokens = tokenize_line(line);
+	if (alias_shell())
+		expand_aliases(&tokens, alias_shell());
 	cursor = tokens;
 	parse_reset();
 	ast = parse_tokens(&cursor);

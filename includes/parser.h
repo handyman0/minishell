@@ -249,6 +249,8 @@ void	expand_tokens(t_token **tokens, t_shell *shell);
 int		expand_glob(char *pattern, t_token **head, t_token **cur);
 
 void	expand_aliases(t_token **tokens, t_shell *shell);
+void	alias_context(t_shell *shell);
+t_shell	*alias_shell(void);
 
 int		is_ctl_node(t_node *node);
 void	free_ctl(t_node *node);

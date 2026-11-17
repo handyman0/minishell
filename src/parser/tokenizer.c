@@ -384,7 +384,8 @@ static t_token	*tokenize_joined(char *line, const int *map)
 		if (line[i] == '\n')
 		{
 			if (current && !continues_command(current))
-				token_add_back(&head, &current, TOKEN_SEMI, NULL);
+				token_add_back(&head, &current, TOKEN_SEMI,
+					ft_strdup("\n"));
 			i = capture_bodies(line, i + 1, &scan, head);
 			continue ;
 		}

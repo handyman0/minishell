@@ -43,6 +43,7 @@ static void	init_shell(t_shell *shell, char **envp)
 {
 	char	cwd[1024];
 
+	alias_context(shell);
 	shell->env = env_init(envp);
 	init_env_defaults(shell);
 	shell->lineno = 0;
