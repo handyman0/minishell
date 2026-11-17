@@ -234,6 +234,8 @@ static char	*apply_op(char *name, char *value, const char *rest, t_shell *shell)
 	int		longest;
 	colon = (rest[0] == ':');
 	op = rest[colon];
+	if (!op)
+		return (ft_strdup(""));
 	unset = !value || (colon && !*value);
 	longest = (op == '#' || op == '%') && rest[colon + 1] == op;
 	word = expand_variables((char *)rest + colon + 1 + longest, shell);
@@ -1049,7 +1051,8 @@ static int	put_brace(t_word *w, char *raw, int quote, t_shell *shell)
 		return (free(inner), 1);
 	n = inner[0] == '#' ? hash_name(inner) : name_len(inner, 1);
 	colon = inner[n] == ':';
-	if (!inner[0] || !n || !inner[n] || !ft_strchr("-=+?", inner[n + colon]))
+	if (!inner[0] || !n || !inner[n] || !inner[n + colon]
+		|| !ft_strchr("-=+?", inner[n + colon]))
 		return (free(inner), 0);
 	name = ft_substr(inner, 0, n);
 	value = lookup(name, shell);
