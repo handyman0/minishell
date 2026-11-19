@@ -192,26 +192,41 @@ static char	**expand_assignments(char **argv, int count, t_shell *shell)
 	return (assigns);
 }
 
-static void	take_assignments(t_node *node, t_shell *shell)
+static char	**detach_assignments(t_node *node, int *count)
 {
 	char	**argv;
-	int		count;
+	char	**raw;
 	int		i;
 
 	argv = node->data.cmd.argv;
-	count = 0;
-	while (argv[count] && is_assignment(argv[count]))
-		count++;
-	if (count == 0)
+	*count = 0;
+	while (argv[*count] && is_assignment(argv[*count]))
+		(*count)++;
+	if (*count == 0)
+		return (NULL);
+	raw = ft_calloc(*count + 1, sizeof(char *));
+	if (!raw)
+		return (*count = 0, NULL);
+	ft_memcpy(raw, argv, sizeof(char *) * *count);
+	i = 0;
+	while (argv[*count + i])
+		i++;
+	ft_memmove(argv, argv + *count, sizeof(char *) * (i + 1));
+	return (raw);
+}
+
+static void	finish_assignments(t_node *node, char **raw, int count,
+				t_shell *shell)
+{
+	int	i;
+
+	if (!raw)
 		return ;
-	node->data.cmd.assigns = expand_assignments(argv, count, shell);
+	node->data.cmd.assigns = expand_assignments(raw, count, shell);
 	i = 0;
 	while (i < count)
-		free(argv[i++]);
-	i = 0;
-	while (argv[count + i])
-		i++;
-	ft_memmove(argv, argv + count, sizeof(char *) * (i + 1));
+		free(raw[i++]);
+	free(raw);
 }
 
 static int	is_decl_builtin(const char *name)
@@ -286,22 +301,27 @@ void	expand_command(t_node *node, t_shell *shell)
 {
 	t_token	*tokens;
 	char	**decl;
+	char	**raw;
+	int		count;
 
-	expand_redirs(node->data.cmd.redirs, shell);
 	if (!node->data.cmd.argv)
-		return ;
-	take_assignments(node, shell);
+		return (expand_redirs(node->data.cmd.redirs, shell));
+	raw = detach_assignments(node, &count);
 	if (node->data.cmd.argv[0] && is_decl_builtin(node->data.cmd.argv[0]))
 	{
 		decl = expand_decl(node->data.cmd.argv, shell);
 		free_str_array(node->data.cmd.argv);
 		node->data.cmd.argv = decl;
-		return ;
 	}
-	tokens = argv_to_tokens(node->data.cmd.argv);
-	expand_tokens(&tokens, shell);
-	free_str_array(node->data.cmd.argv);
-	node->data.cmd.argv = tokens_to_argv(tokens);
+	else
+	{
+		tokens = argv_to_tokens(node->data.cmd.argv);
+		expand_tokens(&tokens, shell);
+		free_str_array(node->data.cmd.argv);
+		node->data.cmd.argv = tokens_to_argv(tokens);
+	}
+	expand_redirs(node->data.cmd.redirs, shell);
+	finish_assignments(node, raw, count, shell);
 }
 
 char	**expand_words(char **raw, t_shell *shell)
